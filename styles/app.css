@@ -1,0 +1,49 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@plugin "daisyui";
+
+/* Markenfarbe – einzige Stelle, an der der Farbwert steht. */
+:root {
+  --glutorange: #E25822;
+}
+
+/* daisyUI-Farbschema „light“: Glutorange ist die Grundfarbe (primary) des ERP.
+   Dadurch nutzen alle daisyUI-Bausteine sie automatisch: btn-primary, link-primary,
+   checkbox-primary, Fokus-Ränder, Ladeanzeigen usw. */
+@plugin "daisyui/theme" {
+  name: "light";
+  default: true;
+  --color-primary: var(--glutorange);
+  --color-primary-content: #ffffff;
+}
+
+/* Markierung des aktiven Navigationseintrags in leichtem Glutorange:
+   heller Hintergrund (15 % Grundfarbe), Schrift in dunklem Glutorange für guten Kontrast. */
+.menu {
+  --menu-active-bg: color-mix(in oklab, var(--color-primary) 15%, transparent);
+  --menu-active-fg: color-mix(in oklab, var(--color-primary) 70%, black);
+}
+.menu .menu-active {
+  font-weight: 600;
+  box-shadow: none;
+}
+
+/* Zusätzlich als Tailwind-Farbe: bg-glutorange, text-glutorange, border-glutorange … */
+/* Schrift für Tifinagh (Berberschrift), geladen in der HTML-Shell (src/app.rs) */
+@theme {
+  --font-tifinagh: "Noto Sans Tifinagh", "Ebrima", "Segoe UI Historic", sans-serif;
+}
+
+@theme inline {
+  --color-glutorange: var(--glutorange);
+
+  /* Ebenen der Projekt-Hierarchie (ANF-003): Grundton + dunkle Schrift für gute Lesbarkeit */
+  --color-level-project: var(--glutorange);
+  --color-level-project-ink: color-mix(in oklab, var(--glutorange) 70%, black);
+  --color-level-subproject: #2563eb;
+  --color-level-subproject-ink: #1e40af;
+  --color-level-process: #0d9488;
+  --color-level-process-ink: #115e59;
+  --color-level-task: #64748b;
+  --color-level-task-ink: #334155;
+}

@@ -1,0 +1,19 @@
+{
+  "name": "erp-saintwhoo",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "css:build": "tailwindcss -i styles/app.css -o styles/output.css --minify",
+    "css:watch": "tailwindcss -i styles/app.css -o styles/output.css --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.5",
+    "daisyui": "^5.7.50",
+    "tailwindcss": "^4.3.5"
+  },
+  "private": true
+}

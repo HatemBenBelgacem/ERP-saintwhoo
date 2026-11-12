@@ -1,0 +1,4 @@
+# Leptos: Komponenten-Typen löschen (kürzere Typnamen, schnelleres Übersetzen).
+# Nötig, weil der Apple-Linker (ld-1230) bei den sehr langen Typnamen grosser Ansichten abstürzt.
+[target.aarch64-apple-darwin]
+rustflags = ["--cfg", "erase_components"]
