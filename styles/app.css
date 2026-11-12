@@ -29,10 +29,6 @@
 }
 
 /* Zusätzlich als Tailwind-Farbe: bg-glutorange, text-glutorange, border-glutorange … */
-/* Schrift für Tifinagh (Berberschrift), geladen in der HTML-Shell (src/app.rs) */
-@theme {
-  --font-tifinagh: "Noto Sans Tifinagh", "Ebrima", "Segoe UI Historic", sans-serif;
-}
 
 @theme inline {
   --color-glutorange: var(--glutorange);

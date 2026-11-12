@@ -10,6 +10,8 @@ pub struct NavItem {
     pub title: &'static str,
     pub path: &'static str,
     pub icon: Option<Icon>,
+    /// Kurzbeschreibung für die Karte auf der Startseite
+    pub description: &'static str,
 }
 
 /// Alle Pfade unterhalb dieses Präfixes zeigen die Einstellungsnavigation (AK-9).
@@ -21,36 +23,62 @@ pub const MAIN_NAV: &[NavItem] = &[
         title: "Startseite",
         path: "/",
         icon: Some(Icon::Home),
+        description: "Übersicht aller Module.",
     },
     NavItem {
         title: "Adressen",
         path: "/adressen",
         icon: Some(Icon::Addresses),
+        description: "Firmen und Personen: Kunden, Lieferanten und Partner an einer zentralen Stelle.",
     },
     NavItem {
         title: "Projekte",
         path: "/projekte",
         icon: Some(Icon::Projects),
+        description: "Projekte mit Teilprojekten, Vorgängen und Aufgaben planen und den Fortschritt verfolgen.",
+    },
+    // ANF-006
+    NavItem {
+        title: "Aufgaben",
+        path: "/aufgaben",
+        icon: Some(Icon::Tasks),
+        description: "Alle zugeordneten Aufgaben aus allen Projekten an einer Stelle – und Aufgaben ohne Projekt.",
     },
     NavItem {
         title: "Einkauf",
         path: "/einkauf",
         icon: Some(Icon::Purchasing),
+        description: "Einkaufsaufträge bei Lieferanten erfassen, bestellen und den Wareneingang verfolgen.",
     },
 ];
 
 /// Einstellungsnavigation. Der erste Eintrag ist das Ziel von „Einstellungen“ (AK-7).
-pub const SETTINGS_NAV: &[NavItem] = &[NavItem {
-    title: "Allgemein",
-    path: "/einstellungen/allgemein",
-    icon: Some(Icon::Sliders),
-}];
+pub const SETTINGS_NAV: &[NavItem] = &[
+    NavItem {
+        title: "Allgemein",
+        path: "/einstellungen/allgemein",
+        icon: Some(Icon::Sliders),
+        description: "Allgemeine Einstellungen.",
+    },
+    // ANF-005
+    NavItem {
+        title: "Benutzer",
+        path: "/einstellungen/benutzer",
+        icon: Some(Icon::User),
+        description: "Benutzer anlegen, sperren und ihrer Adresse zuordnen.",
+    },
+];
 
 /// Ziel des Eintrags „Einstellungen“ in der Fusszeile der Seitenleiste.
 pub fn settings_entry_path() -> &'static str {
     SETTINGS_NAV
         .first()
         .map_or(SETTINGS_PREFIX, |item| item.path)
+}
+
+/// Module für die Karten auf der Startseite: alle Einträge der Hauptnavigation ausser der Startseite.
+pub fn modules() -> impl Iterator<Item = &'static NavItem> {
+    MAIN_NAV.iter().filter(|item| item.path != "/")
 }
 
 /// `true`, wenn die aktuelle URL zum Einstellungsbereich gehört.
@@ -89,6 +117,12 @@ mod tests {
         assert!(is_active("/lager", "/lager/artikel/5"));
         assert!(is_active("/lager", "/lager/"));
         assert!(!is_active("/lager", "/lagerort"));
+    }
+
+    #[test]
+    fn modules_exclude_home_and_have_descriptions() {
+        assert!(modules().all(|m| m.path != "/" && !m.description.is_empty()));
+        assert_eq!(modules().count(), MAIN_NAV.len() - 1);
     }
 
     #[test]

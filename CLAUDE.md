@@ -22,6 +22,7 @@ Reiner Servercode (sqlx, Modul `db`) steht immer hinter `#[cfg(feature = "ssr")]
 
 ```
 CLAUDE.md            Diese Datei
+system-design.md     Systementwurf: Schichten, Ordnerstruktur, Abhängigkeitsregeln
 index.md             Übersicht aller Dokumente und Anforderungen
 task.md              Aufgabenliste (In Arbeit / Offen / Erledigt)
 anforderungen/       Eine Markdown-Datei pro Anforderung
@@ -34,10 +35,10 @@ src/
   navigation.rs      Zentrale Navigationseinträge (Haupt- und Einstellungsnavigation)
   icons.rs           Eingebettete SVG-Symbole
   forms.rs           Gemeinsame Formular-Bausteine: TextField, SelectField, SearchPicker, Fehler, Pfadleiste, SaveOutcome
-  pages/             Ein Ordner pro Modul: model.rs, api.rs (Server-Funktionen), list/detail/form.rs
-    addresses/       ANF-002 Adressen
-    projects/        ANF-003 Projekte → Teilprojekte → Vorgänge → Aufgaben
-    purchase_orders/ ANF-004 Einkaufsaufträge mit Positionen
+  backend/<modul>/   model.rs (Datentypen + Prüfregeln), server_fns.rs (#[server]), repository.rs (SQL, nur ssr)
+  components/<modul>/ Eine Datei pro Komponente bzw. Ansicht (list.rs, detail.rs, form.rs …)
+                     Module: addresses (ANF-002), projects (ANF-003), purchase_orders (ANF-004), users (ANF-005), tasks (ANF-006), auth (ANF-007),
+                     system (Datenbank-Status), home, settings – Details in system-design.md
   db.rs              Verbindungspool + Migrationen (nur ssr)
 migrations/          SQL-Migrationen (sqlx), laufen beim Serverstart automatisch
 public/              Feste Dateien (Bilder, Seitensymbol), werden unverändert ausgeliefert
@@ -57,7 +58,7 @@ npm run css:build               # styles/output.css erzeugen (vor dem ersten car
 
 # Entwicklung (zwei Terminalfenster)
 npm run css:watch               # CSS neu bauen bei Änderungen
-cargo leptos watch              # Server + Browserteil, lädt bei Änderungen neu: http://127.0.0.1:3000
+cargo leptos watch              # Server + Browserteil, lädt bei Änderungen neu: http://127.0.0.1:3002
 
 # Prüfen
 cargo fmt
@@ -127,7 +128,7 @@ sqlx migrate add -r <name>      # neue Migration in migrations/
   `primary` hinterlegt (`styles/app.css`). Hervorhebungen immer über `primary` gestalten:
   `bg-primary`/`text-primary-content`, `btn-primary`, `link-primary`, `checkbox-primary` usw.
   Der aktive Navigationseintrag ist in **leichtem Glutorange** markiert (15 % Grundfarbe als Hintergrund,
-  Schrift in dunklem Glutorange) – Flächen für Markierungen so, kräftiges Glutorange nur für Kopfzeile und Hauptschaltflächen.
+  Schrift in dunklem Glutorange) – Flächen für Markierungen so, kräftiges Glutorange nur für Hauptschaltflächen. Die Kopfzeile ist neutral in dunklem Anthrazit (`bg-neutral`).
 - Den Farbwert nur in `styles/app.css` (`--glutorange`) ändern, nie als Hex-Wert im Code.
 - **Ebenen-Farben der Projekte** (Tokens in `styles/app.css`, Klassen über `Level::stripe_class()`,
   `badge_class()`, `tint_class()`): Projekt = Glutorange, Teilprojekt = Blau, Vorgang = Petrol, Aufgabe = Schiefergrau.
@@ -140,17 +141,24 @@ sqlx migrate add -r <name>      # neue Migration in migrations/
   Parameter in der Webadresse (`?neu=…`, `?unter=…`, `?bearbeiten=…`, `?id=…`), damit Neuladen und Zurück-Taste
   funktionieren. Bausteine in `src/forms.rs`: `Modal`, `use_base_href()` (Adresse ohne Fenster-Parameter =
   Schliessen-Ziel), `with_params()`, `refresh_when()`/`is_saved()` + `data_version()` (Daten nach dem Speichern neu laden).
-- Neue Seite: Komponente in `src/pages/`, Route in `src/app.rs` innerhalb der `ParentRoute` mit dem Grundgerüst (`AppLayout`).
+- Neue Seite: Komponente in `src/components/<modul>/`, Daten über `src/backend/<modul>/server_fns.rs` (siehe `system-design.md`), Route in `src/app.rs` innerhalb der `ParentRoute` mit dem Grundgerüst (`AppLayout`).
 - Navigationseintrag nur in `src/navigation.rs` ergänzen (`MAIN_NAV` bzw. `SETTINGS_NAV`), nicht im Grundgerüst.
 - Einstellungsseiten liegen unter `/einstellungen/…` – dann zeigt die Seitenleiste automatisch die Einstellungsnavigation.
 - Interne Verweise als normales `<a href>` – Leptos wechselt die Seite dann ohne Neuladen.
+
+### Anmeldung und Zugangsschutz (ANF-007)
+- Jede Anfrage läuft durch `src/backend/auth/middleware.rs`: Seiten ohne Sitzung → `/anmelden`,
+  Server-Funktionen unter `/api/…` ohne Sitzung → 401. Neue `#[server]`-Funktionen sind damit automatisch geschützt.
+- Nur Funktionen, die **ohne** Anmeldung gehen müssen, bekommen `#[server(prefix = "/oeffentlich")]` – sparsam verwenden.
+- Den angemeldeten Benutzer in Server-Funktionen mit `crate::backend::auth::session::current_user()` bzw. `require_user()` holen.
 
 ### Datenbank
 - Schemaänderungen nur über neue Migrationsdateien, bestehende Migrationen nie ändern.
 - Den Verbindungspool in Server-Funktionen mit `crate::db::pool()?` holen (stellt `main.rs` über den Kontext bereit).
 - Eingaben immer als Parameter (`$1`, `.bind(…)`), nie in den SQL-Text einsetzen. Zusammengesetzte SQL-Texte
   verlangt sqlx 0.9 mit `AssertSqlSafe(…)` – nur verwenden, wenn alle Teile feste Texte oder Werte aus einer
-  festen Liste sind (Beispiel: Sortierung in `src/pages/addresses/api.rs`).
+  festen Liste sind (Beispiel: Sortierung in `src/backend/addresses/repository.rs`).
+- SQL steht nur in `repository.rs`; Server-Funktionen (`server_fns.rs`) prüfen, steuern Transaktionen und melden Fehler.
 - Prüfregeln für Eingaben im gemeinsamen Modell (`model.rs`) ablegen und auf dem Server immer ausführen.
 
 ### Code

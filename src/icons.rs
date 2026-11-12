@@ -17,6 +17,9 @@ pub enum Icon {
     Trash,
     Search,
     Chevron,
+    User,
+    Tasks,
+    Logout,
 }
 
 impl Icon {
@@ -46,6 +49,11 @@ impl Icon {
             Icon::Trash => "M4 7h16M10 11v6M14 11v6M9 7V4h6v3M6 7l1 13h10l1-13",
             Icon::Search => "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14ZM20 20l-4-4",
             Icon::Chevron => "M9 6l6 6-6 6",
+            Icon::Logout => "M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4",
+            Icon::Tasks => {
+                "M10 6h10M10 12h10M10 18h10M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5 2.5-2.5M3.5 18l1.5 1.5 2.5-2.5"
+            }
+            Icon::User => "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4.5 20a7.5 7.5 0 0 1 15 0",
         }
     }
 }

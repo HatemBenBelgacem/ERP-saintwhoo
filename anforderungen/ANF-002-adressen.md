@@ -146,11 +146,11 @@ Für die Umsetzung wurden vorläufige Annahmen getroffen (in Klammern).
 | Datei | Inhalt |
 |-------|--------|
 | `migrations/20261111120000_adresse.sql` | Tabelle `adresse`, Nummern-Sequenz, Pflichtfeld-Prüfungen, berechneter Anzeigename |
-| `src/pages/addresses/model.rs` | Datenmodell, Prüfregeln (Server und Browser), Länderliste + Modultests |
-| `src/pages/addresses/api.rs` | Server-Funktionen: Liste, Detail, Anlegen, Bearbeiten, Löschen |
-| `src/pages/addresses/list.rs` | Liste mit Suche, Sortierung, Seiten (Zustand in der Webadresse) |
-| `src/pages/addresses/detail.rs` | Detailansicht, Löschdialog, „nicht gefunden“ |
-| `src/pages/addresses/form.rs` | Modal-Fenster für Anlegen und Bearbeiten |
+| `src/backend/addresses/model.rs` | Datenmodell, Prüfregeln (Server und Browser), Länderliste + Modultests |
+| `src/backend/addresses/server_fns.rs` + `src/backend/addresses/repository.rs` | Server-Funktionen: Liste, Detail, Anlegen, Bearbeiten, Löschen |
+| `src/components/addresses/list.rs` | Liste mit Suche, Sortierung, Seiten (Zustand in der Webadresse) |
+| `src/components/addresses/detail.rs` | Detailansicht, Löschdialog, „nicht gefunden“ |
+| `src/components/addresses/form.rs` | Modal-Fenster für Anlegen und Bearbeiten |
 | `src/navigation.rs`, `src/app.rs` | Navigationseintrag „Adressen“ und Routen |
 
 Hinweise:
@@ -170,3 +170,4 @@ Projektverweis) und 13 Modultests.
 | 2026-11-11 | Hatem Ben Belgacem | Tabellennamen in Einzahl |
 | 2026-11-11 | Hatem Ben Belgacem | Umgesetzt |
 | 2026-11-11 | Hatem Ben Belgacem | Eingabe in Modal-Fenstern (AK-8, AK-12) |
+| 2026-11-12 | Hatem Ben Belgacem | ANF-005: Hinweis auf Benutzer, Löschschutz „als Benutzer“, Typ bleibt Person |

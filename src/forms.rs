@@ -17,6 +17,7 @@ pub const MODAL_PARAMS: &[&str] = &[
     "gespeichert",
     "geloescht",
     "wareneingang",
+    "passwort",
 ];
 
 /// Zähler, der nach jedem Speichern erhöht wird. Ressourcen, die ihn lesen, laden danach neu
@@ -234,6 +235,9 @@ pub fn SearchPicker<F, Fut>(
     errors: Signal<FieldErrors>,
     search: F,
     #[prop(optional)] required: bool,
+    /// Wird nach jeder Auswahl bzw. jedem Entfernen aufgerufen (z. B. um die Webadresse zu ändern).
+    #[prop(optional)]
+    on_change: Option<Callback<Option<PickOption>>>,
 ) -> impl IntoView
 where
     F: Fn(String) -> Fut + Copy + Send + Sync + 'static,
@@ -248,9 +252,12 @@ where
     let has_error = move || errors.read().contains_key(field);
 
     let pick = move |c: PickOption| {
-        selected.set(Some(c));
+        selected.set(Some(c.clone()));
         open.set(false);
         query.set(String::new());
+        if let Some(cb) = on_change {
+            cb.run(Some(c));
+        }
     };
 
     view! {
@@ -273,7 +280,12 @@ where
                             class="btn btn-ghost btn-xs"
                             aria-label=format!("{label} entfernen")
                             title=format!("{label} entfernen")
-                            on:click=move |_| selected.set(None)
+                            on:click=move |_| {
+                                selected.set(None);
+                                if let Some(cb) = on_change {
+                                    cb.run(None);
+                                }
+                            }
                         >"✕"</button>
                     </div>
                 }

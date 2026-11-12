@@ -214,14 +214,14 @@ Für die Umsetzung wurden die Vorschläge in Klammern als vorläufige Annahmen �
 | Datei | Inhalt |
 |-------|--------|
 | `migrations/20261111200000_einkaufsauftrag.sql` | Tabellen `einkaufsauftrag`, `einkaufsposition`, Nummernzähler je Jahr, Prüfregeln, Fremdschlüssel ohne Kaskade auf Adresse und Projekt |
-| `src/pages/purchase_orders/model.rs` | Datenmodell, Prüfregeln, Festkomma-Rechnung (Positionsbetrag, MWST je Satz, Rappenrundung), Status nach Lieferung + Modultests |
-| `src/pages/purchase_orders/api.rs` | Server-Funktionen: Liste, Detail, Anlegen, Bearbeiten, Positionen, Bestellen, Wareneingang, Alles geliefert, Stornieren, Löschen |
-| `src/pages/purchase_orders/list.rs` | Liste mit Suche, Statusfilter, Sortierung, Seiten, Markierung „überfällig“ |
-| `src/pages/purchase_orders/detail.rs` | Detailansicht mit Positionen und Summen, Schaltflächen je Status, Bestätigungsdialoge; Einkaufsaufträge im Projekt |
-| `src/pages/purchase_orders/form.rs` | Modal-Fenster: Kopfdaten, Position, Wareneingang |
+| `src/backend/purchase_orders/model.rs` | Datenmodell, Prüfregeln, Festkomma-Rechnung (Positionsbetrag, MWST je Satz, Rappenrundung), Status nach Lieferung + Modultests |
+| `src/backend/purchase_orders/server_fns.rs` + `src/backend/purchase_orders/repository.rs` | Server-Funktionen: Liste, Detail, Anlegen, Bearbeiten, Positionen, Bestellen, Wareneingang, Alles geliefert, Stornieren, Löschen |
+| `src/components/purchase_orders/list.rs` | Liste mit Suche, Statusfilter, Sortierung, Seiten, Markierung „überfällig“ |
+| `src/components/purchase_orders/detail.rs` | Detailansicht mit Positionen und Summen, Schaltflächen je Status, Bestätigungsdialoge; Einkaufsaufträge im Projekt |
+| `src/components/purchase_orders/form.rs` | Modal-Fenster: Kopfdaten, Position, Wareneingang |
 | `src/forms.rs` | Neu gemeinsam: `SearchPicker` (Suchauswahl), `SelectField`; Fenster-Parameter `wareneingang` |
-| `src/pages/addresses/api.rs`, `src/pages/projects/api.rs` | `search_addresses`, `search_projects`; Löschsperren mit Meldung (AK-21, AK-23) |
-| `src/pages/projects/detail.rs` | Abschnitt „Einkaufsaufträge“ in der Projekt-Detailansicht (AK-22) |
+| `src/backend/addresses/server_fns.rs` + `src/backend/addresses/repository.rs`, `src/backend/projects/server_fns.rs` + `src/backend/projects/repository.rs` | `search_addresses`, `search_projects`; Löschsperren mit Meldung (AK-21, AK-23) |
+| `src/components/projects/detail.rs` | Abschnitt „Einkaufsaufträge“ in der Projekt-Detailansicht (AK-22) |
 | `src/navigation.rs`, `src/app.rs`, `src/icons.rs` | Navigationseintrag „Einkauf“, Routen, Symbol |
 
 Hinweise:

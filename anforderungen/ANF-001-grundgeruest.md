@@ -9,7 +9,7 @@
 | **Modul**     | Allgemein / Oberfläche                            |
 | **Autor**     | Hatem Ben Belgacem                                |
 | **Erstellt**  | 2026-11-11                                        |
-| **Geändert**  | 2026-11-11                                        |
+| **Geändert**  | 2026-11-12                                        |
 
 ## 1. Beschreibung
 
@@ -30,7 +30,7 @@ wieder zur Hauptnavigation.
 
 ```
 ┌──────────────────────────────────────────────────┐
-│ Kopfzeile: Leitspruch (Tifinagh + Übersetzung)   │
+│ Kopfzeile (neutral, ohne Überschrift)            │
 ├──────────────┬───────────────────────────────────┤
 │ Navigation   │                                   │
 │  • Eintrag 1 │                                   │
@@ -83,6 +83,12 @@ wieder zur Hauptnavigation.
 - [x] **AK-11:** Gegeben die eingeblendete Seitenleiste auf dem Mobiltelefon, wenn der Benutzer einen
   Eintrag wählt, dann schliesst sich die Seitenleiste automatisch.
 
+**Startseite**
+- [x] **AK-12:** Gegeben die Startseite, dann erscheint jedes Modul der Hauptnavigation (ausser der Startseite
+  selbst) als Karte mit Symbol, Titel und Kurzbeschreibung. Ein Klick auf die Karte öffnet das Modul. Neue Module
+  erscheinen automatisch, sobald sie in der Hauptnavigation eingetragen sind. Darunter zeigt eine kleine Zeile,
+  ob die Datenbank verbunden ist.
+
 ## 4. Daten / Felder
 
 Aufbau eines Navigationseintrags:
@@ -92,6 +98,7 @@ Aufbau eines Navigationseintrags:
 | Titel  | Text   | Ja      | Angezeigter Name, z. B. „Lager“            |
 | Pfad   | Text   | Ja      | Ziel-Webadresse, z. B. `/lager`            |
 | Symbol | Text   | Nein    | Symbol vor dem Titel                       |
+| Beschreibung | Text | Ja   | Kurzbeschreibung für die Karte auf der Startseite (AK-12) |
 
 ## 5. Abhängigkeiten
 
@@ -108,11 +115,9 @@ Aufbau eines Navigationseintrags:
 
 Für die Umsetzung wurden vorläufige Annahmen getroffen (in Klammern). Weitere Wünsche als neue Anforderung erfassen.
 
-- [x] Farbe der Kopfzeile: Markenfarbe `--glutorange: #E25822`, Schrift weiss.
+- [x] Farbe der Kopfzeile: neutral in dunklem Anthrazit (daisyUI `neutral`, Schrift `neutral-content`), kein Glutorange.
 - [x] Glutorange ist die Grundfarbe des ERP (daisyUI `primary`), Der aktive Navigationseintrag ist in leichtem Glutorange markiert.
-- [x] Inhalt der Kopfzeile: mittig der Leitspruch in Tifinagh (Berberschrift) „ⵅⴰⵙ ⵉⵇⵙⴻⵃ ⵡⴻⴷⵔⴰⵔ, ⴰⴷ ⵜ-ⵢⴻⵄⴼⴻⵙ ⵓⴹⴰⵔ.“
-  (Kabylisch: „Xas iqseḥ wedrar, ad t-yeɛfes uḍar.“), darunter klein die Übersetzung „So hart und steil der Berg
-  auch sein mag, der Fuß wird ihn bezwingen.“ Kein Anwendungsname. Schrift: Noto Sans Tifinagh (Google Fonts).
+- [x] Inhalt der Kopfzeile: keine Überschrift, kein Leitspruch, kein Anwendungsname; nur das Menü-Symbol auf kleinen Bildschirmen.
 - [ ] Soll die Kopfzeile später zusätzlich ein Benutzermenü oder eine Suche erhalten?
 - [ ] Welche Einträge hat die Hauptnavigation? *(vorerst: „Startseite“)*
 - [ ] Welche Einträge hat die Einstellungsnavigation? *(vorerst: „Allgemein“ als Platzhalter)*
@@ -127,6 +132,7 @@ Für die Umsetzung wurden vorläufige Annahmen getroffen (in Klammern). Weitere 
 | `src/layout.rs` | Grundgerüst (`AppLayout`), Kopfzeile, Seitenleiste (daisyUI `drawer` + `menu`) |
 | `src/navigation.rs` | Zentrale Navigationseinträge `MAIN_NAV` (Hauptnavigation), `SETTINGS_NAV` (Einstellungen) + Modultests |
 | `src/icons.rs` | Eingebettete SVG-Symbole |
+| `src/components/home/home_page.rs` | Startseite mit Modulkarten aus `navigation::modules()` und Datenbank-Status (AK-12) |
 | `src/app.rs` | Routen: `/`, `/einstellungen` (→ Weiterleitung auf erste Einstellungsseite), `/einstellungen/allgemein` |
 | `styles/app.css` | Farbe `--glutorange` als daisyUI-Grundfarbe `primary`, Markierung der Navigation |
 
@@ -138,7 +144,9 @@ Geprüft: alle AK im Browser (grosser Bildschirm 1280 px, Mobiltelefon 390 px) u
 |------------|--------------------|-----------------|
 | 2026-11-11 | Hatem Ben Belgacem | Erstellt        |
 | 2026-11-11 | Hatem Ben Belgacem | Umgesetzt, Farbe der Kopfzeile `--glutorange` ergänzt |
+| 2026-11-12 | Hatem Ben Belgacem | AK-12: Startseite zeigt alle Module als Karten |
 | 2026-11-11 | Hatem Ben Belgacem | Begriffe auf Deutsch umgestellt (vorher REQ-001 „AppLayout mit Header und Seitenleiste“) |
 | 2026-11-11 | Hatem Ben Belgacem | Glutorange als Grundfarbe, auch für die Markierung der Navigation |
 | 2026-11-11 | Hatem Ben Belgacem | Markierung der Navigation in leichtem Glutorange |
 | 2026-11-11 | Hatem Ben Belgacem | Kopfzeile: Leitspruch in Tifinagh mittig, Anwendungsname entfernt |
+| 2026-11-12 | Hatem Ben Belgacem | Kopfzeile neutral: Glutorange und Leitspruch entfernt |

@@ -1,11 +1,12 @@
 pub mod app;
+pub mod backend;
+pub mod components;
 #[cfg(feature = "ssr")]
 pub mod db;
 pub mod forms;
 pub mod icons;
 pub mod layout;
 pub mod navigation;
-pub mod pages;
 
 #[cfg(feature = "hydrate")]
 #[wasm_bindgen::prelude::wasm_bindgen]

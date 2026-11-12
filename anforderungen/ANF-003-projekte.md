@@ -9,7 +9,7 @@
 | **Modul**     | Projekte                                          |
 | **Autor**     | Hatem Ben Belgacem                                |
 | **Erstellt**  | 2026-11-11                                        |
-| **Geändert**  | 2026-11-11                                        |
+| **Geändert**  | 2026-11-12                                        |
 
 ## 1. Beschreibung
 
@@ -90,7 +90,8 @@ Das Modul erscheint als Eintrag **„Projekte“** in der Hauptnavigation (ANF-0
 - [x] **AK-11:** Gegeben die Detailansicht eines Elements oder eine Zeile im Strukturbaum, wenn der Benutzer
   auf „Bearbeiten“ (✎) klickt, dann öffnet sich das Formular mit den aktuellen Werten in einem Modal-Fenster;
   Speichern übernimmt die Änderungen, „Abbrechen“ nicht.
-- [x] **AK-11a:** Gegeben eine Aufgabe, dann enthält das Formular (Anlegen und Bearbeiten) nur das Feld „Titel“.
+- [x] **AK-11a:** Gegeben eine Aufgabe, dann enthält das Formular (Anlegen und Bearbeiten) nur die Felder „Titel“
+  (Pflicht) und „Beschreibung“ (optional); die Detailansicht der Aufgabe zeigt die Beschreibung.
 - [x] **AK-5a:** Projekt, Teilprojekt, Vorgang und Aufgabe sind farblich abgegrenzt (Übersicht, Strukturbaum,
   Kopf der Detailansicht): farbiger Streifen links, Ebenen-Plakette, leichter Hintergrund; Legende über der Übersicht.
   Farben: Projekt Glutorange, Teilprojekt Blau, Vorgang Petrol, Aufgabe Schiefergrau.
@@ -114,7 +115,7 @@ Das Modul erscheint als Eintrag **„Projekte“** in der Hauptnavigation (ANF-0
 
 ## 4. Daten / Felder
 
-**Felder** von Projekt, Teilprojekt und Vorgang. **Aufgaben haben nur einen Titel** (plus erledigt/offen):
+**Felder** von Projekt, Teilprojekt und Vorgang. **Aufgaben haben nur Titel und Beschreibung** (plus erledigt/offen):
 
 | Feld | Typ | Pflicht | Bemerkung |
 |------|-----|---------|-----------|
@@ -134,7 +135,7 @@ Das Modul erscheint als Eintrag **„Projekte“** in der Hauptnavigation (ANF-0
 | Projekt | `projekt` | Nummer (eindeutig, fortlaufend, z. B. `P-2026-001`), Kunde (→ `adresse`, optional) |
 | Teilprojekt | `teilprojekt` | Projekt (→ `projekt`, Pflicht), Reihenfolge |
 | Vorgang | `vorgang` | Teilprojekt (→ `teilprojekt`, Pflicht), Reihenfolge |
-| Aufgabe | `aufgabe` | Nur: Titel, erledigt/offen, Vorgang (→ `vorgang`, Pflicht), Reihenfolge |
+| Aufgabe | `aufgabe` | Nur: Titel, Beschreibung, erledigt/offen, Vorgang (→ `vorgang`, Pflicht), Reihenfolge |
 
 **Status:**
 
@@ -159,7 +160,7 @@ Das Modul erscheint als Eintrag **„Projekte“** in der Hauptnavigation (ANF-0
 
 ## 6. Nicht im Umfang
 
-- Zuweisung von Aufgaben an Benutzer (es gibt noch keine Benutzerverwaltung)
+- Verantwortliche Benutzer bei Projekt, Teilprojekt und Vorgang – geregelt in ANF-005 (Verantwortung in Projekten)
 - Zeiterfassung, Ist-Aufwand, Kosten und Budget
 - Balkenplan (Terminplan), Abhängigkeiten zwischen Vorgängen
 - Verschieben eines Elements zu einem anderen übergeordneten Element
@@ -184,11 +185,12 @@ Für die Umsetzung wurden vorläufige Annahmen getroffen (in Klammern).
 |-------|--------|
 | `migrations/20261111150000_projekt.sql` | Tabellen `projekt`, `teilprojekt`, `vorgang`, `aufgabe`, Zähler `projekt_nummer`; Fremdschlüssel mit `ON DELETE CASCADE` innerhalb der Hierarchie, `ON DELETE RESTRICT` zur Adresse |
 | `migrations/20261111180000_aufgabe_nur_titel.sql` | Aufgaben: Beschreibung, Start, Fällig, Priorität und Aufwand entfernt; Status nur offen/erledigt |
-| `src/pages/projects/model.rs` | Ebenen, Status, Prüfregeln, Nummerierung, Fortschritt + Modultests |
-| `src/pages/projects/api.rs` | Server-Funktionen: Liste, Struktur laden, Anlegen, Bearbeiten, Löschen, Abhaken, Verschieben, Kundensuche |
-| `src/pages/projects/list.rs` | Projektübersicht mit Struktur (auf-/zuklappbar), Suche, Statusfilter, Sortierung, Seiten |
-| `src/pages/projects/detail.rs` | Detailansichten aller Ebenen, Strukturbaum, Fortschritt, Löschdialog |
-| `src/pages/projects/form.rs` | Modal-Fenster für alle Ebenen (gesteuert über die Webadresse), Kundenauswahl mit Suche |
+| `migrations/20261112120000_aufgabe_beschreibung.sql` | Aufgaben: Beschreibung wieder ergänzt (optional, AK-11a) |
+| `src/backend/projects/model.rs` | Ebenen, Status, Prüfregeln, Nummerierung, Fortschritt + Modultests |
+| `src/backend/projects/server_fns.rs` + `src/backend/projects/repository.rs` | Server-Funktionen: Liste, Struktur laden, Anlegen, Bearbeiten, Löschen, Abhaken, Verschieben, Kundensuche |
+| `src/components/projects/list.rs` | Projektübersicht mit Struktur (auf-/zuklappbar), Suche, Statusfilter, Sortierung, Seiten |
+| `src/components/projects/detail.rs` | Detailansichten aller Ebenen, Strukturbaum, Fortschritt, Löschdialog |
+| `src/components/projects/form.rs` | Modal-Fenster für alle Ebenen (gesteuert über die Webadresse), Kundenauswahl mit Suche |
 
 **Webadressen:**
 
@@ -226,3 +228,7 @@ Geprüft: alle AK im Browser (grosser Bildschirm und Mobiltelefon, 61 Testprojek
 | 2026-11-11 | Hatem Ben Belgacem | Projektübersicht mit Struktur (AK-1a), Eingabe in Modal-Fenstern (AK-7, AK-8, AK-11) |
 | 2026-11-11 | Hatem Ben Belgacem | Aufgaben nur noch mit Titel (AK-11a); Felder Beschreibung, Start, Fällig, Priorität, Aufwand entfernt |
 | 2026-11-11 | Hatem Ben Belgacem | Ebenen farblich abgegrenzt (AK-5a) |
+| 2026-11-12 | Hatem Ben Belgacem | Aufgaben wieder mit Feld „Beschreibung“ (AK-11a) |
+| 2026-11-12 | Hatem Ben Belgacem | Verweis auf ANF-005 für verantwortliche Benutzer |
+| 2026-11-12 | Hatem Ben Belgacem | Feld „Verantwortlich“ bei Projekt, Teilprojekt und Vorgang umgesetzt (ANF-005) |
+| 2026-11-12 | Hatem Ben Belgacem | ANF-006: Aufgaben ohne Projekt erscheinen nicht im Projektbereich |

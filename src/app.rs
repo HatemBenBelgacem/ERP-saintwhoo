@@ -5,15 +5,19 @@ use leptos_router::{
     components::{ParentRoute, Redirect, Route, Router, Routes},
 };
 
-use crate::layout::AppLayout;
-use crate::navigation::settings_entry_path;
-use crate::pages::{
+use crate::backend::projects::model::Level;
+use crate::components::{
     addresses::{AddressDetailPage, AddressListPage},
+    auth::LoginPage,
     home::HomePage,
-    projects::{ElementDetailPage, ProjectDetailPage, ProjectListPage, model::Level},
+    projects::{ElementDetailPage, ProjectDetailPage, ProjectListPage},
     purchase_orders::{OrderDetailPage, OrderListPage},
     settings::GeneralSettingsPage,
+    tasks::{TaskDetailPage, TaskListPage},
+    users::{UserDetailPage, UserListPage},
 };
+use crate::layout::AppLayout;
+use crate::navigation::settings_entry_path;
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -24,13 +28,6 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 <meta name="viewport" content="width=device-width, initial-scale=1"/>
                 <AutoReload options=options.clone()/>
                 <HydrationScripts options/>
-                // Schrift für den Leitspruch in Tifinagh (Berberschrift)
-                <link rel="preconnect" href="https://fonts.googleapis.com"/>
-                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
-                <link
-                    rel="stylesheet"
-                    href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tifinagh&display=swap"
-                />
                 <MetaTags/>
             </head>
             <body>
@@ -50,6 +47,8 @@ pub fn App() -> impl IntoView {
         <Title text="ERP-saintwhoo"/>
         <Router>
             <Routes fallback=|| view! { <p class="p-8">"Seite nicht gefunden."</p> }>
+                // ANF-007: Anmeldeseite ohne Grundgerüst (öffentlich, siehe auth::middleware)
+                <Route path=StaticSegment("anmelden") view=LoginPage/>
                 <ParentRoute path=StaticSegment("") view=AppLayout>
                     <Route path=StaticSegment("") view=HomePage/>
                     // ANF-002 Adressen – Eingabe im Modal-Fenster (?neu=1, ?bearbeiten=1)
@@ -68,6 +67,15 @@ pub fn App() -> impl IntoView {
                         path=(StaticSegment("einstellungen"), StaticSegment("allgemein"))
                         view=GeneralSettingsPage
                     />
+                    // ANF-005 Benutzer – Eingabe im Modal-Fenster (?neu=1, ?bearbeiten=1, ?passwort=1)
+                    <Route
+                        path=(StaticSegment("einstellungen"), StaticSegment("benutzer"))
+                        view=UserListPage
+                    />
+                    <Route
+                        path=(StaticSegment("einstellungen"), StaticSegment("benutzer"), ParamSegment("id"))
+                        view=UserDetailPage
+                    />
                     // ANF-003 Projekte – Eingabe im Modal-Fenster (?neu=…, ?bearbeiten=…); feste Segmente vor der Kennung
                     <Route path=StaticSegment("projekte") view=ProjectListPage/>
                     <Route
@@ -83,6 +91,9 @@ pub fn App() -> impl IntoView {
                         view=|| view! { <ElementDetailPage level=Level::Task/> }
                     />
                     <Route path=(StaticSegment("projekte"), ParamSegment("id")) view=ProjectDetailPage/>
+                    // ANF-006 Aufgaben eines Benutzers und Aufgaben ohne Projekt (?benutzer=…, ?neu=1, ?bearbeiten=1)
+                    <Route path=StaticSegment("aufgaben") view=TaskListPage/>
+                    <Route path=(StaticSegment("aufgaben"), ParamSegment("id")) view=TaskDetailPage/>
                     // ANF-004 Einkauf – Eingabe im Modal-Fenster (?neu=…, ?bearbeiten=…, ?wareneingang=…)
                     <Route path=StaticSegment("einkauf") view=OrderListPage/>
                     <Route path=(StaticSegment("einkauf"), ParamSegment("id")) view=OrderDetailPage/>

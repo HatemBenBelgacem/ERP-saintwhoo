@@ -1,7 +1,13 @@
 //! Grundgerüst: Kopfzeile, Seitenleiste und Inhaltsbereich (ANF-001).
 
 use leptos::prelude::*;
-use leptos_router::{components::Outlet, hooks::use_location};
+use leptos_router::{
+    components::Outlet,
+    hooks::{use_location, use_navigate},
+};
+
+use crate::backend::auth::model::{CurrentUser, login_url};
+use crate::backend::auth::server_fns::{Logout, get_current_user};
 
 use crate::icons::{Icon, IconView};
 use crate::navigation::{
@@ -14,8 +20,25 @@ const DRAWER_ID: &str = "app-drawer";
 /// Grundgerüst aller Seiten. Die jeweilige Seite erscheint im `<Outlet/>`.
 #[component]
 pub fn AppLayout() -> impl IntoView {
-    let pathname = use_location().pathname;
+    let location = use_location();
+    let pathname = location.pathname;
     let drawer_open = RwSignal::new(false);
+
+    // ANF-007: angemeldeter Benutzer für die Kopfzeile; bei jedem Seitenwechsel neu geprüft.
+    // Ist die Sitzung inzwischen abgelaufen (AK-14), geht es zur Anmeldeseite (Seitenwechsel im
+    // Browser laufen nicht über den Server, deshalb hier zusätzlich zur Middleware).
+    let me = Resource::new(move || pathname.get(), |_| get_current_user());
+    let navigate = use_navigate();
+    Effect::new(move |_| {
+        if let Some(Ok(None)) = me.get() {
+            let target = format!(
+                "{}{}",
+                location.pathname.get_untracked(),
+                location.search.get_untracked()
+            );
+            navigate(&login_url(&target, true), Default::default());
+        }
+    });
 
     // AK-11: Nach jedem Seitenwechsel die (mobile) Seitenleiste schliessen.
     Effect::new(move |_| {
@@ -26,7 +49,7 @@ pub fn AppLayout() -> impl IntoView {
     view! {
         // AK-2: Nur der Inhaltsbereich scrollt, Header und Seitenleiste bleiben stehen.
         <div class="flex h-dvh flex-col overflow-hidden">
-            <Header/>
+            <Header me/>
             <div class="drawer min-h-0 flex-1 lg:drawer-open">
                 <input
                     id=DRAWER_ID
@@ -52,29 +75,42 @@ pub fn AppLayout() -> impl IntoView {
 }
 
 #[component]
-fn Header() -> impl IntoView {
+fn Header(me: Resource<Result<Option<CurrentUser>, ServerFnError>>) -> impl IntoView {
     view! {
-        // Drei Spalten: Menü-Symbol | Leitspruch mittig | Platzhalter gleicher Breite (hält die Mitte exakt)
-        <header class="z-10 grid min-h-16 grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-2 bg-primary px-2 sm:px-4 py-2 text-primary-content">
+        // Neutrale Kopfzeile in dunklem Anthrazit (daisyUI `neutral`)
+        <header class="z-10 flex min-h-16 items-center gap-2 bg-neutral px-2 py-2 text-neutral-content sm:px-4">
             // AK-10: Menü-Symbol nur auf kleinen Bildschirmen
             <label for=DRAWER_ID aria-label="Seitenleiste öffnen" class="btn btn-square btn-ghost lg:invisible">
                 <IconView icon=Icon::Menu/>
             </label>
-            // Leitspruch in Tifinagh (Kabylisch), darunter die deutsche Übersetzung
-            <div class="min-w-0 text-center leading-tight text-balance">
-                <p
-                    lang="kab-Tfng"
-                    class="font-tifinagh text-lg tracking-wide sm:text-2xl"
-                    title="Xas iqseḥ wedrar, ad t-yeɛfes uḍar."
-                >
-                    "ⵅⴰⵙ ⵉⵇⵙⴻⵃ ⵡⴻⴷⵔⴰⵔ, ⴰⴷ ⵜ-ⵢⴻⵄⴼⴻⵙ ⵓⴹⴰⵔ."
-                </p>
-                <p class="mt-0.5 text-xs opacity-90">
-                    "So hart und steil der Berg auch sein mag, der Fuß wird ihn bezwingen."
-                </p>
-            </div>
-            <span aria-hidden="true"></span>
+            // ANF-007 AK-17: angemeldeter Benutzer und „Abmelden“ rechts
+            <Transition fallback=|| ()>
+                {move || Suspend::new(async move {
+                    me.await.ok().flatten().map(|user| view! { <UserMenu user/> })
+                })}
+            </Transition>
         </header>
+    }
+}
+
+/// Name des angemeldeten Benutzers und „Abmelden“ (ANF-007 AK-17, AK-18).
+#[component]
+fn UserMenu(user: CurrentUser) -> impl IntoView {
+    let logout = ServerAction::<Logout>::new();
+    view! {
+        <div class="ml-auto flex items-center gap-1 sm:gap-3">
+            <span class="flex items-center gap-2" title=format!("Angemeldet als {}", user.benutzername)>
+                <IconView icon=Icon::User/>
+                // Auf dem Mobiltelefon nur das Symbol
+                <span class="hidden max-w-48 truncate sm:inline">{user.name.clone()}</span>
+            </span>
+            <ActionForm action=logout>
+                <button type="submit" class="btn btn-ghost btn-sm" aria-label="Abmelden" disabled=move || logout.pending().get()>
+                    <IconView icon=Icon::Logout/>
+                    <span class="hidden sm:inline">"Abmelden"</span>
+                </button>
+            </ActionForm>
+        </div>
     }
 }
 
