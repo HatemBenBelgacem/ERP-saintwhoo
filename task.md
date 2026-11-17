@@ -4,10 +4,11 @@ Stand: 2026-11-17
 
 ## In Arbeit
 
-- [ ] ANF-008 umsetzen: `Dockerfile`, `.dockerignore`, `railway.toml`, Server hört auf `PORT`, `cargo-chef`
+- [ ] …
 
 ## Offen
 
+- [ ] ANF-008: Railway einrichten – Projekt mit PostgreSQL (Region Europa), GitHub verbinden, `DATABASE_URL` und `SITZUNG_COOKIE_SECURE=1` setzen; danach AK-9, 10, 14, 16 prüfen
 - [ ] Module des ERP festlegen (z. B. Lager, Einkauf, Verkauf, Buchhaltung)
 - [ ] Erste Anforderungen mit der [Vorlage](anforderungen/_VORLAGE.md) erfassen
 - [ ] Datenbank `erp_saintwhoo` anlegen und `.env` mit Zugangsdaten füllen
@@ -52,3 +53,4 @@ Stand: 2026-11-17
 - [x] ANF-007 Anmeldeseite umgesetzt (Zugangsschutz, Sitzungen, Ersteinrichtung)
 - [x] Testszenarien zu allen Akzeptanzkriterien erstellt (`testszenarien.md`, 170 Szenarien)
 - [x] Anforderung ANF-008 (Docker-Image für Railway) erfasst, offene Fragen geklärt und freigegeben
+- [x] ANF-008 umgesetzt: `Dockerfile` mit `cargo-chef`, `.dockerignore`, `railway.toml`, Server hört auf `PORT` (lokal mit Docker geprüft)
