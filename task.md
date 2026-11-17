@@ -4,7 +4,7 @@ Stand: 2026-11-17
 
 ## In Arbeit
 
-- [ ] …
+- [ ] ANF-009 Farbpalette umsetzen (Indigo, Teal, neutrale Töne, Signalfarben; Glutorange entfernen)
 
 ## Offen
 

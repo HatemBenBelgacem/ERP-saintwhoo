@@ -316,7 +316,7 @@ fn ProjectTable(
             };
             view! {
                 <th aria-sort=active.then_some(if state.dir == "ab" { "descending" } else { "ascending" })>
-                    <a href=state.sorted_by(key).href() class="link link-hover" class:text-primary=active>
+                    <a href=state.sorted_by(key).href() class="link link-hover" class:text-secondary=active>
                         {*label}
                         {arrow}
                     </a>

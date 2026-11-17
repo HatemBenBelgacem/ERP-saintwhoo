@@ -94,7 +94,7 @@ Das Modul erscheint als Eintrag **„Projekte“** in der Hauptnavigation (ANF-0
   (Pflicht) und „Beschreibung“ (optional); die Detailansicht der Aufgabe zeigt die Beschreibung.
 - [x] **AK-5a:** Projekt, Teilprojekt, Vorgang und Aufgabe sind farblich abgegrenzt (Übersicht, Strukturbaum,
   Kopf der Detailansicht): farbiger Streifen links, Ebenen-Plakette, leichter Hintergrund; Legende über der Übersicht.
-  Farben: Projekt Glutorange, Teilprojekt Blau, Vorgang Petrol, Aufgabe Schiefergrau.
+  Farben: Projekt Indigo, Teilprojekt Himmelblau, Vorgang Petrol, Aufgabe Schiefergrau (ANF-009 AK-10).
 - [x] **AK-12:** Gegeben eine Aufgabe, dann kann der Benutzer ihren Status direkt im Strukturbaum ändern
   (z. B. per Kontrollkästchen „Erledigt“), ohne das Formular zu öffnen.
 - [x] **AK-13:** Gegeben mehrere Elemente auf derselben Ebene, dann kann der Benutzer ihre Reihenfolge
@@ -232,3 +232,4 @@ Geprüft: alle AK im Browser (grosser Bildschirm und Mobiltelefon, 61 Testprojek
 | 2026-11-12 | Hatem Ben Belgacem | Verweis auf ANF-005 für verantwortliche Benutzer |
 | 2026-11-12 | Hatem Ben Belgacem | Feld „Verantwortlich“ bei Projekt, Teilprojekt und Vorgang umgesetzt (ANF-005) |
 | 2026-11-12 | Hatem Ben Belgacem | ANF-006: Aufgaben ohne Projekt erscheinen nicht im Projektbereich |
+| 2026-11-17 | Hatem Ben Belgacem | Ebenen-Farben an Farbpalette ANF-009 angepasst: Projekt Indigo, Teilprojekt Himmelblau |

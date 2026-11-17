@@ -121,7 +121,7 @@ fn TaskView(task: StandaloneTask, toggle: ServerAction<ToggleTask>) -> impl Into
                 <div>
                     <h1 class="text-2xl font-semibold">{task.name.clone()}</h1>
                     <p class="flex items-center gap-2 text-base-content/70">
-                        <span class="badge badge-sm badge-primary badge-soft">"ohne Projekt"</span>
+                        <span class="badge badge-sm badge-secondary badge-soft">"ohne Projekt"</span>
                         <span class=status_badge(&task.status)>{status_label(&task.status).to_string()}</span>
                     </p>
                 </div>

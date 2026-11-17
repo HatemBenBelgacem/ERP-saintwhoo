@@ -136,14 +136,19 @@ bereit. Umgebungsvariablen in der Railway-Oberfläche: `DATABASE_URL=${{Postgres
 ### Gestaltung
 - Nur Tailwind-Klassen und daisyUI-Komponenten (`btn`, `card`, `table`, …), kein eigenes CSS ohne Grund.
 - Tailwind sucht Klassen nur in `src/`. Weitere Ordner in `styles/app.css` per `@source` eintragen.
-- **Glutorange (`--glutorange`, #E25822) ist die Grundfarbe des ERP.** Sie ist im daisyUI-Farbschema als
-  `primary` hinterlegt (`styles/app.css`). Hervorhebungen immer über `primary` gestalten:
-  `bg-primary`/`text-primary-content`, `btn-primary`, `link-primary`, `checkbox-primary` usw.
-  Der aktive Navigationseintrag ist in **leichtem Glutorange** markiert (15 % Grundfarbe als Hintergrund,
-  Schrift in dunklem Glutorange) – Flächen für Markierungen so, kräftiges Glutorange nur für Hauptschaltflächen. Die Kopfzeile ist neutral in dunklem Anthrazit (`bg-neutral`).
-- Den Farbwert nur in `styles/app.css` (`--glutorange`) ändern, nie als Hex-Wert im Code.
+- **Farbpalette (ANF-009)**, hinterlegt im daisyUI-Farbschema in `styles/app.css`:
+  - **Primärfarbe Indigo** (`--primaerfarbe`, `primary`): Hauptschaltflächen, Hauptnavigation, aktive Zustände,
+    Fokus – `btn-primary`, `link-primary`, `checkbox-primary`, `bg-primary`/`text-primary-content` usw.
+  - **Sekundärfarbe Teal** (`--sekundaerfarbe`, `secondary`): Akzente, sekundäre Filter, dezente Hervorhebungen
+    (z. B. aktive Sortierspalte `text-secondary`, Plakette `badge-secondary`).
+  - **Neutrale Töne** (`base-100` … `base-300`, `base-content`, `neutral`): Hintergründe, Oberflächen, Rahmen, Text.
+    Die Kopfzeile ist dunkles Anthrazit (`bg-neutral`).
+  - **Signalfarben** nur für Meldungen und Status: `error` Rot, `warning` Gelb, `success` Grün, `info` Blau.
+  Der aktive Navigationseintrag ist in **leichtem Indigo** markiert (15 % Primärfarbe als Hintergrund, Schrift in
+  dunklem Indigo) – Flächen für Markierungen so, kräftiges Indigo nur für Hauptschaltflächen.
+- Farbwerte nur in `styles/app.css` ändern, nie als Hex-Wert im Code.
 - **Ebenen-Farben der Projekte** (Tokens in `styles/app.css`, Klassen über `Level::stripe_class()`,
-  `badge_class()`, `tint_class()`): Projekt = Glutorange, Teilprojekt = Blau, Vorgang = Petrol, Aufgabe = Schiefergrau.
+  `badge_class()`, `tint_class()`): Projekt = Indigo, Teilprojekt = Himmelblau, Vorgang = Petrol, Aufgabe = Schiefergrau.
   Nicht für Status verwenden – Status hat eigene Plaketten (`status_badge`).
 - Inhalte nutzen die **ganze Bildschirmbreite**: keine `max-w-*`-Begrenzung für Seiten, Karten oder Formulare. Ausnahme: Modal-Fenster (`max-w-4xl`).
 - Klassennamen immer vollständig schreiben, nicht zusammensetzen (`"btn-" + farbe` wird nicht erkannt).

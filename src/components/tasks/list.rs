@@ -289,7 +289,7 @@ fn TaskTable(
                                 <a href=Level::Project.url(pid) class="link link-hover">{t.project_label()}</a>
                             }.into_any(),
                             // AK-4: Aufgaben ohne Projekt mit eigener Plakette
-                            None => view! { <span class="badge badge-sm badge-primary badge-soft">"ohne Projekt"</span> }.into_any(),
+                            None => view! { <span class="badge badge-sm badge-secondary badge-soft">"ohne Projekt"</span> }.into_any(),
                         }}
                     </td>
                     <td class="whitespace-nowrap font-mono text-sm text-base-content/60">{t.nummer.clone()}</td>
