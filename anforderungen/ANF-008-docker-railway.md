@@ -74,16 +74,18 @@ beim Start automatisch.
 
 **Betrieb auf Railway**
 - [ ] **AK-10:** Gegeben ein Railway-Projekt mit PostgreSQL-Dienst und dem verbundenen GitHub-Projektarchiv,
-  wenn auf `main` ein neuer Stand eingeht, dann baut Railway das Image aus dem `Dockerfile` und stellt es
+  wenn auf `main` ein neuer Stand eingeht, dann baut Railway **automatisch** (ohne Knopfdruck) das Image aus dem `Dockerfile` und stellt es
   bereit. Die Einstellungen dafür stehen in `railway.toml` im Projektarchiv.
 - [ ] **AK-11:** Gegeben eine leere Datenbank auf Railway, wenn der Container zum ersten Mal startet, dann
-  laufen alle Migrationen durch und die Ersteinrichtung (ANF-007) ist erreichbar.
+  legt der Server die Datenbank an, falls sie fehlt (wie bisher in `src/db.rs`), alle Migrationen laufen durch und die Ersteinrichtung (ANF-007) ist erreichbar.
 - [ ] **AK-12:** Gegeben ein neuer Stand mit zusätzlichen Migrationen, wenn er bereitgestellt wird, dann
   laufen nur die neuen Migrationen; bestehende Daten bleiben erhalten.
 - [ ] **AK-13:** Gegeben eine nicht erreichbare Datenbank beim Start, dann beendet sich der Server mit einer
   verständlichen Fehlermeldung im Protokoll, und Railway startet ihn erneut (Neustart-Regel in
   `railway.toml`).
 - [ ] **AK-14:** Die Anwendung ist über die von Railway vergebene Webadresse per HTTPS erreichbar.
+- [ ] **AK-16:** Anwendung und PostgreSQL-Dienst laufen in einer **europäischen** Railway-Region
+  („EU West“), damit die Daten in Europa bleiben. Die Region ist in `railway.toml` festgelegt.
 
 **Dokumentation**
 - [ ] **AK-15:** `CLAUDE.md` (Abschnitt „Befehle“) und `system-design.md` beschreiben Bau des Images,
@@ -115,20 +117,20 @@ Umgebungsvariablen im Betrieb:
 - Getrennte Umgebungen (Test / Betrieb)
 - `docker-compose` für die lokale Entwicklung
 - Überwachung und Alarmierung über das Protokoll von Railway hinaus
+- Eigener Gesundheitspfad für die Prüfung durch Railway
 
 ## 7. Offene Fragen
 
-- [ ] Bereitstellung automatisch bei jedem Stand auf `main` oder nur auf Knopfdruck?
-- [ ] Railway-Region (z. B. Europa West) – wegen Datenschutz und Antwortzeit?
-- [ ] Darf das Serverprogramm die Datenbank selbst anlegen (heute `create_database` in `src/db.rs`),
-  oder wird sie auf Railway immer vorgegeben? Falls das Anlegen fehlschlägt, muss der Start trotzdem gehen.
-- [ ] Braucht es einen Gesundheitspfad (z. B. `/oeffentlich/gesund`) für die Prüfung durch Railway, oder
-  genügt die Anmeldeseite?
-- [ ] Bauzeit: Rust-Bau auf Railway ist langsam – Zwischenspeicher für Abhängigkeiten (z. B. `cargo-chef`)
-  gewünscht?
+- [x] Bereitstellung automatisch bei jedem Stand auf `main` oder nur auf Knopfdruck?
+  → **Automatisch** bei jedem neuen Stand auf `main` (AK-10).
+- [x] Railway-Region? → **Europa** (Railway-Region „EU West“), damit die Daten in Europa bleiben (AK-16).
+- [x] Darf das Serverprogramm die Datenbank selbst anlegen? → **Ja**, wie heute in `src/db.rs` (AK-11).
+- [x] Braucht es einen Gesundheitspfad für Railway? → **Nein**.
+- [ ] Bauzeit: Zwischenspeicher für Abhängigkeiten mit `cargo-chef` gewünscht?
 
 ## 8. Änderungshistorie
 
 | Datum      | Autor | Änderung        |
 |------------|-------|-----------------|
 | 2026-11-17 | Hatem Ben Belgacem | Erstellt |
+| 2026-11-17 | Hatem Ben Belgacem | Offene Fragen 1–4 beantwortet: automatische Bereitstellung, Region Europa (AK-16), Server legt Datenbank an, kein Gesundheitspfad |

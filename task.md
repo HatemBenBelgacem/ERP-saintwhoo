@@ -8,7 +8,7 @@ Stand: 2026-11-17
 
 ## Offen
 
-- [ ] ANF-008: offene Fragen klären und freigeben (Docker-Image für Railway)
+- [ ] ANF-008: Frage zu `cargo-chef` klären und freigeben (Docker-Image für Railway)
 - [ ] ANF-008 umsetzen: `Dockerfile`, `.dockerignore`, `railway.toml`, Server hört auf `PORT`
 - [ ] Module des ERP festlegen (z. B. Lager, Einkauf, Verkauf, Buchhaltung)
 - [ ] Erste Anforderungen mit der [Vorlage](anforderungen/_VORLAGE.md) erfassen
