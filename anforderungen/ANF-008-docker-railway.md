@@ -3,7 +3,7 @@
 | Feld          | Wert                                              |
 |---------------|---------------------------------------------------|
 | **Nummer**    | ANF-008                                           |
-| **Status**    | Entwurf                                           |
+| **Status**    | Freigegeben                                       |
 | **Priorität** | Muss                                              |
 | **Typ**       | Technisch                                         |
 | **Modul**     | Betrieb                                           |
@@ -87,6 +87,14 @@ beim Start automatisch.
 - [ ] **AK-16:** Anwendung und PostgreSQL-Dienst laufen in einer **europäischen** Railway-Region
   („EU West“), damit die Daten in Europa bleiben. Die Region ist in `railway.toml` festgelegt.
 
+**Bauzeit**
+- [ ] **AK-17:** Das `Dockerfile` verwendet `cargo-chef`: Die fremden Bibliotheken werden in einem eigenen
+  Bauschritt übersetzt, der nur von `Cargo.toml` und `Cargo.lock` abhängt (`cargo chef prepare` /
+  `cargo chef cook`), und zwar für beide Übersetzungen (Server mit `ssr`, WebAssembly mit `hydrate`).
+  Gegeben ein neuer Stand, der nur Dateien in `src/` ändert, dann werden die Bibliotheken nicht neu
+  übersetzt, sofern Railway den Zwischenspeicher behalten hat. `cargo-chef` ist im Laufzeit-Image nicht
+  enthalten.
+
 **Dokumentation**
 - [ ] **AK-15:** `CLAUDE.md` (Abschnitt „Befehle“) und `system-design.md` beschreiben Bau des Images,
   lokalen Probelauf mit Docker und die nötigen Umgebungsvariablen auf Railway.
@@ -126,7 +134,7 @@ Umgebungsvariablen im Betrieb:
 - [x] Railway-Region? → **Europa** (Railway-Region „EU West“), damit die Daten in Europa bleiben (AK-16).
 - [x] Darf das Serverprogramm die Datenbank selbst anlegen? → **Ja**, wie heute in `src/db.rs` (AK-11).
 - [x] Braucht es einen Gesundheitspfad für Railway? → **Nein**.
-- [ ] Bauzeit: Zwischenspeicher für Abhängigkeiten mit `cargo-chef` gewünscht?
+- [x] Bauzeit: Zwischenspeicher für Abhängigkeiten mit `cargo-chef` gewünscht? → **Ja** (AK-17).
 
 ## 8. Änderungshistorie
 
@@ -134,3 +142,4 @@ Umgebungsvariablen im Betrieb:
 |------------|-------|-----------------|
 | 2026-11-17 | Hatem Ben Belgacem | Erstellt |
 | 2026-11-17 | Hatem Ben Belgacem | Offene Fragen 1–4 beantwortet: automatische Bereitstellung, Region Europa (AK-16), Server legt Datenbank an, kein Gesundheitspfad |
+| 2026-11-17 | Hatem Ben Belgacem | Frage 5 beantwortet: `cargo-chef` (AK-17); Status Freigegeben |
