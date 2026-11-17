@@ -1,0 +1,15 @@
+# ANF-008: Nicht ins Docker-Image (Bau-Ergebnisse, Zugangsdaten, Versionsverwaltung)
+target/
+node_modules/
+styles/output.css
+.env
+.env.*
+!.env.example
+.git/
+.gitignore
+.claude/
+.vscode/
+.idea/
+Dockerfile
+.dockerignore
+*.md

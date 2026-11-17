@@ -4,11 +4,10 @@ Stand: 2026-11-17
 
 ## In Arbeit
 
-- [ ] …
+- [ ] ANF-008 umsetzen: `Dockerfile`, `.dockerignore`, `railway.toml`, Server hört auf `PORT`, `cargo-chef`
 
 ## Offen
 
-- [ ] ANF-008 umsetzen: `Dockerfile`, `.dockerignore`, `railway.toml`, Server hört auf `PORT`, `cargo-chef`
 - [ ] Module des ERP festlegen (z. B. Lager, Einkauf, Verkauf, Buchhaltung)
 - [ ] Erste Anforderungen mit der [Vorlage](anforderungen/_VORLAGE.md) erfassen
 - [ ] Datenbank `erp_saintwhoo` anlegen und `.env` mit Zugangsdaten füllen

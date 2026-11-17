@@ -142,6 +142,32 @@ Anfrage ──► auth::middleware (Axum-Schicht in main.rs)
 - Seitenwechsel im Browser laufen nicht über den Server; deshalb prüft das Grundgerüst (`layout.rs`) bei jedem
   Wechsel `get_current_user()` und leitet bei abgelaufener Sitzung zur Anmeldeseite.
 
+## Auslieferung mit Docker auf Railway (ANF-008)
+
+```
+git push main ──► Railway (railway.toml) ──► docker build (Dockerfile)
+                                                │
+   css       node: npm ci, npm run css:build ──► styles/output.css
+   chef      rust + wasm32-Ziel + cargo-chef + cargo-leptos
+   planer    cargo chef prepare ──► recipe.json (nur Abhängigkeiten, ohne eigenen Code)
+   bau       cargo chef cook (ssr, release)              ┐ zwischengespeichert, solange
+             cargo chef cook (hydrate, wasm-release)     ┘ Cargo.toml/Cargo.lock gleich bleiben
+             cargo leptos build --release ──► target/release/erp-saintwhoo + target/site
+   laufzeit  debian slim, Benutzer „erp“ (nicht root):
+             /app/erp-saintwhoo, /app/site, /app/Cargo.toml
+                                                │
+Container ──► hört auf 0.0.0.0:$PORT ──► DATABASE_URL ──► PostgreSQL-Dienst (Railway, Europa)
+```
+
+- Migrationen sind über `sqlx::migrate!` im Serverprogramm enthalten und laufen beim Start; fehlt die
+  Datenbank, legt der Server sie an (`src/db.rs`).
+- Umgebungsvariablen im Image: `LEPTOS_ENV=PROD`, `LEPTOS_SITE_ROOT=site`, `LEPTOS_SITE_ADDR=0.0.0.0:8080`,
+  `RUST_LOG=info`. In Railway zu setzen: `DATABASE_URL`, `SITZUNG_COOKIE_SECURE=1`.
+- Die `cargo chef cook`-Aufrufe müssen dieselben Funktionsschalter, Profile und Zielordner verwenden wie
+  `cargo leptos build` – sonst übersetzt der letzte Schritt alle Bibliotheken neu (kein Fehler, nur langsam).
+- Railway-Region der Anwendung steht in `railway.toml`; die Region des PostgreSQL-Dienstes wird in der
+  Railway-Oberfläche gewählt (ebenfalls Europa).
+
 ## Abhängigkeitsregeln
 
 | Von ↓ darf nutzen →         | `model` | `server_fns` | `repository` | `db` | `components` |
