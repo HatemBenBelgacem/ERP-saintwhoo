@@ -163,6 +163,8 @@ Container ──► hört auf 0.0.0.0:$PORT ──► DATABASE_URL ──► Pos
   Datenbank, legt der Server sie an (`src/db.rs`).
 - Umgebungsvariablen im Image: `LEPTOS_ENV=PROD`, `LEPTOS_SITE_ROOT=site`, `LEPTOS_SITE_ADDR=0.0.0.0:8080`,
   `RUST_LOG=info`. In Railway zu setzen: `DATABASE_URL`, `SITZUNG_COOKIE_SECURE=1`.
+- Im Docker-Bau setzt `RUSTFLAGS="--cfg erase_components"` die Leptos-Option für Linux (`.cargo/config.toml`
+  gilt nur für Apple-Rechner). Ohne sie bricht der Release-Bau des Servers mit „queries overflow the depth limit“ ab.
 - Die `cargo chef cook`-Aufrufe müssen dieselben Funktionsschalter, Profile und Zielordner verwenden wie
   `cargo leptos build` – sonst übersetzt der letzte Schritt alle Bibliotheken neu (kein Fehler, nur langsam).
 - Railway-Region der Anwendung steht in `railway.toml`; die Region des PostgreSQL-Dienstes wird in der

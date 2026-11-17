@@ -37,6 +37,10 @@ RUN cargo chef prepare --recipe-path recipe.json
 
 # ---------------------------------------------------------------- bau
 FROM chef AS bau
+# Leptos: Komponenten-Typen löschen. .cargo/config.toml setzt das nur für Apple-Rechner; unter Linux
+# bricht der Release-Bau des Servers sonst mit „queries overflow the depth limit“ ab.
+# Muss vor `cargo chef cook` stehen, damit Bibliotheken und ERP mit denselben Optionen übersetzt werden.
+ENV RUSTFLAGS="--cfg erase_components"
 COPY --from=planer /app/recipe.json recipe.json
 # Bibliotheken mit denselben Einstellungen übersetzen, die cargo-leptos verwendet.
 # Dieser Schritt hängt nur von recipe.json ab und wird bei Änderungen in src/ wiederverwendet (AK-17).
