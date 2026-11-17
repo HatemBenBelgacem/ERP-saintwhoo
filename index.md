@@ -25,7 +25,7 @@
 | [ANF-006](anforderungen/ANF-006-meine-aufgaben.md) | Aufgaben eines Benutzers und Aufgaben ohne Projekt | Aufgaben | Muss | Erledigt |
 | [ANF-007](anforderungen/ANF-007-anmeldung.md) | Anmeldeseite | Benutzer | Muss | Erledigt |
 | [ANF-008](anforderungen/ANF-008-docker-railway.md) | Auslieferung als Docker-Image für Railway | Betrieb | Muss | In Umsetzung |
-| [ANF-009](anforderungen/ANF-009-farbpalette.md) | Farbpalette (Primär-, Sekundär-, Neutral- und Signalfarben) | Allgemein / Oberfläche | Muss | In Umsetzung |
+| [ANF-009](anforderungen/ANF-009-farbpalette.md) | Farbpalette (Primär-, Sekundär-, Neutral- und Signalfarben) | Allgemein / Oberfläche | Muss | Erledigt |
 
 <!-- Neue Zeile pro Anforderung, z. B.:
 | [ANF-010](anforderungen/ANF-010-artikelstamm.md) | Artikelstamm verwalten | Lager | Muss | Entwurf |

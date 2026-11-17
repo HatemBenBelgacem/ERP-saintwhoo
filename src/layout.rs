@@ -80,7 +80,7 @@ fn Header(me: Resource<Result<Option<CurrentUser>, ServerFnError>>) -> impl Into
         // Neutrale Kopfzeile in dunklem Anthrazit (daisyUI `neutral`)
         <header class="z-10 flex min-h-16 items-center gap-2 bg-neutral px-2 py-2 text-neutral-content sm:px-4">
             // AK-10: Menü-Symbol nur auf kleinen Bildschirmen
-            <label for=DRAWER_ID aria-label="Seitenleiste öffnen" class="btn btn-square btn-ghost lg:invisible">
+            <label for=DRAWER_ID aria-label="Seitenleiste öffnen" class="btn btn-square btn-ghost text-neutral-content lg:invisible">
                 <IconView icon=Icon::Menu/>
             </label>
             // ANF-007 AK-17: angemeldeter Benutzer und „Abmelden“ rechts
@@ -105,7 +105,7 @@ fn UserMenu(user: CurrentUser) -> impl IntoView {
                 <span class="hidden max-w-48 truncate sm:inline">{user.name.clone()}</span>
             </span>
             <ActionForm action=logout>
-                <button type="submit" class="btn btn-ghost btn-sm" aria-label="Abmelden" disabled=move || logout.pending().get()>
+                <button type="submit" class="btn btn-ghost btn-sm text-neutral-content" aria-label="Abmelden" disabled=move || logout.pending().get()>
                     <IconView icon=Icon::Logout/>
                     <span class="hidden sm:inline">"Abmelden"</span>
                 </button>

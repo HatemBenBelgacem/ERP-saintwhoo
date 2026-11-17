@@ -3,7 +3,7 @@
 | Feld          | Wert                                              |
 |---------------|---------------------------------------------------|
 | **Nummer**    | ANF-009                                           |
-| **Status**    | In Umsetzung                                      |
+| **Status**    | Erledigt                                          |
 | **Priorität** | Muss                                              |
 | **Typ**       | Nicht-funktional                                  |
 | **Modul**     | Allgemein / Oberfläche                            |
@@ -50,33 +50,34 @@ Signalfarben im Einzelnen:
 ## 3. Akzeptanzkriterien
 
 **Palette**
-- [ ] **AK-1:** Alle Farbwerte stehen nur in `styles/app.css` (`--primaerfarbe`, `--sekundaerfarbe` und im
+- [x] **AK-1:** Alle Farbwerte stehen nur in `styles/app.css` (`--primaerfarbe`, `--sekundaerfarbe` und im
   daisyUI-Farbschema). Im Rust-Code stehen keine Farbwerte, nur daisyUI- und Tailwind-Klassen.
-- [ ] **AK-2:** Glutorange kommt im ERP nicht mehr vor (keine Variable, keine Klasse, keine Ebene).
+- [x] **AK-2:** Glutorange kommt im ERP nicht mehr vor (keine Variable, keine Klasse, keine Ebene).
 
 **Primärfarbe Indigo**
-- [ ] **AK-3:** Hauptschaltflächen (`btn-primary`), Verweise (`link-primary`), Kontrollkästchen, Fortschritts-
+- [x] **AK-3:** Hauptschaltflächen (`btn-primary`), Verweise (`link-primary`), Kontrollkästchen, Fortschritts-
   balken und Fokus-Ränder sind Indigo mit weisser Schrift.
-- [ ] **AK-4:** Der aktive Navigationseintrag ist in **leichtem Indigo** markiert: 15 % Primärfarbe als
+- [x] **AK-4:** Der aktive Navigationseintrag ist in **leichtem Indigo** markiert: 15 % Primärfarbe als
   Hintergrund, Schrift in dunklem Indigo (wie bisher bei Glutorange, ANF-001 AK-4).
 
 **Sekundärfarbe Teal**
-- [ ] **AK-5:** Die aktive Sortierspalte in den Listen (Adressen, Projekte, Einkauf, Benutzer) ist in der
+- [x] **AK-5:** Die aktive Sortierspalte in den Listen (Adressen, Projekte, Einkauf, Benutzer) ist in der
   Sekundärfarbe hervorgehoben.
-- [ ] **AK-6:** Die Plakette „ohne Projekt“ bei Aufgaben (ANF-006) ist in der Sekundärfarbe.
+- [x] **AK-6:** Die Plakette „ohne Projekt“ bei Aufgaben (ANF-006) ist in der Sekundärfarbe.
 
 **Neutrale Töne und Signalfarben**
-- [ ] **AK-7:** Seitenhintergrund, Karten, Rahmen, Text und Kopfzeile verwenden die neutralen Töne aus
-  Abschnitt 1. Die Kopfzeile bleibt dunkles Anthrazit (`bg-neutral`).
-- [ ] **AK-8:** Meldungen (`alert-…`), Plaketten und Feldfehler verwenden die Signalfarben aus Abschnitt 1.
-- [ ] **AK-9:** Alle Schriften auf farbigen Flächen erreichen einen Kontrast von mindestens 4.5 : 1 (WCAG AA).
+- [x] **AK-7:** Seitenhintergrund, Karten, Rahmen, Text und Kopfzeile verwenden die neutralen Töne aus
+  Abschnitt 1. Die Kopfzeile bleibt dunkles Anthrazit (`bg-neutral`); Schaltflächen darin (Menü, „Abmelden“)
+  haben helle Schrift (`text-neutral-content`).
+- [x] **AK-8:** Meldungen (`alert-…`), Plaketten und Feldfehler verwenden die Signalfarben aus Abschnitt 1.
+- [x] **AK-9:** Alle Schriften auf farbigen Flächen erreichen einen Kontrast von mindestens 4.5 : 1 (WCAG AA).
 
 **Ebenen der Projekte (ANF-003 AK-5a)**
-- [ ] **AK-10:** Die Ebenen bleiben farblich unterscheidbar: Projekt = **Indigo** (Primärfarbe),
+- [x] **AK-10:** Die Ebenen bleiben farblich unterscheidbar: Projekt = **Indigo** (Primärfarbe),
   Teilprojekt = **Himmelblau** `#0284C7`, Vorgang = **Petrol** `#0D9488`, Aufgabe = **Schiefergrau** `#64748B`.
 
 **Dokumentation**
-- [ ] **AK-11:** `CLAUDE.md` (Gestaltung), ANF-001, ANF-003 und `testszenarien.md` beschreiben die neue Palette.
+- [x] **AK-11:** `CLAUDE.md` (Gestaltung), ANF-001, ANF-003 und `testszenarien.md` beschreiben die neue Palette.
 
 ## 4. Daten / Felder (optional)
 
@@ -90,7 +91,7 @@ Keine.
 
 ## 6. Nicht im Umfang
 
-- Dunkles Farbschema (Dark Mode)
+- Dunkles Farbschema (Dark Mode) – das ERP verwendet immer das helle Farbschema, auch bei dunkel eingestelltem Betriebssystem
 - Umschalten des Farbschemas durch den Benutzer
 - Logo oder Seitensymbol in neuen Farben
 - Farben der Status-Plaketten von Projekten und Einkaufsaufträgen (bleiben in der Primärfarbe)
@@ -106,3 +107,4 @@ Keine.
 | Datum      | Autor | Änderung        |
 |------------|-------|-----------------|
 | 2026-11-17 | Hatem Ben Belgacem | Erstellt; Primärfarbe Indigo, Sekundärfarbe Teal, Glutorange entfernt |
+| 2026-11-17 | Claude Code | Umgesetzt in `styles/app.css`, Sortierspalte und „ohne Projekt“ in Teal, helle Schrift für „Abmelden“ in der Kopfzeile; im Browser geprüft |

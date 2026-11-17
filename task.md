@@ -4,7 +4,7 @@ Stand: 2026-11-17
 
 ## In Arbeit
 
-- [ ] ANF-009 Farbpalette umsetzen (Indigo, Teal, neutrale Töne, Signalfarben; Glutorange entfernen)
+- [ ] …
 
 ## Offen
 
@@ -54,3 +54,4 @@ Stand: 2026-11-17
 - [x] Testszenarien zu allen Akzeptanzkriterien erstellt (`testszenarien.md`, 170 Szenarien)
 - [x] Anforderung ANF-008 (Docker-Image für Railway) erfasst, offene Fragen geklärt und freigegeben
 - [x] ANF-008 umgesetzt: `Dockerfile` mit `cargo-chef`, `.dockerignore`, `railway.toml`, Server hört auf `PORT` (lokal mit Docker geprüft)
+- [x] ANF-009 Farbpalette umgesetzt (Indigo, Teal, neutrale Töne, Signalfarben; Glutorange entfernt)
