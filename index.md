@@ -24,7 +24,8 @@
 | [ANF-005](anforderungen/ANF-005-benutzerverwaltung.md) | Benutzer verwalten (Benutzer – Adresse 1:1, Verantwortung in Projekten) | Benutzer | Muss | Erledigt |
 | [ANF-006](anforderungen/ANF-006-meine-aufgaben.md) | Aufgaben eines Benutzers und Aufgaben ohne Projekt | Aufgaben | Muss | Erledigt |
 | [ANF-007](anforderungen/ANF-007-anmeldung.md) | Anmeldeseite | Benutzer | Muss | Erledigt |
+| [ANF-008](anforderungen/ANF-008-docker-railway.md) | Auslieferung als Docker-Image für Railway | Betrieb | Muss | Freigegeben |
 
 <!-- Neue Zeile pro Anforderung, z. B.:
-| [ANF-008](anforderungen/ANF-008-artikelstamm.md) | Artikelstamm verwalten | Lager | Muss | Entwurf |
+| [ANF-009](anforderungen/ANF-009-artikelstamm.md) | Artikelstamm verwalten | Lager | Muss | Entwurf |
 -->

@@ -46,6 +46,9 @@ styles/app.css       Tailwind-Eingabe (Quelle, wird bearbeitet)
 styles/output.css    Erzeugtes CSS (nicht bearbeiten, nicht eingecheckt)
 .env                 DATABASE_URL (nicht eingecheckt, Vorlage: .env.example)
 .cargo/config.toml   Übersetzer-Option erase_components (siehe Code)
+Dockerfile           Docker-Image für Railway in Stufen, mit cargo-chef (ANF-008)
+.dockerignore        Was nicht ins Image kommt (target/, node_modules/, .env …)
+railway.toml         Railway-Einstellungen: Bau mit Dockerfile, Neustart-Regel, Region Europa (ANF-008)
 ```
 
 ## Befehle
@@ -71,7 +74,16 @@ npm run css:build && cargo leptos build --release
 
 # Migrationen
 sqlx migrate add -r <name>      # neue Migration in migrations/
+
+# Docker-Image (ANF-008) – lokal bauen und ausprobieren
+docker build -t erp-saintwhoo .
+docker run --rm -p 8080:8080 -e PORT=8080 -e DATABASE_URL=postgres://… erp-saintwhoo
 ```
+
+Betrieb auf Railway (ANF-008): Railway baut bei jedem neuen Stand auf `main` das `Dockerfile` und stellt es
+bereit. Umgebungsvariablen in der Railway-Oberfläche: `DATABASE_URL=${{Postgres.DATABASE_URL}}`,
+`SITZUNG_COOKIE_SECURE=1`. `PORT` setzt Railway selbst; der Server hört dann auf `0.0.0.0:$PORT`
+(`listen_addr` in `src/main.rs`), sonst auf `site-addr` aus `Cargo.toml`. Details in `system-design.md`.
 
 ## Arbeitsregeln
 

@@ -1,0 +1,18 @@
+# ANF-008: Einstellungen für Railway (Konfiguration im Projektarchiv).
+# Railway liest diese Datei bei jeder Bereitstellung des ERP-Dienstes.
+# Nicht hier, sondern in der Railway-Oberfläche: Umgebungsvariablen (DATABASE_URL,
+# SITZUNG_COOKIE_SECURE) und die Region des PostgreSQL-Dienstes.
+
+[build]
+# Bau mit dem Dockerfile im Hauptordner (AK-10)
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Bei Absturz neu starten, z. B. wenn die Datenbank beim Start nicht erreichbar ist (AK-13)
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+# Region Europa (EU West, Amsterdam), damit die Daten in Europa bleiben (AK-16)
+[deploy.multiRegionConfig."europe-west4-drams3a"]
+numReplicas = 1

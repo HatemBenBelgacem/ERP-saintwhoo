@@ -1,10 +1,10 @@
 # Aufgaben
 
-Stand: 2026-11-12
+Stand: 2026-11-17
 
 ## In Arbeit
 
-- [ ] …
+- [ ] ANF-008 umsetzen: `Dockerfile`, `.dockerignore`, `railway.toml`, Server hört auf `PORT`, `cargo-chef`
 
 ## Offen
 
@@ -51,3 +51,4 @@ Stand: 2026-11-12
 - [x] Anforderung ANF-007 (Anmeldeseite) erfasst
 - [x] ANF-007 Anmeldeseite umgesetzt (Zugangsschutz, Sitzungen, Ersteinrichtung)
 - [x] Testszenarien zu allen Akzeptanzkriterien erstellt (`testszenarien.md`, 170 Szenarien)
+- [x] Anforderung ANF-008 (Docker-Image für Railway) erfasst, offene Fragen geklärt und freigegeben
