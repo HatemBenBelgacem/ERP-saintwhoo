@@ -1,6 +1,6 @@
 # Aufgaben
 
-Stand: 2026-11-12
+Stand: 2026-11-17
 
 ## In Arbeit
 
@@ -8,6 +8,8 @@ Stand: 2026-11-12
 
 ## Offen
 
+- [ ] ANF-008: offene Fragen klären und freigeben (Docker-Image für Railway)
+- [ ] ANF-008 umsetzen: `Dockerfile`, `.dockerignore`, `railway.toml`, Server hört auf `PORT`
 - [ ] Module des ERP festlegen (z. B. Lager, Einkauf, Verkauf, Buchhaltung)
 - [ ] Erste Anforderungen mit der [Vorlage](anforderungen/_VORLAGE.md) erfassen
 - [ ] Datenbank `erp_saintwhoo` anlegen und `.env` mit Zugangsdaten füllen
@@ -51,3 +53,4 @@ Stand: 2026-11-12
 - [x] Anforderung ANF-007 (Anmeldeseite) erfasst
 - [x] ANF-007 Anmeldeseite umgesetzt (Zugangsschutz, Sitzungen, Ersteinrichtung)
 - [x] Testszenarien zu allen Akzeptanzkriterien erstellt (`testszenarien.md`, 170 Szenarien)
+- [x] Anforderung ANF-008 (Docker-Image für Railway) erfasst
