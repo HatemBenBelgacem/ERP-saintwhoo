@@ -62,7 +62,7 @@ wieder zur Hauptnavigation.
 - [x] **AK-3:** Gegeben die Hauptnavigation, wenn der Benutzer einen Eintrag anklickt, dann wird die
   zugehörige Seite im Inhaltsbereich geladen, ohne dass die ganze Seite neu lädt.
 - [x] **AK-4:** Gegeben eine geöffnete Seite, dann ist der zugehörige Navigationseintrag als aktiv
-  hervorgehoben – in leichtem Glutorange (heller Hintergrund, Schrift in dunklem Glutorange).
+  hervorgehoben – in leichtem Indigo (heller Hintergrund, Schrift in dunklem Indigo; Farbe der Primärfarbe, ANF-009).
 - [x] **AK-5:** Die Navigationseinträge werden an einer zentralen Stelle im Code definiert, damit neue
   Module ohne Änderung am Grundgerüst ergänzt werden können.
 
@@ -116,7 +116,7 @@ Aufbau eines Navigationseintrags:
 Für die Umsetzung wurden vorläufige Annahmen getroffen (in Klammern). Weitere Wünsche als neue Anforderung erfassen.
 
 - [x] Farbe der Kopfzeile: neutral in dunklem Anthrazit (daisyUI `neutral`, Schrift `neutral-content`), kein Glutorange.
-- [x] Glutorange ist die Grundfarbe des ERP (daisyUI `primary`), Der aktive Navigationseintrag ist in leichtem Glutorange markiert.
+- [x] ~~Glutorange ist die Grundfarbe des ERP~~ → ersetzt durch die Farbpalette aus ANF-009 (Primärfarbe Indigo, daisyUI `primary`). Der aktive Navigationseintrag ist in leichtem Indigo markiert.
 - [x] Inhalt der Kopfzeile: keine Überschrift, kein Leitspruch, kein Anwendungsname; nur das Menü-Symbol auf kleinen Bildschirmen.
 - [ ] Soll die Kopfzeile später zusätzlich ein Benutzermenü oder eine Suche erhalten?
 - [ ] Welche Einträge hat die Hauptnavigation? *(vorerst: „Startseite“)*
@@ -134,7 +134,7 @@ Für die Umsetzung wurden vorläufige Annahmen getroffen (in Klammern). Weitere 
 | `src/icons.rs` | Eingebettete SVG-Symbole |
 | `src/components/home/home_page.rs` | Startseite mit Modulkarten aus `navigation::modules()` und Datenbank-Status (AK-12) |
 | `src/app.rs` | Routen: `/`, `/einstellungen` (→ Weiterleitung auf erste Einstellungsseite), `/einstellungen/allgemein` |
-| `styles/app.css` | Farbe `--glutorange` als daisyUI-Grundfarbe `primary`, Markierung der Navigation |
+| `styles/app.css` | Farbpalette (ANF-009) im daisyUI-Farbschema, Markierung der Navigation |
 
 Geprüft: alle AK im Browser (grosser Bildschirm 1280 px, Mobiltelefon 390 px) und Modultests für die Pfadlogik.
 
@@ -150,3 +150,4 @@ Geprüft: alle AK im Browser (grosser Bildschirm 1280 px, Mobiltelefon 390 px) u
 | 2026-11-11 | Hatem Ben Belgacem | Markierung der Navigation in leichtem Glutorange |
 | 2026-11-11 | Hatem Ben Belgacem | Kopfzeile: Leitspruch in Tifinagh mittig, Anwendungsname entfernt |
 | 2026-11-12 | Hatem Ben Belgacem | Kopfzeile neutral: Glutorange und Leitspruch entfernt |
+| 2026-11-17 | Hatem Ben Belgacem | Glutorange durch die Farbpalette aus ANF-009 ersetzt (Primärfarbe Indigo) |

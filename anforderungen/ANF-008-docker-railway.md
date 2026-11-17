@@ -3,7 +3,7 @@
 | Feld          | Wert                                              |
 |---------------|---------------------------------------------------|
 | **Nummer**    | ANF-008                                           |
-| **Status**    | Freigegeben                                       |
+| **Status**    | In Umsetzung                                      |
 | **Priorität** | Muss                                              |
 | **Typ**       | Technisch                                         |
 | **Modul**     | Betrieb                                           |
@@ -49,25 +49,25 @@ beim Start automatisch.
 ## 3. Akzeptanzkriterien
 
 **Docker-Image**
-- [ ] **AK-1:** Gegeben das Projektarchiv, wenn `docker build -t erp-saintwhoo .` ausgeführt wird, dann
+- [x] **AK-1:** Gegeben das Projektarchiv, wenn `docker build -t erp-saintwhoo .` ausgeführt wird, dann
   entsteht ohne Fehler ein Image. Es gibt dafür ein `Dockerfile` und eine `.dockerignore` im
   Hauptordner.
-- [ ] **AK-2:** Das `Dockerfile` baut in mehreren Stufen (CSS, Rust, Laufzeit). Das Laufzeit-Image enthält
+- [x] **AK-2:** Das `Dockerfile` baut in mehreren Stufen (CSS, Rust, Laufzeit). Das Laufzeit-Image enthält
   keine Übersetzer (kein `cargo`, kein `node`) und keinen Quellcode.
-- [ ] **AK-3:** Die `.dockerignore` schliesst mindestens `target/`, `node_modules/`, `.env`,
+- [x] **AK-3:** Die `.dockerignore` schliesst mindestens `target/`, `node_modules/`, `.env`,
   `styles/output.css` und `.git/` aus. Die Datei `.env` gelangt nie ins Image.
-- [ ] **AK-4:** Das Serverprogramm läuft im Container nicht als Benutzer `root`.
-- [ ] **AK-5:** Gegeben ein gestartetes Image mit gültiger `DATABASE_URL`, wenn die Startseite geöffnet wird,
+- [x] **AK-4:** Das Serverprogramm läuft im Container nicht als Benutzer `root`.
+- [x] **AK-5:** Gegeben ein gestartetes Image mit gültiger `DATABASE_URL`, wenn die Startseite geöffnet wird,
   dann erscheint die Anmeldeseite (ANF-007) mit vollständigem Aussehen (CSS geladen) und sie ist im
   Browser interaktiv (WebAssembly geladen).
 
 **Konfiguration über Umgebungsvariablen**
-- [ ] **AK-6:** Gegeben die Umgebungsvariable `PORT` (von Railway vorgegeben), dann hört der Server auf
+- [x] **AK-6:** Gegeben die Umgebungsvariable `PORT` (von Railway vorgegeben), dann hört der Server auf
   `0.0.0.0:<PORT>`. Ohne `PORT` gilt weiterhin `site-addr` aus `Cargo.toml` – die lokale Entwicklung
   mit `cargo leptos watch` bleibt unverändert.
-- [ ] **AK-7:** Die Verbindung zur Datenbank kommt ausschliesslich aus `DATABASE_URL`. Zugangsdaten stehen
+- [x] **AK-7:** Die Verbindung zur Datenbank kommt ausschliesslich aus `DATABASE_URL`. Zugangsdaten stehen
   weder im `Dockerfile` noch im Code.
-- [ ] **AK-8:** Im Image ist `LEPTOS_ENV=PROD` gesetzt; `LEPTOS_SITE_ROOT` zeigt auf den mitgelieferten
+- [x] **AK-8:** Im Image ist `LEPTOS_ENV=PROD` gesetzt; `LEPTOS_SITE_ROOT` zeigt auf den mitgelieferten
   Ordner `site`.
 - [ ] **AK-9:** Auf Railway ist `SITZUNG_COOKIE_SECURE=1` gesetzt, damit das Sitzungs-Cookie nur über HTTPS
   gesendet wird (ANF-007).
@@ -76,11 +76,11 @@ beim Start automatisch.
 - [ ] **AK-10:** Gegeben ein Railway-Projekt mit PostgreSQL-Dienst und dem verbundenen GitHub-Projektarchiv,
   wenn auf `main` ein neuer Stand eingeht, dann baut Railway **automatisch** (ohne Knopfdruck) das Image aus dem `Dockerfile` und stellt es
   bereit. Die Einstellungen dafür stehen in `railway.toml` im Projektarchiv.
-- [ ] **AK-11:** Gegeben eine leere Datenbank auf Railway, wenn der Container zum ersten Mal startet, dann
+- [x] **AK-11:** Gegeben eine leere Datenbank auf Railway, wenn der Container zum ersten Mal startet, dann
   legt der Server die Datenbank an, falls sie fehlt (wie bisher in `src/db.rs`), alle Migrationen laufen durch und die Ersteinrichtung (ANF-007) ist erreichbar.
-- [ ] **AK-12:** Gegeben ein neuer Stand mit zusätzlichen Migrationen, wenn er bereitgestellt wird, dann
+- [x] **AK-12:** Gegeben ein neuer Stand mit zusätzlichen Migrationen, wenn er bereitgestellt wird, dann
   laufen nur die neuen Migrationen; bestehende Daten bleiben erhalten.
-- [ ] **AK-13:** Gegeben eine nicht erreichbare Datenbank beim Start, dann beendet sich der Server mit einer
+- [x] **AK-13:** Gegeben eine nicht erreichbare Datenbank beim Start, dann beendet sich der Server mit einer
   verständlichen Fehlermeldung im Protokoll, und Railway startet ihn erneut (Neustart-Regel in
   `railway.toml`).
 - [ ] **AK-14:** Die Anwendung ist über die von Railway vergebene Webadresse per HTTPS erreichbar.
@@ -88,7 +88,7 @@ beim Start automatisch.
   („EU West“), damit die Daten in Europa bleiben. Die Region ist in `railway.toml` festgelegt.
 
 **Bauzeit**
-- [ ] **AK-17:** Das `Dockerfile` verwendet `cargo-chef`: Die fremden Bibliotheken werden in einem eigenen
+- [x] **AK-17:** Das `Dockerfile` verwendet `cargo-chef`: Die fremden Bibliotheken werden in einem eigenen
   Bauschritt übersetzt, der nur von `Cargo.toml` und `Cargo.lock` abhängt (`cargo chef prepare` /
   `cargo chef cook`), und zwar für beide Übersetzungen (Server mit `ssr`, WebAssembly mit `hydrate`).
   Gegeben ein neuer Stand, der nur Dateien in `src/` ändert, dann werden die Bibliotheken nicht neu
@@ -96,7 +96,7 @@ beim Start automatisch.
   enthalten.
 
 **Dokumentation**
-- [ ] **AK-15:** `CLAUDE.md` (Abschnitt „Befehle“) und `system-design.md` beschreiben Bau des Images,
+- [x] **AK-15:** `CLAUDE.md` (Abschnitt „Befehle“) und `system-design.md` beschreiben Bau des Images,
   lokalen Probelauf mit Docker und die nötigen Umgebungsvariablen auf Railway.
 
 ## 4. Daten / Felder (optional)
@@ -143,3 +143,4 @@ Umgebungsvariablen im Betrieb:
 | 2026-11-17 | Hatem Ben Belgacem | Erstellt |
 | 2026-11-17 | Hatem Ben Belgacem | Offene Fragen 1–4 beantwortet: automatische Bereitstellung, Region Europa (AK-16), Server legt Datenbank an, kein Gesundheitspfad |
 | 2026-11-17 | Hatem Ben Belgacem | Frage 5 beantwortet: `cargo-chef` (AK-17); Status Freigegeben |
+| 2026-11-17 | Claude Code | Umgesetzt: `Dockerfile`, `.dockerignore`, `railway.toml`, `PORT` in `src/main.rs`. Lokal mit Docker geprüft (AK-1–8, 11–13, 15, 17). Offen: Einrichtung auf Railway (AK-9, 10, 14, 16) |

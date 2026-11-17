@@ -63,7 +63,7 @@ Die Anforderungen ANF-005 bis ANF-007 haben bisher keine Prüfung im Browser. Mi
 | TS-001-01 | 1 | Startseite `/` aufrufen. | Kopfzeile oben, Seitenleiste links und Inhalt rechts sind sichtbar. |
 | TS-001-02 | 2 | Projektübersicht mit 61 Projekten auf dem grossen Bildschirm öffnen und nach unten scrollen. | Kopfzeile und Seitenleiste bleiben stehen. Nur der Inhalt bewegt sich. |
 | TS-001-03 | 3 | In der Seitenleiste auf „Adressen“ klicken. | Die Adressliste erscheint. Die Seitenleiste wird nicht neu aufgebaut und flackert nicht. |
-| TS-001-04 | 4 | Auf einer geöffneten Seite den Eintrag der Seite ansehen. | Der aktive Eintrag hat einen leichten Glutorange-Hintergrund mit dunkel-orangefarbener Schrift. Andere Einträge sind nicht markiert. |
+| TS-001-04 | 4 | Auf einer geöffneten Seite den Eintrag der Seite ansehen. | Der aktive Eintrag hat einen leichten Indigo-Hintergrund mit dunkel-indigofarbener Schrift. Andere Einträge sind nicht markiert. |
 | TS-001-05 | 6 | Seitenleiste ansehen. | „Einstellungen“ steht getrennt am unteren Rand der Seitenleiste. |
 | TS-001-06 | 7 | In der Fusszeile der Seitenleiste auf „Einstellungen“ klicken. | Die Seitenleiste zeigt die Einstellungsnavigation mit „Allgemein“ und „Benutzer“. Im Inhalt steht „Allgemein“. |
 | TS-001-07 | 8 | In der Einstellungsnavigation auf „Zurück“ klicken. | Die Hauptnavigation erscheint und im Inhalt die Startseite. |
@@ -120,7 +120,7 @@ Hinweis: AK-5 (Navigation an einer zentralen Stelle definiert) wird im Code gepr
 | TS-003-15 | 10 | Projekt ohne Name speichern. Dann ein Projekt mit Ende vor Start speichern. | Nichts wird gespeichert. Die Felder sind mit einer Meldung markiert. |
 | TS-003-16 | 11 | Vorgang 2.3 mit ✎ bearbeiten. Name ändern und speichern. Dann eine zweite Änderung mit „Abbrechen“ verwerfen. | Die erste Änderung ist gespeichert. Die zweite nicht. |
 | TS-003-17 | 11a | „Neue Aufgabe“ öffnen. Das Formular ansehen. Dann den Titel leer lassen und speichern. | Das Formular hat nur „Titel“ (Pflicht) und „Beschreibung“ (optional). Ohne Titel wird nichts gespeichert. |
-| TS-003-18 | 5a | Übersicht und Strukturbaum ansehen. | Projekt ist Glutorange, Teilprojekt Blau, Vorgang Petrol und Aufgabe Schiefergrau. Jede Ebene hat einen farbigen Streifen links. Über der Übersicht steht eine Legende. |
+| TS-003-18 | 5a | Übersicht und Strukturbaum ansehen. | Projekt ist Indigo, Teilprojekt Himmelblau, Vorgang Petrol und Aufgabe Schiefergrau. Jede Ebene hat einen farbigen Streifen links. Über der Übersicht steht eine Legende. |
 | TS-003-19 | 12 | Im Strukturbaum das Kontrollkästchen „Erledigt“ einer Aufgabe setzen. | Der Status ändert sich sofort. Das Formular öffnet sich nicht. Der Fortschritt des Projekts ändert sich. |
 | TS-003-20 | 13 | Vorgang 2.2 nach oben verschieben. | Vorgang 2.2 wird zu 2.1. Seine Aufgaben tragen die neuen Nummern. |
 | TS-003-21 | 14 | Teilprojekt 2 löschen, aber im Dialog abbrechen. Dann erneut löschen. | Der Dialog nennt die Zahl der Teilprojekte, Vorgänge und Aufgaben darunter. Die Zahlen stimmen mit dem Strukturbaum überein. Nach Abbrechen bleibt alles. |
@@ -236,7 +236,7 @@ Hinweis: AK-5 (Navigation an einer zentralen Stelle definiert) wird im Code gepr
 | TS-007-01 | 1 | Im privaten Fenster ohne Anmeldung `/projekte/4` aufrufen. Dann die Seite neu laden. | Beide Male wirst du nach `/anmelden?zurueck=/projekte/4` umgeleitet. |
 | TS-007-02 | 2 | Ohne Anmeldung und ohne Cookie eine Server-Funktion unter `/api/…` aufrufen, z. B. mit `curl`. | Die Antwort ist HTTP 401 mit „Nicht angemeldet“. Es kommen keine Daten zurück. |
 | TS-007-03 | 3 | Ohne Anmeldung `/anmelden` öffnen und das Netzwerk prüfen. | Stylesheet und Seitensymbol laden ohne Umleitung. |
-| TS-007-04 | 4 | `/anmelden` auf dem Mobiltelefon und auf dem grossen Bildschirm öffnen. | Eine zentrierte Karte mit dem Namen „ERP-saintwhoo“, den Feldern Benutzername und Passwort und der Schaltfläche „Anmelden“ (Glutorange). Keine Seitenleiste. |
+| TS-007-04 | 4 | `/anmelden` auf dem Mobiltelefon und auf dem grossen Bildschirm öffnen. | Eine zentrierte Karte mit dem Namen „ERP-saintwhoo“, den Feldern Benutzername und Passwort und der Schaltfläche „Anmelden“ (Indigo). Keine Seitenleiste. |
 | TS-007-05 | 5 | Mit Anna anmelden. | Die Startseite erscheint. Die Kopfzeile zeigt „Muster Anna“ und „Abmelden“. |
 | TS-007-06 | 5 | Mit Enter statt Klick anmelden. Vorher `/anmelden?zurueck=/projekte/4` aufrufen. | Enter funktioniert. Nach der Anmeldung erscheint `/projekte/4`. |
 | TS-007-07 | 5 | `/anmelden?zurueck=https://boese.example.com` mit richtigen Daten verwenden. Dann mit `zurueck=//boese.example.com` wiederholen. | Beide Male landest du auf der Startseite und nicht auf einer fremden Adresse. |
