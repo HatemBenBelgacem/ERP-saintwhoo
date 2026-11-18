@@ -26,7 +26,23 @@
 | [ANF-007](anforderungen/ANF-007-anmeldung.md) | Anmeldeseite | Benutzer | Muss | Erledigt |
 | [ANF-008](anforderungen/ANF-008-docker-railway.md) | Auslieferung als Docker-Image für Railway | Betrieb | Muss | In Umsetzung |
 | [ANF-009](anforderungen/ANF-009-farbpalette.md) | Farbpalette (Primär-, Sekundär-, Neutral- und Signalfarben) | Allgemein / Oberfläche | Muss | Erledigt |
+| [ANF-010](anforderungen/ANF-010-finanzen.md) | Finanzen – Rahmen und Aufteilung in Komponenten | Finanzen | Muss | Entwurf |
+| [ANF-011](anforderungen/ANF-011-kontenplan.md) | Kontenplan und Systemkonten | Finanzen / Einstellungen | Muss | Entwurf |
+| [ANF-012](anforderungen/ANF-012-mwst-codes.md) | MWST-Codes (Steuersätze) | Finanzen / Einstellungen | Muss | Entwurf |
+| [ANF-013](anforderungen/ANF-013-geschaeftsjahre.md) | Geschäftsjahre und Perioden | Finanzen / Einstellungen | Muss | Entwurf |
+| [ANF-014](anforderungen/ANF-014-waehrungen.md) | Währungen und Umrechnungskurse | Finanzen / Einstellungen | Soll | Entwurf |
+| [ANF-015](anforderungen/ANF-015-bankkonten.md) | Eigene Bankkonten | Finanzen / Einstellungen | Muss | Entwurf |
+| [ANF-016](anforderungen/ANF-016-zahlungsbedingungen.md) | Zahlungsbedingungen | Finanzen / Einstellungen | Muss | Entwurf |
+| [ANF-017](anforderungen/ANF-017-buchungsjournal.md) | Buchungsjournal (Hauptbuch) | Finanzen | Muss | Entwurf |
+| [ANF-018](anforderungen/ANF-018-debitorenrechnungen.md) | Debitoren – Ausgangsrechnungen | Finanzen | Muss | Entwurf |
+| [ANF-019](anforderungen/ANF-019-kreditorenrechnungen.md) | Kreditoren – Eingangsrechnungen | Finanzen | Muss | Entwurf |
+| [ANF-020](anforderungen/ANF-020-zahlungen.md) | Zahlungen und offene Posten | Finanzen | Muss | Entwurf |
+| [ANF-021](anforderungen/ANF-021-finanzauswertungen.md) | Auswertungen – Kontoauszug, Saldenliste, Bilanz, Erfolgsrechnung | Finanzen | Muss | Entwurf |
+| [ANF-022](anforderungen/ANF-022-mwst-abrechnung.md) | MWST-Abrechnung | Finanzen | Soll | Entwurf |
+| [ANF-023](anforderungen/ANF-023-jahresabschluss.md) | Jahresabschluss und Saldovortrag | Finanzen | Soll | Entwurf |
+| [ANF-024](anforderungen/ANF-024-mahnwesen.md) | Mahnwesen | Finanzen / Einstellungen | Kann | Entwurf |
+| [ANF-025](anforderungen/ANF-025-firma.md) | Firmenverwaltung (eigene Firma, verknüpft mit Adresse) | Einstellungen | Muss | Entwurf |
 
 <!-- Neue Zeile pro Anforderung, z. B.:
-| [ANF-010](anforderungen/ANF-010-artikelstamm.md) | Artikelstamm verwalten | Lager | Muss | Entwurf |
+| [ANF-026](anforderungen/ANF-026-artikelstamm.md) | Artikelstamm verwalten | Lager | Muss | Entwurf |
 -->
