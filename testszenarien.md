@@ -1,6 +1,6 @@
 # Testszenarien – ERP-saintwhoo
 
-Stand: 2026-11-12 · Grundlage: Akzeptanzkriterien (AK) der Anforderungen ANF-001 bis ANF-007
+Stand: 2026-11-12 · Grundlage: Akzeptanzkriterien (AK) der Anforderungen ANF-001 bis ANF-007, ANF-011 und ANF-025
 
 Dieses Dokument beschreibt, wie du von Hand prüfst, ob das ERP die Anforderungen erfüllt. Jedes Testszenario nennt das Akzeptanzkriterium, das es prüft.
 
@@ -262,6 +262,41 @@ Hinweis: AK-5 (Navigation an einer zentralen Stelle definiert) wird im Code gepr
 | TS-007-27 | 22 | Nach der Ersteinrichtung `/anmelden` öffnen. Dann die Server-Funktion für die Ersteinrichtung erneut aufrufen. | Die Anmeldung erscheint statt der Ersteinrichtung. Der Aufruf meldet „Die Ersteinrichtung ist bereits abgeschlossen. Bitte anmelden.“. |
 | TS-007-28 | 23 | DB: `INSERT INTO anmeldeversuch (benutzername, zeitpunkt) VALUES ('alt', now() - interval '1 day');` ausführen. Dann anmelden. | Der alte Eintrag ist danach gelöscht. Die Tabellen `sitzung` und `anmeldeversuch` sind vorhanden. |
 | TS-007-29 | 24 | Anmelden mit den Entwicklerwerkzeugen beobachten: Anfrage, Webadresse und Serverprotokoll. | Das Formular wird per POST gesendet. Die Webadresse enthält kein Passwort. Im Serverprotokoll stehen weder Passwort noch Cookie-Wert. |
+
+## ANF-011 Kontenplan
+
+| Nr | AK | Schritte | Erwartet |
+|----|----|----------|----------|
+| TS-011-01 | 3, 12 | Mit leerem Kontenplan Einstellungen › Finanzen › Kontenplan öffnen. „KMU-Kontenrahmen übernehmen“ klicken und bestätigen. | Vorher erscheinen der Hinweis „Noch keine Konten erfasst“ und die Warnung zu fehlenden Pflicht-Systemkonten. Danach sind 97 Konten angelegt, die Systemkonten sind vorbelegt, die Warnung ist weg und die Schaltfläche „KMU-Kontenrahmen übernehmen“ ist verschwunden. |
+| TS-011-02 | 1 | Die Liste ansehen. | Die Konten sind nach Nummer sortiert und nach Kontenklasse gruppiert (Zwischenzeile „Klasse 1 · Aktiven“ usw.). Systemkonten tragen eine Plakette mit ihrer Rolle. |
+| TS-011-03 | 2 | Nach „bank“ suchen, dann Kontoart „Ertrag“ wählen. Die Seite neu laden. | Die Suche findet 1020, 2100, 2400, 6940. Der Filter zeigt nur Ertragskonten. Suche und Filter stehen in der Webadresse und bleiben nach dem Neuladen erhalten. |
+| TS-011-04 | 4, 5 | „Neues Konto“ öffnen. Nummer 1021 eingeben, dann 6571. | Die Webadresse enthält `?neu=1`. Die Kontoart springt auf „Aktiv“ bzw. „Aufwand“. Bei 7000 bleibt sie unverändert. Nach einer eigenen Auswahl der Kontoart wird sie nicht mehr überschrieben. |
+| TS-011-05 | 4, 8 | Nummer 1020 ohne Bezeichnung speichern. Dann 123 und 0100 versuchen. | Nichts wird gespeichert. Meldungen: „Diese Kontonummer ist bereits vergeben.“, „Bitte eine Bezeichnung eingeben.“ bzw. der Hinweis auf 4–6 Ziffern. |
+| TS-011-06 | 4 | 1021 „Bankguthaben UBS“, Kontoart Aktiv speichern. | Das Fenster schliesst, die Meldung „Konto 1021 gespeichert.“ erscheint, die Suche bleibt erhalten und 1021 steht direkt unter 1020. |
+| TS-011-07 | 6, 11 | Konto 1100 (Systemkonto Debitoren) öffnen. „Aktiv“ abwählen und speichern. Dann Kontoart „Passiv“ wählen und speichern. | Beide Male wird das Speichern verhindert, mit Hinweis auf das Systemkonto „Debitoren“. |
+| TS-011-08 | 9 | Bei Konto 1100 „Löschen“ › „Endgültig löschen“. | Die Meldung nennt „als Systemkonto „Debitoren““ und schlägt Deaktivieren vor. Das Konto bleibt bestehen. |
+| TS-011-09 | 10 | Konto 1021 deaktivieren. Danach „Inaktive anzeigen“ wählen. | Ohne Kontrollkästchen ist 1021 ausgeblendet. Mit Kontrollkästchen erscheint es abgeschwächt mit „Inaktiv“. In „Systemkonten bearbeiten“ wird es nicht angeboten. |
+| TS-011-10 | 9 | Konto 1021 löschen. | Nach Bestätigung erscheint „Konto 1021 wurde gelöscht.“. |
+| TS-011-11 | 11, 12 | „Systemkonten bearbeiten“: bei „Kreditoren“ „– nicht zugeordnet –“ wählen und speichern. | Bei Debitoren werden nur aktive Aktivkonten angeboten. Nach dem Speichern erscheint die Warnung „Pflicht-Systemkonten fehlen: Kreditoren …“. |
+| TS-011-12 | 11 | Mit den Entwicklerwerkzeugen die Anfrage beim Speichern der Systemkonten so ändern, dass Debitoren auf 3400 zeigt. | Der Server lehnt ab: „Für „Debitoren“ ist nur ein Konto der Kontoart Aktiv erlaubt.“ |
+| TS-011-13 | – | Liste und „Konto bearbeiten“ auf dem Mobiltelefon öffnen. | Keine waagrechte Verschiebung der Seite; die Tabelle lässt sich in ihrem Rahmen verschieben, das Modal-Fenster ist vollständig bedienbar. |
+
+## ANF-025 Firma
+
+| Nr | AK | Schritte | Erwartet |
+|----|----|----------|----------|
+| TS-025-01 | 1 | Einstellungen öffnen. | In der Einstellungsnavigation steht „Firma“ (`/einstellungen/firma`). |
+| TS-025-02 | 4 | Ohne Firma die Seite öffnen, „Firma erfassen“ klicken und ohne Auswahl speichern. | Hinweis „Noch keine Firma erfasst“. Das Fenster öffnet mit `?neu=1`. Meldung „Bitte eine Adresse wählen.“ |
+| TS-025-03 | 4 | Im Suchfeld „a“ eingeben. | Es erscheinen nur Adressen vom Typ „Firma“, keine Personen. |
+| TS-025-04 | 4, 6, 8 | „Neue Adresse anlegen“ wählen, Firmenname, PLZ, Ort ohne Strasse eingeben, UID CHE-123.456.789. Speichern. Dann Strasse ergänzen und UID „che 116 281 710“. | Zuerst: Strasse „Für den Absender der Belege nötig.“ und „Die Prüfziffer stimmt nicht …“. Danach gespeichert; die neue Adresse steht im Adressstamm, die UID lautet CHE-116.281.710, die MWST-Nummer CHE-116.281.710 MWST. |
+| TS-025-05 | 5, 8 | „Bearbeiten“: eine Firmenadresse ohne Strasse wählen und speichern. Dann eine vollständige Firmenadresse wählen. | Zuerst „Die Postanschrift ist unvollständig (fehlt: Strasse) …“. Danach ist die neue Adresse verknüpft. |
+| TS-025-06 | 5 | Im Fenster „Bearbeiten“ auf „Adresse bearbeiten“ klicken. | Die Adresse öffnet sich im Adressstamm im Bearbeiten-Fenster. |
+| TS-025-07 | 7 | Unter „Logo“ eine GIF-Datei mit Endung .png hochladen, dann eine Datei über 1 MB. | „Erlaubt sind nur PNG-, JPG- oder SVG-Dateien.“ bzw. „Die Datei ist grösser als 1 MB.“ |
+| TS-025-08 | 7 | Ein PNG hochladen, danach ein SVG mit `<script>`. `/firma/logo` direkt öffnen. | Das Logo erscheint auf der Seite und in der Belegvorschau. Das SVG wird angezeigt, das Skript läuft nicht (Antwort mit `Content-Security-Policy: … sandbox`). |
+| TS-025-09 | 7 | „Logo entfernen“. | „Logo entfernt.“, kein Logo mehr sichtbar. |
+| TS-025-10 | 3 | Belegvorschau ansehen. | Logo, Name, Anschrift und UID oben, Fusszeile unten. |
+| TS-025-11 | 11 | Die Adresse der Firma im Adressstamm öffnen und löschen. | Plakette „Eigene Firma“. Löschen wird verhindert: „… als eigene Firma verwendet …“. |
+| TS-025-12 | 12 | Neues Projekt: im Feld „Kunde“ nach dem Firmennamen suchen. Ebenso bei einem neuen Einkaufsauftrag (Lieferant). | Die eigene Firma wird nicht angeboten. |
 
 ## Offene Punkte aus der Prüfung
 

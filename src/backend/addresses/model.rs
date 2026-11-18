@@ -201,6 +201,8 @@ pub struct Address {
     /// Benutzer, dem die Adresse gehört (ANF-005 AK-8)
     pub benutzer_id: Option<i64>,
     pub benutzername: Option<String>,
+    /// Adresse der eigenen Firma (ANF-025 AK-11)
+    pub eigene_firma: bool,
     /// Bereits formatiert (TT.MM.JJJJ HH:MM, Zeitzone Europe/Zurich)
     pub erstellt_am: String,
     pub geaendert_am: String,

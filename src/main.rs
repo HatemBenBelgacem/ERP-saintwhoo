@@ -34,6 +34,14 @@ async fn main() {
                 move || shell(leptos_options.clone())
             },
         )
+        // ANF-025: Firmenlogo aus der Datenbank
+        .route(
+            erp_saintwhoo::backend::company::model::LOGO_URL,
+            axum::routing::get({
+                let pool = pool.clone();
+                move || erp_saintwhoo::backend::company::logo::logo_response(pool.clone())
+            }),
+        )
         .fallback(leptos_axum::file_and_error_handler(shell))
         // ANF-007: Zugangsschutz für alle Seiten und Server-Funktionen (auch die Rückfallroute)
         .layer(axum::middleware::from_fn_with_state(

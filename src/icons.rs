@@ -20,6 +20,8 @@ pub enum Icon {
     User,
     Tasks,
     Logout,
+    Ledger,
+    Building,
 }
 
 impl Icon {
@@ -50,6 +52,12 @@ impl Icon {
             Icon::Search => "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14ZM20 20l-4-4",
             Icon::Chevron => "M9 6l6 6-6 6",
             Icon::Logout => "M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4",
+            Icon::Building => {
+                "M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 9h4a1 1 0 0 1 1 1v11M3 21h18M8 8h3M8 12h3M8 16h3"
+            }
+            Icon::Ledger => {
+                "M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5v-15ZM5 19.5A1.5 1.5 0 0 0 6.5 21H19M9 7h6M9 11h4"
+            }
             Icon::Tasks => {
                 "M10 6h10M10 12h10M10 18h10M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5 2.5-2.5M3.5 18l1.5 1.5 2.5-2.5"
             }

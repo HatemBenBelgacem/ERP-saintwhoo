@@ -60,12 +60,30 @@ pub const SETTINGS_NAV: &[NavItem] = &[
         icon: Some(Icon::Sliders),
         description: "Allgemeine Einstellungen.",
     },
+    // ANF-025
+    NavItem {
+        title: "Firma",
+        path: "/einstellungen/firma",
+        icon: Some(Icon::Building),
+        description: "Eigene Firma: Absender aller Belege, verknüpft mit einer Adresse.",
+    },
     // ANF-005
     NavItem {
         title: "Benutzer",
         path: "/einstellungen/benutzer",
         icon: Some(Icon::User),
         description: "Benutzer anlegen, sperren und ihrer Adresse zuordnen.",
+    },
+];
+
+/// Einstellungsnavigation, Abschnitt „Finanzen“: Stammdaten der Finanzen (ANF-010 AK-3).
+pub const SETTINGS_FINANCE_NAV: &[NavItem] = &[
+    // ANF-011
+    NavItem {
+        title: "Kontenplan",
+        path: "/einstellungen/finanzen/kontenplan",
+        icon: Some(Icon::Ledger),
+        description: "Konten nach KMU-Kontenrahmen und Systemkonten für automatische Buchungen.",
     },
 ];
 

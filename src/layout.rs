@@ -11,7 +11,8 @@ use crate::backend::auth::server_fns::{Logout, get_current_user};
 
 use crate::icons::{Icon, IconView};
 use crate::navigation::{
-    MAIN_NAV, NavItem, SETTINGS_NAV, is_active, is_settings_path, settings_entry_path,
+    MAIN_NAV, NavItem, SETTINGS_FINANCE_NAV, SETTINGS_NAV, is_active, is_settings_path,
+    settings_entry_path,
 };
 
 /// Id der Checkbox, die die Seitenleiste auf kleinen Bildschirmen öffnet/schliesst.
@@ -123,7 +124,10 @@ fn Sidebar(pathname: Memo<String>) -> impl IntoView {
             <nav class="flex-1 overflow-y-auto" aria-label="Navigation">
                 {move || {
                     if in_settings.get() {
-                        view! { <NavList items=SETTINGS_NAV pathname title="Einstellungen"/> }
+                        view! {
+                            <NavList items=SETTINGS_NAV pathname title="Einstellungen"/>
+                            <NavList items=SETTINGS_FINANCE_NAV pathname title="Finanzen"/>
+                        }
                             .into_any()
                     } else {
                         view! { <NavList items=MAIN_NAV pathname/> }.into_any()

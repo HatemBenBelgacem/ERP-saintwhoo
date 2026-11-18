@@ -3,7 +3,7 @@
 | Feld          | Wert                                              |
 |---------------|---------------------------------------------------|
 | **Nummer**    | ANF-011                                           |
-| **Status**    | Entwurf                                           |
+| **Status**    | Erledigt                                          |
 | **Priorität** | Muss                                              |
 | **Typ**       | Funktional                                        |
 | **Modul**     | Finanzen / Einstellungen                          |
@@ -37,47 +37,47 @@ Der Kontenplan wird in den Einstellungen unter `/einstellungen/finanzen/kontenpl
 ## 3. Akzeptanzkriterien
 
 **Anzeigen**
-- [ ] **AK-1:** Gegeben die Einstellungsseite „Kontenplan“, dann erscheinen alle Konten als Tabelle mit
+- [x] **AK-1:** Gegeben die Einstellungsseite „Kontenplan“, dann erscheinen alle Konten als Tabelle mit
   Nummer, Bezeichnung, Kontoart, Kontengruppe, MWST-Code (Vorgabe) und Kennzeichen „aktiv“, sortiert nach
   Nummer und gruppiert nach Kontenklasse (Klasse als Zwischenzeile).
-- [ ] **AK-2:** Gegeben die Liste, dann kann der Benutzer nach Nummer oder Bezeichnung suchen und nach
+- [x] **AK-2:** Gegeben die Liste, dann kann der Benutzer nach Nummer oder Bezeichnung suchen und nach
   Kontoart filtern; inaktive Konten sind standardmässig ausgeblendet. Suche und Filter stehen in der Webadresse.
 
 **Vorlage übernehmen**
-- [ ] **AK-3:** Gegeben ein leerer Kontenplan, wenn der Benutzer auf „KMU-Kontenrahmen übernehmen“ klickt
+- [x] **AK-3:** Gegeben ein leerer Kontenplan, wenn der Benutzer auf „KMU-Kontenrahmen übernehmen“ klickt
   und bestätigt, dann wird ein vorbereiteter Kontenplan (gängige Konten des KMU-Kontenrahmens) angelegt und
   die Systemkonten werden vorbelegt. Ist bereits ein Konto vorhanden, ist die Schaltfläche ausgeblendet.
 
 **Anlegen und Bearbeiten**
-- [ ] **AK-4:** Gegeben die Liste, wenn der Benutzer auf „Neues Konto“ klickt, dann öffnet sich ein
+- [x] **AK-4:** Gegeben die Liste, wenn der Benutzer auf „Neues Konto“ klickt, dann öffnet sich ein
   Modal-Fenster (`?neu=1`). Nummer (4 bis 6 Ziffern, eindeutig), Bezeichnung und Kontoart sind Pflicht.
-- [ ] **AK-5:** Gegeben eine Kontonummer, dann schlägt das System die Kontoart aus der ersten Ziffer vor
+- [x] **AK-5:** Gegeben eine Kontonummer, dann schlägt das System die Kontoart aus der ersten Ziffer vor
   (1 → Aktiv, 2 → Passiv, 3 → Ertrag, 4–6 → Aufwand; bei 7, 8 und 9 kein Vorschlag, da diese Klassen
   Aufwand und Ertrag enthalten); der Benutzer kann sie ändern.
 - [ ] **AK-6:** Gegeben ein Konto, dann kann der Benutzer es bearbeiten (`?bearbeiten=<kennung>`).
   Nummer und Kontoart sind nicht mehr änderbar, sobald auf das Konto gebucht wurde.
 - [ ] **AK-7:** Gegeben ein Konto, dann kann ein Vorgabe-MWST-Code (ANF-012) hinterlegt werden, der beim
   Erfassen einer Buchung oder Rechnungsposition auf diesem Konto vorgeschlagen wird.
-- [ ] **AK-8:** Gegeben ungültige Eingaben, dann wird nichts gespeichert und die Felder sind mit einer
+- [x] **AK-8:** Gegeben ungültige Eingaben, dann wird nichts gespeichert und die Felder sind mit einer
   verständlichen Meldung markiert (Prüfung auf dem Server).
 
 **Löschen und Deaktivieren**
-- [ ] **AK-9:** Gegeben ein Konto ohne Buchungen und ohne Verwendung als Systemkonto, Bankkonto oder
+- [x] **AK-9:** Gegeben ein Konto ohne Buchungen und ohne Verwendung als Systemkonto, Bankkonto oder
   Vorgabe, dann kann es nach Bestätigung gelöscht werden.
-- [ ] **AK-10:** Gegeben ein Konto mit Buchungen, dann ist Löschen nicht möglich; stattdessen kann es
+- [x] **AK-10:** Gegeben ein Konto mit Buchungen, dann ist Löschen nicht möglich; stattdessen kann es
   **deaktiviert** werden. Deaktivierte Konten sind in Auswahllisten für neue Buchungen nicht wählbar,
   bleiben aber in Auswertungen sichtbar.
 
 **Systemkonten**
-- [ ] **AK-11:** Gegeben der Abschnitt „Systemkonten“ auf derselben Seite, dann kann der Benutzer für jede
+- [x] **AK-11:** Gegeben der Abschnitt „Systemkonten“ auf derselben Seite, dann kann der Benutzer für jede
   Rolle genau ein aktives Konto der passenden Kontoart wählen: Debitoren, Kreditoren, Vorsteuer,
   Umsatzsteuer, Bank (Vorgabe), Kursdifferenzen, Skonto Ertrag (gewährt), Skonto Aufwand (erhalten),
   Rundungsdifferenzen, Gewinnvortrag, Eröffnungsbilanz und Jahresgewinn/-verlust.
-- [ ] **AK-12:** Gegeben fehlende Pflicht-Systemkonten (Debitoren, Kreditoren, Vorsteuer, Umsatzsteuer),
+- [x] **AK-12:** Gegeben fehlende Pflicht-Systemkonten (Debitoren, Kreditoren, Vorsteuer, Umsatzsteuer),
   dann zeigt die Seite einen Warnhinweis, und automatische Buchungen aus Debitoren/Kreditoren sind gesperrt.
 
 **Allgemein**
-- [ ] **AK-13:** Die Tabellen werden per sqlx-Migration angelegt.
+- [x] **AK-13:** Die Tabellen werden per sqlx-Migration angelegt.
 
 ## 4. Daten / Felder
 
@@ -119,8 +119,37 @@ Tabelle `systemkonto`:
 - [ ] Länge der Kontonummer frei (4–6 Ziffern) oder fest 4-stellig? *(Vorschlag: 4–6 Ziffern)*
 - [ ] Sollen Kontengruppen eine eigene Tabelle mit fester Reihenfolge für die Bilanzgliederung bekommen? *(Vorschlag: vorerst Freitext; Gliederung nach Nummernbereich)*
 
+## Umsetzung
+
+| Datei | Inhalt |
+|-------|--------|
+| `migrations/20261118120000_konto.sql` | Tabellen `konto` (Nummer eindeutig, 4–6 Ziffern, Kontoart) und `systemkonto` (Rolle → Konto, Löschen des Kontos verhindert) |
+| `src/backend/finance/accounts/model.rs` | Datentypen, Prüfregeln, Kontenklassen, Vorschlag der Kontoart, Rollen der Systemkonten, Vorlage KMU-Kontenrahmen (97 Konten) + Modultests |
+| `src/backend/finance/accounts/server_fns.rs` + `repository.rs` | Liste, Anlegen, Bearbeiten, Löschen, Vorlage übernehmen, Systemkonten speichern |
+| `src/components/settings/finance/accounts/list.rs` | Seite `/einstellungen/finanzen/kontenplan`: Liste nach Klassen, Suche, Filter, inaktive Konten, Vorlage, Systemkonten, Warnung |
+| `src/components/settings/finance/accounts/form.rs` | Modal-Fenster: Konto (`?neu=1`, `?bearbeiten=<kennung>`) mit Löschen, Vorlage (`?vorlage=1`), Systemkonten (`?systemkonten=1`) |
+| `src/navigation.rs`, `src/layout.rs`, `src/app.rs`, `src/icons.rs`, `src/forms.rs` | Abschnitt „Finanzen“ in der Einstellungsnavigation (`SETTINGS_FINANCE_NAV`, ANF-010 AK-3), Route, Symbol, Fenster-Parameter |
+
+Hinweise:
+- **AK-6:** Nummer und Kontoart lassen sich vorerst immer ändern; die Sperre nach der ersten Buchung folgt mit
+  dem Buchungsjournal (ANF-017). Schon jetzt: Ein Systemkonto behält eine zur Rolle passende Kontoart und bleibt aktiv.
+- **AK-7:** Der Vorgabe-MWST-Code folgt mit den MWST-Codes (ANF-012), da es die Tabelle `mwst_code` noch nicht gibt.
+- **AK-9/AK-10:** Gelöscht werden kann jedes Konto ohne Verweis; Verweise (heute Systemkonten, später Buchungen,
+  Bankkonten) verhindern das Löschen über den Fremdschlüssel, die Meldung schlägt Deaktivieren vor.
+  Inaktive Konten werden in „Systemkonten bearbeiten“ nicht angeboten; die Auswahl bei Buchungen folgt mit ANF-017.
+- **AK-11:** Zusätzliche Rolle „Abrechnungskonto MWST“ (für ANF-022). „Skonto gewährt“ ist als Erlösminderung (Ertrag),
+  „Skonto erhalten“ als Aufwandminderung (Aufwand) vorbelegt; beide erlauben Aufwand oder Ertrag.
+- **AK-12:** Die Warnung erscheint auf der Seite; die Sperre der automatischen Buchungen setzen ANF-018/ANF-019 um.
+- Vorlage: Klasse 9 enthält nur „9100 Eröffnungsbilanz“ (als Passivkonto geführt); Rundungsdifferenzen 6990 und
+  Kursdifferenzen 6960 sind ergänzt.
+- Unter Linux übersetzt der Server nur mit `RUSTFLAGS="--cfg erase_components"` (wie im Dockerfile).
+
+Geprüft: alle umgesetzten AK im Browser (grosser Bildschirm und Mobiltelefon, `testszenarien.md` TS-011-01 bis -13),
+Prüfung der Systemkonten auf dem Server mit veränderter Anfrage, 8 neue Modultests.
+
 ## 8. Änderungshistorie
 
 | Datum      | Autor              | Änderung        |
 |------------|--------------------|-----------------|
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
+| 2026-11-18 | Hatem Ben Belgacem | Umgesetzt (AK-6 Sperre nach Buchung mit ANF-017, AK-7 mit ANF-012) |

@@ -13,6 +13,7 @@ const SELECT_ADDRESS: &str = "\
            strasse, postfach, plz, ort, land, email, telefon, mobiltelefon, webseite, notiz, \
            (SELECT b.id FROM benutzer b WHERE b.adresse_id = adresse.id) AS benutzer_id, \
            (SELECT b.benutzername FROM benutzer b WHERE b.adresse_id = adresse.id) AS benutzername, \
+           EXISTS (SELECT 1 FROM firma f WHERE f.adresse_id = adresse.id) AS eigene_firma, \
            to_char(erstellt_am AT TIME ZONE 'Europe/Zurich', 'DD.MM.YYYY HH24:MI') AS erstellt_am, \
            to_char(geaendert_am AT TIME ZONE 'Europe/Zurich', 'DD.MM.YYYY HH24:MI') AS geaendert_am \
     FROM adresse";
@@ -112,6 +113,7 @@ pub async fn find(pool: &PgPool, id: i64) -> Result<Option<Address>, sqlx::Error
 }
 
 /// Höchstens 20 Treffer für die Adress-Auswahl (nach Name, Nummer oder Ort).
+/// Die eigene Firma ist nicht wählbar (ANF-025 AK-12) – die Auswahl dient Kunden und Lieferanten.
 pub async fn search_options(
     pool: &PgPool,
     suche: &str,
@@ -119,7 +121,8 @@ pub async fn search_options(
 ) -> Result<Vec<PickOption>, sqlx::Error> {
     sqlx::query_as(
         "SELECT id, nummer, anzeigename AS name FROM adresse \
-         WHERE $1 = '' OR anzeigename ILIKE $2 OR nummer ILIKE $2 OR ort ILIKE $2 \
+         WHERE ($1 = '' OR anzeigename ILIKE $2 OR nummer ILIKE $2 OR ort ILIKE $2) \
+           AND NOT EXISTS (SELECT 1 FROM firma f WHERE f.adresse_id = adresse.id) \
          ORDER BY lower(anzeigename), id LIMIT 20",
     )
     .bind(suche)
@@ -129,13 +132,17 @@ pub async fn search_options(
 }
 
 /// Neue Adresse speichern; liefert die Kennung.
-pub async fn insert(pool: &PgPool, input: &AddressInput) -> Result<i64, sqlx::Error> {
+/// Auch innerhalb einer Transaktion nutzbar (z. B. Firma mit neuer Adresse, ANF-025).
+pub async fn insert<'e>(
+    executor: impl sqlx::PgExecutor<'e>,
+    input: &AddressInput,
+) -> Result<i64, sqlx::Error> {
     let sql = format!(
         "INSERT INTO adresse ({COLUMNS}) \
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING id"
     );
     let row = bind_input(sqlx::query(AssertSqlSafe(sql)), input)
-        .fetch_one(pool)
+        .fetch_one(executor)
         .await?;
     sqlx::Row::try_get(&row, "id")
 }

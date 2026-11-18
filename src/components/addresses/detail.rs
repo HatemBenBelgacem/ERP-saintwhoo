@@ -124,6 +124,11 @@ fn AddressDetail(address: Address, saved: Signal<bool>) -> impl IntoView {
                             " · Benutzer: "
                             <a href=user_url(id) class="link link-primary">{name}</a>
                         })}
+                        // ANF-025 AK-11: Adresse der eigenen Firma
+                        {address.eigene_firma.then(|| view! {
+                            " · "
+                            <a href="/einstellungen/firma" class="badge badge-secondary badge-soft">"Eigene Firma"</a>
+                        })}
                     </p>
                 </div>
                 <div class="flex gap-2">
