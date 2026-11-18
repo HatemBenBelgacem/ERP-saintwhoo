@@ -367,7 +367,8 @@ pub fn Modal(title: String, close_href: Signal<String>, children: Children) -> i
     view! {
         // Mobiltelefon: Fenster unten (daisyUI `modal-bottom`) und gleitet von unten herein; ab `sm` mittig.
         <div class="modal modal-open max-sm:modal-bottom" role="dialog" aria-modal="true" aria-label=label>
-            <div class="modal-box w-full sm:w-11/12 max-w-4xl motion-safe:max-sm:animate-modal-von-unten">
+            // dvh statt daisyUI-Vorgabe 100vh: Auf dem iPhone ist 100vh höher als der sichtbare Bereich
+            <div class="modal-box max-h-[calc(100dvh-5em)] w-full sm:w-11/12 max-w-4xl motion-safe:max-sm:animate-modal-von-unten">
                 <div class="mb-4 flex items-center justify-between gap-2">
                     <h3 class="text-lg font-bold">{title}</h3>
                     <a href=move || close_href.get() class="btn btn-circle btn-ghost btn-sm" aria-label="Schliessen">"✕"</a>

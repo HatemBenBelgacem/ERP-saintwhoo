@@ -82,3 +82,13 @@
     to { translate: 0 0; }
   }
 }
+
+/* Fußzeile mit den Schaltflächen (Abbrechen, Speichern) bleibt beim Blättern am unteren Rand des
+   Modal-Fensters sichtbar; sonst muss man auf dem Mobiltelefon erst nach unten scrollen. */
+.modal-box .modal-action {
+  position: sticky;
+  /* -1.5rem = Innenabstand des Fensters: die Fußzeile deckt auch den unteren Rand ab */
+  bottom: -1.5rem;
+  padding: 0.75rem 0 2.5rem;
+  background-color: var(--color-base-100);
+}
