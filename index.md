@@ -27,7 +27,7 @@
 | [ANF-008](anforderungen/ANF-008-docker-railway.md) | Auslieferung als Docker-Image für Railway | Betrieb | Muss | In Umsetzung |
 | [ANF-009](anforderungen/ANF-009-farbpalette.md) | Farbpalette (Primär-, Sekundär-, Neutral- und Signalfarben) | Allgemein / Oberfläche | Muss | Erledigt |
 | [ANF-010](anforderungen/ANF-010-finanzen.md) | Finanzen – Rahmen und Aufteilung in Komponenten | Finanzen | Muss | Entwurf |
-| [ANF-011](anforderungen/ANF-011-kontenplan.md) | Kontenplan und Systemkonten | Finanzen / Einstellungen | Muss | Entwurf |
+| [ANF-011](anforderungen/ANF-011-kontenplan.md) | Kontenplan und Systemkonten | Finanzen / Einstellungen | Muss | Erledigt |
 | [ANF-012](anforderungen/ANF-012-mwst-codes.md) | MWST-Codes (Steuersätze) | Finanzen / Einstellungen | Muss | Entwurf |
 | [ANF-013](anforderungen/ANF-013-geschaeftsjahre.md) | Geschäftsjahre und Perioden | Finanzen / Einstellungen | Muss | Entwurf |
 | [ANF-014](anforderungen/ANF-014-waehrungen.md) | Währungen und Umrechnungskurse | Finanzen / Einstellungen | Soll | Entwurf |

@@ -8,6 +8,7 @@ Stand: 2026-11-18
 
 ## Offen
 
+- [ ] ANF-011 Rest: Sperre von Nummer/Kontoart nach Buchungen (mit ANF-017), Vorgabe-MWST-Code (mit ANF-012)
 - [ ] ANF-010 bis ANF-025 (Finanzen, Firma): restliche offene Fragen klären und Anforderungen freigeben (Reihenfolge siehe ANF-010)
 - [ ] Anforderung QR-Rechnung erfassen (wird benötigt, Zeitpunkt offen)
 - [ ] ANF-008: Railway einrichten – Projekt mit PostgreSQL (Region Europa), GitHub verbinden, `DATABASE_URL` und `SITZUNG_COOKIE_SECURE=1` setzen; danach AK-9, 10, 14, 16 prüfen
@@ -58,4 +59,5 @@ Stand: 2026-11-18
 - [x] ANF-008 umgesetzt: `Dockerfile` mit `cargo-chef`, `.dockerignore`, `railway.toml`, Server hört auf `PORT` (lokal mit Docker geprüft)
 - [x] ANF-009 Farbpalette umgesetzt (Indigo, Teal, neutrale Töne, Signalfarben; Glutorange entfernt)
 - [x] Anforderungen Finanzen erfasst: Rahmen ANF-010, Stammdaten in den Einstellungen ANF-011 bis ANF-016, Komponenten ANF-017 bis ANF-024
+- [x] ANF-011 Kontenplan und Systemkonten umgesetzt (Vorlage KMU-Kontenrahmen, Abschnitt „Finanzen“ in den Einstellungen)
 - [x] Fragen zu Finanzen geklärt (führende Buchhaltung, MWST ab 100 000, QR offen); Firmenverwaltung ANF-025 erfasst
