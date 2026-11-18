@@ -521,7 +521,7 @@ fn PositionsCard(order: Order, positions: Vec<Position>, totals: Totals) -> impl
 fn DeletePositionDialog(target: RwSignal<Option<(i64, String)>>) -> impl IntoView {
     let actions = expect_context::<Actions>();
     view! {
-        <div class="modal" class:modal-open=move || target.read().is_some() role="dialog" aria-modal="true">
+        <div class="modal max-sm:modal-bottom" class:modal-open=move || target.read().is_some() role="dialog" aria-modal="true">
             <div class="modal-box">
                 <h3 class="text-lg font-bold">"Position löschen?"</h3>
                 <p class="py-4">
@@ -561,7 +561,7 @@ fn CancelDialog(open: RwSignal<bool>, id: i64, nummer: String) -> impl IntoView 
             .map(|e| error_message(&e))
     };
     view! {
-        <div class="modal" class:modal-open=move || open.get() role="dialog" aria-modal="true">
+        <div class="modal max-sm:modal-bottom" class:modal-open=move || open.get() role="dialog" aria-modal="true">
             <div class="modal-box">
                 <h3 class="text-lg font-bold">"Einkaufsauftrag stornieren?"</h3>
                 <p class="py-4">
@@ -602,7 +602,7 @@ fn DeleteDialog(open: RwSignal<bool>, id: i64, nummer: String, count: usize) -> 
         n => format!(" Dabei werden auch {n} Positionen gelöscht."),
     };
     view! {
-        <div class="modal" class:modal-open=move || open.get() role="dialog" aria-modal="true">
+        <div class="modal max-sm:modal-bottom" class:modal-open=move || open.get() role="dialog" aria-modal="true">
             <div class="modal-box">
                 <h3 class="text-lg font-bold">"Einkaufsauftrag löschen?"</h3>
                 <p class="py-4">

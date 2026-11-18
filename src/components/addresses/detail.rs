@@ -159,7 +159,7 @@ fn AddressDetail(address: Address, saved: Signal<bool>) -> impl IntoView {
                         <dt class="text-sm text-base-content/60">"E-Mail"</dt>
                         <dd>
                             {match a.email.clone() {
-                                Some(m) => view! { <a href=format!("mailto:{m}") class="link link-primary">{m.clone()}</a> }.into_any(),
+                                Some(m) => view! { <a href=format!("mailto:{m}") class="link link-primary wrap-anywhere">{m.clone()}</a> }.into_any(),
                                 None => view! { "–" }.into_any(),
                             }}
                         </dd>
@@ -183,7 +183,7 @@ fn AddressDetail(address: Address, saved: Signal<bool>) -> impl IntoView {
         {move || edit_open().then(|| view! { <AddressEditModal address=edit_address.clone()/> })}
 
         // AK-15: Bestätigungsdialog
-        <div class="modal" class:modal-open=move || confirm_open.get() role="dialog" aria-modal="true">
+        <div class="modal max-sm:modal-bottom" class:modal-open=move || confirm_open.get() role="dialog" aria-modal="true">
             <div class="modal-box">
                 <h3 class="text-lg font-bold">"Adresse löschen?"</h3>
                 <p class="py-4">
@@ -225,7 +225,8 @@ fn Field(label: &'static str, value: Option<String>) -> impl IntoView {
     view! {
         <div>
             <dt class="text-sm text-base-content/60">{label}</dt>
-            <dd>{value.unwrap_or_else(|| "–".into())}</dd>
+            // Lange Wörter (E-Mail, Webadresse) brechen um, sonst läuft die Seite auf dem Mobiltelefon über
+            <dd class="wrap-anywhere">{value.unwrap_or_else(|| "–".into())}</dd>
         </div>
     }
 }

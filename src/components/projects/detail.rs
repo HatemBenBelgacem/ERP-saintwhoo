@@ -645,7 +645,7 @@ fn DeleteDialog(level: Level, id: i64, title: String, summary: String) -> impl I
     };
 
     view! {
-        <div class="modal" class:modal-open=move || open.get() role="dialog" aria-modal="true">
+        <div class="modal max-sm:modal-bottom" class:modal-open=move || open.get() role="dialog" aria-modal="true">
             <div class="modal-box">
                 <h3 class="text-lg font-bold">{format!("{} löschen?", level.label())}</h3>
                 <p class="py-4">
