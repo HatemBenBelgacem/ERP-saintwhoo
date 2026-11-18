@@ -60,6 +60,7 @@ Tabelle `bankkonto`:
 ## 5. Abhängigkeiten
 
 - Hängt ab von: ANF-011
+- Hängt zusätzlich ab von: ANF-025 (Bankkonten gehören zur eigenen Firma)
 - Wird benötigt von: ANF-018, ANF-020, ANF-010 AK-4 (Saldo der Bankkonten)
 
 ## 6. Nicht im Umfang
@@ -70,10 +71,12 @@ Tabelle `bankkonto`:
 
 ## 7. Offene Fragen
 
-- [ ] Wird eine QR-IBAN (für QR-Rechnungen mit Referenz) eingesetzt? *(Vorschlag: Feld vorsehen, Nutzung mit späterer QR-Rechnung)*
+- [ ] Wird eine QR-IBAN (für QR-Rechnungen mit Referenz) eingesetzt? *(QR-Rechnung wird benötigt, Zeitpunkt offen;
+  Vorschlag: Feld jetzt vorsehen)*
 
 ## 8. Änderungshistorie
 
 | Datum      | Autor              | Änderung        |
 |------------|--------------------|-----------------|
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
+| 2026-11-18 | Hatem Ben Belgacem | QR-Rechnung wird benötigt; Bezug zu ANF-025 |

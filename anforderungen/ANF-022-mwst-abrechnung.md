@@ -48,7 +48,7 @@ Die Abrechnung liegt im Reiter „MWST-Abrechnung“ unter `/finanzen/mwst-abrec
   werden die Salden von Umsatzsteuer- und Vorsteuerkonto per Periodenende auf das Konto
   „Abrechnungskonto MWST“ umgebucht (Herkunft `mwst`), die Perioden des Zeitraums werden gesperrt und die
   Abrechnung ist unveränderlich.
-- [ ] **AK-7:** Gegeben eine abgeschlossene Abrechnung, dann kann sie gedruckt werden (Druckansicht mit
+- [ ] **AK-7:** Gegeben eine abgeschlossene Abrechnung, dann kann sie gedruckt werden (Druckansicht mit Absender und MWST-Nummer der Firma (ANF-025),
   allen Ziffern zum Übertrag ins ESTV-Portal) und als CSV heruntergeladen werden.
 - [ ] **AK-8:** Gegeben eine abgeschlossene Abrechnung, wenn der Benutzer „Wieder öffnen“ bestätigt, dann
   wird die Umbuchung storniert und die Perioden entsperrt; dies ist nur möglich, solange das Geschäftsjahr
@@ -94,3 +94,4 @@ Zusätzliches Systemkonto (ANF-011): „Abrechnungskonto MWST“ (Vorschlag 2201
 | Datum      | Autor              | Änderung        |
 |------------|--------------------|-----------------|
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
+| 2026-11-18 | Hatem Ben Belgacem | Absender aus Firmenverwaltung (ANF-025) |

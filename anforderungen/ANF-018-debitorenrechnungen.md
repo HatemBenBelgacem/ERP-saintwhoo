@@ -81,7 +81,8 @@ Die Debitoren liegen im Reiter „Debitoren“ unter `/finanzen/debitoren`.
 
 **Druck**
 - [ ] **AK-11:** Gegeben eine Rechnung, wenn der Benutzer „Drucken“ wählt, dann öffnet sich eine
-  Druckansicht (`/finanzen/debitoren/<kennung>/druck`) mit Absender, Kundenadresse, Rechnungsnummer, Datum,
+  Druckansicht (`/finanzen/debitoren/<kennung>/druck`) mit Absender (Firma und ihre Adresse, ANF-025),
+  Kundenadresse, Rechnungsnummer, Datum,
   MWST-Nummer, Positionen, MWST-Ausweis je Satz, Gesamtbetrag, Zahlungsbedingung und Bankverbindung
   (Standard-Bankkonto, ANF-015). Sie ist für A4 gestaltet; ein Entwurf ist als „Entwurf“ gekennzeichnet.
 
@@ -134,12 +135,12 @@ Tabelle `debitorenposition`: wie `einkaufsposition` (ANF-004) ohne gelieferte Me
 
 ## 5. Abhängigkeiten
 
-- Hängt ab von: ANF-002, ANF-003, ANF-011, ANF-012, ANF-014, ANF-015, ANF-016, ANF-017
+- Hängt ab von: ANF-002, ANF-003, ANF-025, ANF-011, ANF-012, ANF-014, ANF-015, ANF-016, ANF-017
 - Wird benötigt von: ANF-020, ANF-021, ANF-022, ANF-024
 
 ## 6. Nicht im Umfang
 
-- QR-Rechnung mit Zahlteil und PDF-Erzeugung auf dem Server (eigene spätere Anforderung)
+- QR-Rechnung mit Zahlteil und PDF-Erzeugung auf dem Server (wird benötigt, eigene spätere Anforderung)
 - Versand per E-Mail
 - Angebote, Auftragsbestätigungen, Lieferscheine (Verkaufsmodul)
 - Automatische Rechnungen aus Projektaufwand (Stunden) oder Abonnements
@@ -148,8 +149,9 @@ Tabelle `debitorenposition`: wie `einkaufsposition` (ANF-004) ohne gelieferte Me
 ## 7. Offene Fragen
 
 - [ ] Nummernformat? *(Vorschlag: `R-JJJJ-NNNN` und `G-JJJJ-NNNN`, wie Einkauf)*
-- [ ] Wird die QR-Rechnung sofort benötigt? *(Vorschlag: zuerst Druckansicht, QR-Zahlteil als nächste Anforderung)*
-- [ ] Absenderangaben (Firmenname, Adresse, Logo) – woher? *(Vorschlag: neue Einstellung „Firma“ unter Einstellungen → Allgemein)*
+- [ ] Wann wird die QR-Rechnung umgesetzt? *(Geklärt 2026-11-18: wird benötigt; Zeitpunkt vorerst offen)*
+- [x] Absenderangaben – woher? **Geklärt 2026-11-18:** aus der Firmenverwaltung (ANF-025), die mit einer
+  Adresse verknüpft ist.
 - [ ] Sollen Teilrechnungen / Akontorechnungen für Projekte unterstützt werden? *(Vorschlag: später)*
 
 ## 8. Änderungshistorie
@@ -157,3 +159,4 @@ Tabelle `debitorenposition`: wie `einkaufsposition` (ANF-004) ohne gelieferte Me
 | Datum      | Autor              | Änderung        |
 |------------|--------------------|-----------------|
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
+| 2026-11-18 | Hatem Ben Belgacem | Absender aus Firmenverwaltung (ANF-025); QR-Rechnung benötigt, Zeitpunkt offen |

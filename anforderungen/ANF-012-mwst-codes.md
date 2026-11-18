@@ -25,6 +25,10 @@ Vorsteuer), Satz, Gültigkeit und die Ziffer im MWST-Formular der ESTV zusammen,
 | `VI81` | Vorsteuer Investitionen/übriger Betriebsaufwand 8.1 % | Vorsteuer | 8.1 % |
 | `UEX` | Steuerbefreit / Export | Umsatzsteuer | 0 % |
 
+Ein Unternehmen wird **ab CHF 100 000 Jahresumsatz** MWST-pflichtig. Die MWST-Funktion muss deshalb
+vollständig vorhanden sein und lässt sich mit dem Beginn der Pflicht **einschalten**; solange sie aus ist,
+überwacht das System den Umsatz und warnt vor dem Erreichen der Grenze.
+
 Die Codes ersetzen die bisher fest im Code hinterlegte Liste der MWST-Sätze im Einkauf (ANF-004).
 Sie werden unter `/einstellungen/finanzen/mwst` gepflegt.
 
@@ -48,13 +52,23 @@ Sie werden unter `/einstellungen/finanzen/mwst` gepflegt.
 - [ ] **AK-6:** Gegeben ein Belegdatum ausserhalb der Gültigkeit eines Codes, dann ist der Code für diesen
   Beleg nicht wählbar bzw. die Speicherung wird mit Meldung abgelehnt.
 - [ ] **AK-7:** Gegeben ein unbenutzter Code, dann kann er gelöscht werden; ein benutzter Code nur deaktiviert.
-- [ ] **AK-8:** Gegeben der Abschnitt „MWST-Einstellungen“, dann kann der Benutzer die MWST-Nummer
-  (UID, Format `CHE-123.456.789 MWST`), die Abrechnungsmethode (effektiv / Saldosteuersatz), die
+- [ ] **AK-8:** Gegeben der Abschnitt „MWST-Einstellungen“, dann kann der Benutzer die MWST-Pflicht mit
+  **Beginndatum** einschalten, die Abrechnungsmethode (effektiv / Saldosteuersatz), die
   Abrechnungsart (vereinbart / vereinnahmt) und die Periodizität (quartalsweise / halbjährlich) festlegen.
-  Ohne MWST-Pflicht kann die MWST ganz ausgeschaltet werden; dann sind alle Codes ausgeblendet.
+  Die MWST-Nummer wird aus der UID der Firma gebildet (`CHE-123.456.789 MWST`, ANF-025); ohne UID kann die
+  Pflicht nicht eingeschaltet werden. Ohne MWST-Pflicht sind alle Codes ausgeblendet und Belege werden
+  ohne MWST erfasst.
 - [ ] **AK-9:** Gegeben die MWST-Codes, dann verwendet der Einkauf (ANF-004) für neue Positionen die
   Codes statt der fest hinterlegten Sätze; bestehende Positionen behalten ihren Satz.
-- [ ] **AK-10:** Die Tabellen werden per sqlx-Migration angelegt.
+- [ ] **AK-10:** Gegeben die eingeschaltete MWST-Pflicht, dann gelten MWST-Codes für Belege ab dem
+  Beginndatum; Belege mit früherem Datum bleiben ohne MWST und werden nicht geändert.
+- [ ] **AK-11:** Gegeben ein nicht MWST-pflichtiges Unternehmen, dann berechnet das System den
+  massgebenden Umsatz (gebuchte Erlöse der Kontenklasse 3 im laufenden Geschäftsjahr und in den letzten
+  12 Monaten) und zeigt auf der MWST-Seite und in der Finanz-Übersicht (ANF-010 AK-4) den Stand zur
+  **Umsatzgrenze** (Vorgabe CHF 100 000, in den MWST-Einstellungen änderbar): ab 80 % ein Hinweis
+  (`warning`), ab 100 % eine Warnung (`error`) „Umsatzgrenze erreicht – MWST-Pflicht prüfen und bei der
+  ESTV anmelden“ mit Verweis auf die Einstellung.
+- [ ] **AK-12:** Die Tabellen werden per sqlx-Migration angelegt.
 
 ## 4. Daten / Felder
 
@@ -74,13 +88,14 @@ Tabelle `mwst_code`:
 | Aktiv | Ja/Nein | Ja | Standard Ja |
 | Erstellt am / Geändert am | Zeitstempel | Ja | automatisch |
 
-Einstellungen (Tabelle `finanzeinstellung`, eine Zeile): MWST-pflichtig (Ja/Nein), MWST-Nummer,
+Einstellungen (Tabelle `finanzeinstellung`, eine Zeile): MWST-pflichtig (Ja/Nein), MWST-pflichtig ab (Datum),
+Umsatzgrenze (Dezimal, Standard 100 000.00),
 Methode (`effektiv`, `saldosteuersatz`), Abrechnungsart (`vereinbart`, `vereinnahmt`),
 Periodizität (`quartal`, `halbjahr`).
 
 ## 5. Abhängigkeiten
 
-- Hängt ab von: ANF-011 (MWST-Konten)
+- Hängt ab von: ANF-011 (MWST-Konten), ANF-025 (UID der Firma)
 - Wird benötigt von: ANF-017, ANF-018, ANF-019, ANF-022; Anpassung in ANF-004
 
 ## 6. Nicht im Umfang
@@ -91,7 +106,9 @@ Periodizität (`quartal`, `halbjahr`).
 
 ## 7. Offene Fragen
 
-- [ ] Ist das Unternehmen MWST-pflichtig, und nach welcher Methode wird abgerechnet? *(Vorschlag: effektiv, vereinbart, quartalsweise)*
+- [x] Ist das Unternehmen MWST-pflichtig? **Geklärt 2026-11-18:** Pflicht ab CHF 100 000 Umsatz; die Funktion
+  muss vorhanden sein (AK-8, AK-10, AK-11).
+- [ ] Nach welcher Methode wird abgerechnet? *(Vorschlag: effektiv, vereinbart, quartalsweise)*
 - [ ] Sollen bestehende Einkaufspositionen (ANF-004) per Migration einem Code zugeordnet werden? *(Vorschlag: ja, nach Satz)*
 - [ ] Werden Preise netto (ohne MWST) oder brutto (inkl. MWST) erfasst? *(Vorschlag: netto, wie im Einkauf; brutto als Kennzeichen pro Beleg später)*
 
@@ -100,3 +117,4 @@ Periodizität (`quartal`, `halbjahr`).
 | Datum      | Autor              | Änderung        |
 |------------|--------------------|-----------------|
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
+| 2026-11-18 | Hatem Ben Belgacem | MWST-Pflicht ab CHF 100 000: Einschalten mit Beginndatum, Überwachung der Umsatzgrenze (AK-10, AK-11); MWST-Nummer aus UID der Firma |

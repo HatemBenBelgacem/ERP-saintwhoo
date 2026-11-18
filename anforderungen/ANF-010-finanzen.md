@@ -13,17 +13,20 @@
 
 ## 1. Beschreibung
 
-Das ERP erhält ein Modul **Finanzen** für eine **doppelte Buchhaltung nach Schweizer Praxis**
+Das ERP erhält ein Modul **Finanzen** als **führende Buchhaltung** des Unternehmens – eine
+**doppelte Buchhaltung nach Schweizer Praxis**
 (KMU-Kontenrahmen, MWST, CHF mit Rappenrundung). Diese Anforderung ist der **Rahmen**: Sie legt fest,
 aus welchen Komponenten das Modul besteht, wo diese in der Oberfläche liegen, wie sie zusammenhängen und
 in welcher Reihenfolge sie umgesetzt werden. Die fachlichen Details stehen in je einer eigenen Anforderung.
 
 ### Komponenten
 
-**Stammdaten** – werden unter **Einstellungen** gepflegt (`/einstellungen/finanzen/…`):
+**Stammdaten** – werden unter **Einstellungen** gepflegt (`/einstellungen/finanzen/…`, die Firma unter
+`/einstellungen/firma`):
 
 | Nummer | Komponente | Pfad | Priorität |
 |--------|------------|------|-----------|
+| [ANF-025](ANF-025-firma.md) | Firmenverwaltung (eigene Firma, verknüpft mit Adresse, Absender aller Belege) | `/einstellungen/firma` | Muss |
 | [ANF-011](ANF-011-kontenplan.md) | Kontenplan und Systemkonten | `/einstellungen/finanzen/kontenplan` | Muss |
 | [ANF-012](ANF-012-mwst-codes.md) | MWST-Codes (Steuersätze) | `/einstellungen/finanzen/mwst` | Muss |
 | [ANF-013](ANF-013-geschaeftsjahre.md) | Geschäftsjahre und Perioden | `/einstellungen/finanzen/geschaeftsjahre` | Muss |
@@ -98,8 +101,8 @@ Grundsätze für alle Komponenten:
   offene Debitoren (Anzahl, Betrag, davon überfällig), offene Kreditoren (Anzahl, Betrag, davon
   überfällig), Saldo der eigenen Bankkonten und das Ergebnis des laufenden Geschäftsjahres.
   Jede Kennzahl ist ein Verweis auf die passende gefilterte Liste.
-- [ ] **AK-5:** Gegeben fehlende Stammdaten (kein Kontenplan, kein offenes Geschäftsjahr, keine
-  Systemkonten), dann zeigt die Übersicht einen Hinweis mit Verweis auf die betreffende Einstellungsseite,
+- [ ] **AK-5:** Gegeben fehlende Stammdaten (keine Firma, kein Kontenplan, kein offenes Geschäftsjahr,
+  keine Systemkonten), dann zeigt die Übersicht einen Hinweis mit Verweis auf die betreffende Einstellungsseite,
   statt Buchungen zuzulassen.
 
 **Grundsätze (gelten für alle Finanz-Komponenten)**
@@ -126,10 +129,10 @@ für die Bewegungsdaten, Stammdaten-Ansichten unter `src/components/settings/fin
 
 - Hängt ab von: ANF-001 (Grundgerüst), ANF-002 (Adressen), ANF-003 (Projekte), ANF-004 (Einkauf),
   ANF-005 (Benutzer), ANF-007 (Anmeldung)
-- Wird benötigt von: ANF-011 bis ANF-024
+- Wird benötigt von: ANF-011 bis ANF-025
 
 **Reihenfolge der Umsetzung:**
-1. Stammdaten: ANF-011 Kontenplan → ANF-012 MWST-Codes → ANF-013 Geschäftsjahre → ANF-015 Bankkonten
+1. Stammdaten: ANF-025 Firma → ANF-011 Kontenplan → ANF-012 MWST-Codes → ANF-013 Geschäftsjahre → ANF-015 Bankkonten
    → ANF-016 Zahlungsbedingungen → ANF-014 Währungen
 2. ANF-017 Buchungsjournal (Kern, auf dem alles aufbaut)
 3. ANF-018 Debitoren und ANF-019 Kreditoren
@@ -141,15 +144,19 @@ für die Bewegungsdaten, Stammdaten-Ansichten unter `src/components/settings/fin
 
 - Lohnbuchhaltung, Anlagenbuchhaltung, Kostenrechnung (Kostenstellen) und Budget
 - Elektronischer Zahlungsverkehr (Export pain.001, Import camt.053/054) und E-Banking-Anbindung
-- QR-Rechnung mit Zahlteil (vorgesehen als eigene spätere Anforderung)
+- QR-Rechnung mit Zahlteil: wird benötigt, Umsetzung vorerst offen (eigene spätere Anforderung)
 - Mehrere Mandanten (Firmen) in einer Datenbank
 - Rollen und Berechtigungen (eigene, noch offene Anforderung); vorerst darf jeder angemeldete Benutzer alles
 - Revisionssichere Archivierung nach GeBüV und Belegablage (eingescannte Belege)
 
 ## 7. Offene Fragen
 
-- [ ] Soll die Finanzbuchhaltung im ERP die **führende** Buchhaltung sein, oder nur Debitoren/Kreditoren
-  führen und an ein externes Programm (z. B. Abacus, Bexio) übergeben? *(Vorschlag: führend)*
+- [x] Soll die Finanzbuchhaltung im ERP die **führende** Buchhaltung sein? **Geklärt 2026-11-18: Ja, führend.**
+- [x] Ist die Firma MWST-pflichtig? **Geklärt 2026-11-18:** Pflicht ab CHF 100 000 Umsatz; die MWST-Funktion
+  muss vollständig vorhanden und einschaltbar sein (ANF-012).
+- [x] Braucht es die QR-Rechnung? **Geklärt 2026-11-18:** Ja, Zeitpunkt der Umsetzung vorerst offen.
+- [x] Woher kommen die Absenderangaben? **Geklärt 2026-11-18:** Aus einer Firmenverwaltung, die mit einer
+  Adresse verknüpft ist (ANF-025).
 - [ ] Wer darf Finanzen sehen und buchen? *(Vorschlag: vorerst alle angemeldeten Benutzer, später Rolle „Buchhaltung“)*
 - [ ] Gruppierte Einstellungsnavigation (Abschnitt „Finanzen“) oder einfache flache Einträge? *(Vorschlag: Abschnitt)*
 - [ ] Braucht es eine Anbindung an E-Banking schon in der ersten Ausbaustufe? *(Vorschlag: nein)*
@@ -159,3 +166,4 @@ für die Bewegungsdaten, Stammdaten-Ansichten unter `src/components/settings/fin
 | Datum      | Autor              | Änderung        |
 |------------|--------------------|-----------------|
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
+| 2026-11-18 | Hatem Ben Belgacem | Offene Fragen geklärt: führende Buchhaltung, MWST-Pflicht ab 100 000, QR-Rechnung offen, Firmenverwaltung ANF-025 ergänzt |

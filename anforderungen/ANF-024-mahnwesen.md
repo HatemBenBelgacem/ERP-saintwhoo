@@ -49,7 +49,7 @@ als Debitorenrechnung erfasst.
   Rechnungen erzeugt; die Mahnstufe und das Mahndatum werden an jeder Rechnung vermerkt.
 - [ ] **AK-5:** Gegeben eine Mahnung mit Gebühr, dann wird automatisch eine Debitorenrechnung über die
   Gebühr (Ertragskonto Mahngebühren, ohne MWST) erzeugt und gebucht.
-- [ ] **AK-6:** Gegeben eine Mahnung, dann gibt es eine Druckansicht mit Kundenadresse, Mahntext der
+- [ ] **AK-6:** Gegeben eine Mahnung, dann gibt es eine Druckansicht mit Absender (Firma, ANF-025), Kundenadresse, Mahntext der
   Stufe, Liste der Rechnungen mit Fälligkeit und offenem Betrag, Gebühr und Gesamtbetrag.
 - [ ] **AK-7:** Gegeben eine Rechnung, dann zeigt ihre Detailansicht den Mahnverlauf (Stufe, Datum).
   Eine Zahlung zwischen Vorschlag und Erzeugung entfernt die Rechnung aus dem Lauf.
@@ -89,3 +89,4 @@ Erweiterung `adresse`: Mahnsperre bis, Grund.
 | Datum      | Autor              | Änderung        |
 |------------|--------------------|-----------------|
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
+| 2026-11-18 | Hatem Ben Belgacem | Absender aus Firmenverwaltung (ANF-025) |
