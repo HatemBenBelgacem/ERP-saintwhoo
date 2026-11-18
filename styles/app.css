@@ -71,3 +71,14 @@
   --color-level-task: #64748b; /* Schiefergrau */
   --color-level-task-ink: #334155;
 }
+
+/* Modal-Fenster auf dem Mobiltelefon gleiten beim Öffnen von unten herein (Klasse
+   `max-sm:motion-safe:animate-modal-von-unten`). daisyUI hat dafür keine Einblend-Animation für
+   Fenster, die erst beim Öffnen eingefügt werden. Entfällt bei reduzierter Bewegung. */
+@theme {
+  --animate-modal-von-unten: modal-von-unten 0.3s ease-out;
+  @keyframes modal-von-unten {
+    from { translate: 0 100%; }
+    to { translate: 0 0; }
+  }
+}

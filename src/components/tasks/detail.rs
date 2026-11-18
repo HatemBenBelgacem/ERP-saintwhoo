@@ -180,7 +180,7 @@ fn TaskView(task: StandaloneTask, toggle: ServerAction<ToggleTask>) -> impl Into
         {move || edit_open().then(|| view! { <TaskEditModal task=edit_task.clone()/> })}
 
         // AK-16: Bestätigungsdialog
-        <div class="modal" class:modal-open=move || confirm_open.get() role="dialog" aria-modal="true">
+        <div class="modal max-sm:modal-bottom" class:modal-open=move || confirm_open.get() role="dialog" aria-modal="true">
             <div class="modal-box">
                 <h3 class="text-lg font-bold">"Aufgabe löschen?"</h3>
                 <p class="py-4">
