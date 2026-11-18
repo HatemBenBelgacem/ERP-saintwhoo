@@ -67,7 +67,8 @@ src/
 | `system`           | ANF-001     | server_fns, repository (Datenbank-Status)    | –                                           |
 | `home`             | ANF-001     | – (nutzt `system`)                           | home_page                                   |
 | `finance::accounts` | ANF-011    | model, server_fns, repository (unter `backend/finance/`) | `settings/finance/accounts/`: list, form |
-| `settings`         | –           | –                                            | general, finance (Stammdaten der Finanzen)  |
+| `company`          | ANF-025     | model, server_fns, repository, logo (Auslieferung `/firma/logo`) | `settings/company/`: page, form |
+| `settings`         | –           | –                                            | general, company, finance (Stammdaten der Finanzen) |
 
 Ein Modul braucht nicht jede Datei: ohne eigene Datentypen entfällt `model.rs`, ohne Daten entfällt `backend/<modul>`.
 

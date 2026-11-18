@@ -60,6 +60,13 @@ pub const SETTINGS_NAV: &[NavItem] = &[
         icon: Some(Icon::Sliders),
         description: "Allgemeine Einstellungen.",
     },
+    // ANF-025
+    NavItem {
+        title: "Firma",
+        path: "/einstellungen/firma",
+        icon: Some(Icon::Building),
+        description: "Eigene Firma: Absender aller Belege, verknüpft mit einer Adresse.",
+    },
     // ANF-005
     NavItem {
         title: "Benutzer",

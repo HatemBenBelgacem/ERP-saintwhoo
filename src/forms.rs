@@ -20,6 +20,7 @@ pub const MODAL_PARAMS: &[&str] = &[
     "passwort",
     "vorlage",
     "systemkonten",
+    "logo",
 ];
 
 /// Zähler, der nach jedem Speichern erhöht wird. Ressourcen, die ihn lesen, laden danach neu

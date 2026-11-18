@@ -38,7 +38,7 @@ src/
   backend/<modul>/   model.rs (Datentypen + Prüfregeln), server_fns.rs (#[server]), repository.rs (SQL, nur ssr)
   components/<modul>/ Eine Datei pro Komponente bzw. Ansicht (list.rs, detail.rs, form.rs …)
                      Module: addresses (ANF-002), projects (ANF-003), purchase_orders (ANF-004), users (ANF-005), tasks (ANF-006), auth (ANF-007),
-                     system (Datenbank-Status), home, settings – Details in system-design.md
+                     system (Datenbank-Status), home, settings, company (ANF-025, Seite unter settings/company) – Details in system-design.md
   backend/finance/<teil>/  Finanzen (ANF-010), je Komponente ein Untermodul: accounts (ANF-011 Kontenplan)
   components/settings/finance/<teil>/  Stammdaten-Seiten der Finanzen unter /einstellungen/finanzen/…
   db.rs              Verbindungspool + Migrationen (nur ssr)

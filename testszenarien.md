@@ -1,6 +1,6 @@
 # Testszenarien – ERP-saintwhoo
 
-Stand: 2026-11-12 · Grundlage: Akzeptanzkriterien (AK) der Anforderungen ANF-001 bis ANF-007 und ANF-011
+Stand: 2026-11-12 · Grundlage: Akzeptanzkriterien (AK) der Anforderungen ANF-001 bis ANF-007, ANF-011 und ANF-025
 
 Dieses Dokument beschreibt, wie du von Hand prüfst, ob das ERP die Anforderungen erfüllt. Jedes Testszenario nennt das Akzeptanzkriterium, das es prüft.
 
@@ -280,6 +280,23 @@ Hinweis: AK-5 (Navigation an einer zentralen Stelle definiert) wird im Code gepr
 | TS-011-11 | 11, 12 | „Systemkonten bearbeiten“: bei „Kreditoren“ „– nicht zugeordnet –“ wählen und speichern. | Bei Debitoren werden nur aktive Aktivkonten angeboten. Nach dem Speichern erscheint die Warnung „Pflicht-Systemkonten fehlen: Kreditoren …“. |
 | TS-011-12 | 11 | Mit den Entwicklerwerkzeugen die Anfrage beim Speichern der Systemkonten so ändern, dass Debitoren auf 3400 zeigt. | Der Server lehnt ab: „Für „Debitoren“ ist nur ein Konto der Kontoart Aktiv erlaubt.“ |
 | TS-011-13 | – | Liste und „Konto bearbeiten“ auf dem Mobiltelefon öffnen. | Keine waagrechte Verschiebung der Seite; die Tabelle lässt sich in ihrem Rahmen verschieben, das Modal-Fenster ist vollständig bedienbar. |
+
+## ANF-025 Firma
+
+| Nr | AK | Schritte | Erwartet |
+|----|----|----------|----------|
+| TS-025-01 | 1 | Einstellungen öffnen. | In der Einstellungsnavigation steht „Firma“ (`/einstellungen/firma`). |
+| TS-025-02 | 4 | Ohne Firma die Seite öffnen, „Firma erfassen“ klicken und ohne Auswahl speichern. | Hinweis „Noch keine Firma erfasst“. Das Fenster öffnet mit `?neu=1`. Meldung „Bitte eine Adresse wählen.“ |
+| TS-025-03 | 4 | Im Suchfeld „a“ eingeben. | Es erscheinen nur Adressen vom Typ „Firma“, keine Personen. |
+| TS-025-04 | 4, 6, 8 | „Neue Adresse anlegen“ wählen, Firmenname, PLZ, Ort ohne Strasse eingeben, UID CHE-123.456.789. Speichern. Dann Strasse ergänzen und UID „che 116 281 710“. | Zuerst: Strasse „Für den Absender der Belege nötig.“ und „Die Prüfziffer stimmt nicht …“. Danach gespeichert; die neue Adresse steht im Adressstamm, die UID lautet CHE-116.281.710, die MWST-Nummer CHE-116.281.710 MWST. |
+| TS-025-05 | 5, 8 | „Bearbeiten“: eine Firmenadresse ohne Strasse wählen und speichern. Dann eine vollständige Firmenadresse wählen. | Zuerst „Die Postanschrift ist unvollständig (fehlt: Strasse) …“. Danach ist die neue Adresse verknüpft. |
+| TS-025-06 | 5 | Im Fenster „Bearbeiten“ auf „Adresse bearbeiten“ klicken. | Die Adresse öffnet sich im Adressstamm im Bearbeiten-Fenster. |
+| TS-025-07 | 7 | Unter „Logo“ eine GIF-Datei mit Endung .png hochladen, dann eine Datei über 1 MB. | „Erlaubt sind nur PNG-, JPG- oder SVG-Dateien.“ bzw. „Die Datei ist grösser als 1 MB.“ |
+| TS-025-08 | 7 | Ein PNG hochladen, danach ein SVG mit `<script>`. `/firma/logo` direkt öffnen. | Das Logo erscheint auf der Seite und in der Belegvorschau. Das SVG wird angezeigt, das Skript läuft nicht (Antwort mit `Content-Security-Policy: … sandbox`). |
+| TS-025-09 | 7 | „Logo entfernen“. | „Logo entfernt.“, kein Logo mehr sichtbar. |
+| TS-025-10 | 3 | Belegvorschau ansehen. | Logo, Name, Anschrift und UID oben, Fusszeile unten. |
+| TS-025-11 | 11 | Die Adresse der Firma im Adressstamm öffnen und löschen. | Plakette „Eigene Firma“. Löschen wird verhindert: „… als eigene Firma verwendet …“. |
+| TS-025-12 | 12 | Neues Projekt: im Feld „Kunde“ nach dem Firmennamen suchen. Ebenso bei einem neuen Einkaufsauftrag (Lieferant). | Die eigene Firma wird nicht angeboten. |
 
 ## Offene Punkte aus der Prüfung
 

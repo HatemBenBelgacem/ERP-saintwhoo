@@ -11,6 +11,8 @@ leptos = "0.8"
 leptos_meta = "0.8"
 leptos_router = "0.8"
 serde = { version = "1", features = ["derive"] }
+# ANF-025: Datei hochladen (Logo) über Server-Funktionen mit MultipartFormData
+server_fn = { version = "0.8", features = ["multipart"] }
 
 # nur Server (ssr)
 leptos_axum = { version = "0.8", optional = true }
