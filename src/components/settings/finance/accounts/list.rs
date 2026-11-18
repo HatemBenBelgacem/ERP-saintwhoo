@@ -89,7 +89,7 @@ pub fn AccountsPage() -> impl IntoView {
             // AK-2: Suche, Kontoart, inaktive Konten
             <Form method="GET" action=ACCOUNTS_URL>
                 <div class="flex flex-wrap items-center gap-2">
-                    <label class="input min-w-0 flex-1 sm:w-md sm:max-w-md sm:flex-none">
+                    <label class="input w-full sm:w-md sm:max-w-md sm:flex-none">
                         <IconView icon=Icon::Search/>
                         <input
                             type="search"

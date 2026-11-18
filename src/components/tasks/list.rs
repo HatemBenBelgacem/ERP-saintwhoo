@@ -186,7 +186,7 @@ fn Filters(state: Memo<ListState>) -> impl IntoView {
         <Form method="GET" action=BASE>
             <input type="hidden" name="benutzer" value=move || state.read().user.map(|u| u.to_string())/>
             <div class="flex flex-wrap gap-2">
-                <label class="input min-w-0 flex-1 sm:w-md sm:max-w-md sm:flex-none">
+                <label class="input w-full sm:w-md sm:max-w-md sm:flex-none">
                     <IconView icon=Icon::Search/>
                     <input
                         type="search"

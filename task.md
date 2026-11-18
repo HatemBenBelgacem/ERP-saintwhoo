@@ -63,3 +63,4 @@ Stand: 2026-11-18
 - [x] ANF-025 Firmenverwaltung umgesetzt (Firma – Adresse 1:1, UID-Prüfung, Logo, Belegvorschau)
 - [x] ANF-011 Kontenplan und Systemkonten umgesetzt (Vorlage KMU-Kontenrahmen, Abschnitt „Finanzen“ in den Einstellungen)
 - [x] Fragen zu Finanzen geklärt (führende Buchhaltung, MWST ab 100 000, QR offen); Firmenverwaltung ANF-025 erfasst
+- [x] Oberfläche responsiv: Suchfelder der Listen auf dem Mobiltelefon über die volle Breite (ANF-001 AK-10); alle Seiten bei 390, 768 und 1280 px ohne seitliches Überlaufen geprüft

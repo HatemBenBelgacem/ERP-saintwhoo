@@ -113,7 +113,7 @@ pub fn AddressListPage() -> impl IntoView {
             // AK-2: Suche (Enter oder Schaltfläche); Sortierung bleibt erhalten, Seite springt auf 1
             <Form method="GET" action="/adressen">
                 <div class="flex gap-2">
-                    <label class="input min-w-0 flex-1 sm:max-w-md sm:flex-none sm:w-md">
+                    <label class="input w-full sm:w-md sm:max-w-md sm:flex-none">
                         <IconView icon=Icon::Search/>
                         <input
                             type="search"

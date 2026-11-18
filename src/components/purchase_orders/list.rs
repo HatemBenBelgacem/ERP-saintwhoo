@@ -125,7 +125,7 @@ pub fn OrderListPage() -> impl IntoView {
             // AK-2: Suche und Statusfilter; Sortierung bleibt erhalten, Seite springt auf 1
             <Form method="GET" action="/einkauf">
                 <div class="flex flex-wrap gap-2">
-                    <label class="input min-w-0 flex-1 sm:w-md sm:max-w-md sm:flex-none">
+                    <label class="input w-full sm:w-md sm:max-w-md sm:flex-none">
                         <IconView icon=Icon::Search/>
                         <input
                             type="search"
