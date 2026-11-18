@@ -4,6 +4,7 @@
 
 pub mod addresses;
 pub mod auth;
+pub mod finance;
 pub mod projects;
 pub mod purchase_orders;
 pub mod system;

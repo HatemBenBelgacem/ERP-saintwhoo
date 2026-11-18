@@ -69,6 +69,17 @@ pub const SETTINGS_NAV: &[NavItem] = &[
     },
 ];
 
+/// Einstellungsnavigation, Abschnitt „Finanzen“: Stammdaten der Finanzen (ANF-010 AK-3).
+pub const SETTINGS_FINANCE_NAV: &[NavItem] = &[
+    // ANF-011
+    NavItem {
+        title: "Kontenplan",
+        path: "/einstellungen/finanzen/kontenplan",
+        icon: Some(Icon::Ledger),
+        description: "Konten nach KMU-Kontenrahmen und Systemkonten für automatische Buchungen.",
+    },
+];
+
 /// Ziel des Eintrags „Einstellungen“ in der Fusszeile der Seitenleiste.
 pub fn settings_entry_path() -> &'static str {
     SETTINGS_NAV

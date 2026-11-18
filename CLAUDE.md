@@ -39,6 +39,8 @@ src/
   components/<modul>/ Eine Datei pro Komponente bzw. Ansicht (list.rs, detail.rs, form.rs …)
                      Module: addresses (ANF-002), projects (ANF-003), purchase_orders (ANF-004), users (ANF-005), tasks (ANF-006), auth (ANF-007),
                      system (Datenbank-Status), home, settings – Details in system-design.md
+  backend/finance/<teil>/  Finanzen (ANF-010), je Komponente ein Untermodul: accounts (ANF-011 Kontenplan)
+  components/settings/finance/<teil>/  Stammdaten-Seiten der Finanzen unter /einstellungen/finanzen/…
   db.rs              Verbindungspool + Migrationen (nur ssr)
 migrations/          SQL-Migrationen (sqlx), laufen beim Serverstart automatisch
 public/              Feste Dateien (Bilder, Seitensymbol), werden unverändert ausgeliefert
@@ -65,7 +67,7 @@ cargo leptos watch              # Server + Browserteil, lädt bei Änderungen ne
 
 # Prüfen
 cargo fmt
-cargo clippy --features ssr
+cargo clippy --features ssr            # unter Linux mit RUSTFLAGS="--cfg erase_components" (wie im Dockerfile)
 cargo clippy --lib --features hydrate --target wasm32-unknown-unknown
 cargo test --features ssr
 
@@ -159,7 +161,8 @@ bereit. Umgebungsvariablen in der Railway-Oberfläche: `DATABASE_URL=${{Postgres
   funktionieren. Bausteine in `src/forms.rs`: `Modal`, `use_base_href()` (Adresse ohne Fenster-Parameter =
   Schliessen-Ziel), `with_params()`, `refresh_when()`/`is_saved()` + `data_version()` (Daten nach dem Speichern neu laden).
 - Neue Seite: Komponente in `src/components/<modul>/`, Daten über `src/backend/<modul>/server_fns.rs` (siehe `system-design.md`), Route in `src/app.rs` innerhalb der `ParentRoute` mit dem Grundgerüst (`AppLayout`).
-- Navigationseintrag nur in `src/navigation.rs` ergänzen (`MAIN_NAV` bzw. `SETTINGS_NAV`), nicht im Grundgerüst.
+- Navigationseintrag nur in `src/navigation.rs` ergänzen (`MAIN_NAV`, `SETTINGS_NAV` bzw. `SETTINGS_FINANCE_NAV`
+  für den Abschnitt „Finanzen“ der Einstellungen), nicht im Grundgerüst.
 - Einstellungsseiten liegen unter `/einstellungen/…` – dann zeigt die Seitenleiste automatisch die Einstellungsnavigation.
 - Interne Verweise als normales `<a href>` – Leptos wechselt die Seite dann ohne Neuladen.
 

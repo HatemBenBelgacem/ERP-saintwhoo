@@ -12,7 +12,7 @@ use crate::components::{
     home::HomePage,
     projects::{ElementDetailPage, ProjectDetailPage, ProjectListPage},
     purchase_orders::{OrderDetailPage, OrderListPage},
-    settings::GeneralSettingsPage,
+    settings::{AccountsPage, GeneralSettingsPage},
     tasks::{TaskDetailPage, TaskListPage},
     users::{UserDetailPage, UserListPage},
 };
@@ -66,6 +66,11 @@ pub fn App() -> impl IntoView {
                     <Route
                         path=(StaticSegment("einstellungen"), StaticSegment("allgemein"))
                         view=GeneralSettingsPage
+                    />
+                    // ANF-011 Kontenplan – Eingabe im Modal-Fenster (?neu=1, ?bearbeiten=…, ?vorlage=1, ?systemkonten=1)
+                    <Route
+                        path=(StaticSegment("einstellungen"), StaticSegment("finanzen"), StaticSegment("kontenplan"))
+                        view=AccountsPage
                     />
                     // ANF-005 Benutzer – Eingabe im Modal-Fenster (?neu=1, ?bearbeiten=1, ?passwort=1)
                     <Route
