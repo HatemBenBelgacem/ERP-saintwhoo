@@ -22,6 +22,8 @@ pub enum Icon {
     Logout,
     Ledger,
     Building,
+    Calendar,
+    Percent,
 }
 
 impl Icon {
@@ -46,6 +48,10 @@ impl Icon {
                 "M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h9.2a1 1 0 0 0 1-.8L20.5 8H6.2\
                  M9 20.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2ZM17 20.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"
             }
+            Icon::Calendar => {
+                "M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"
+            }
+            Icon::Percent => "M19 5 5 19M7.5 7.5a1.5 1.5 0 1 0 0 .01M16.5 16.5a1.5 1.5 0 1 0 0 .01",
             Icon::Plus => "M12 5v14M5 12h14",
             Icon::Pencil => "M16.5 3.5l4 4L8 20H4v-4L16.5 3.5ZM14 6l4 4",
             Icon::Trash => "M4 7h16M10 11v6M14 11v6M9 7V4h6v3M6 7l1 13h10l1-13",

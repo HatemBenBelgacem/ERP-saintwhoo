@@ -4,17 +4,19 @@
 use leptos::prelude::*;
 
 use crate::backend::addresses::server_fns::search_addresses;
+use crate::backend::finance::vat::model::VatCode;
+use crate::backend::finance::vat::server_fns::list_purchase_codes;
 use crate::backend::projects::server_fns::search_projects;
 use crate::backend::purchase_orders::model::{
-    CURRENCIES, FieldErrors, Order, OrderInput, PickOption, Position, PositionInput, UNITS,
-    VAT_RATES, format_trimmed, parse_fixed, unit_label,
+    ALT_VAT, CURRENCIES, FieldErrors, Order, OrderInput, PickOption, Position, PositionInput,
+    UNITS, format_trimmed, parse_fixed, unit_label,
 };
 use crate::backend::purchase_orders::server_fns::{
     CreateOrder, CreatePosition, RecordDelivery, UpdateOrder, UpdatePosition,
 };
 use crate::forms::{
-    ErrorText, Modal, SearchPicker, SelectField, TextField, field_errors, is_saved, refresh_when,
-    server_error, use_base_href,
+    ErrorText, Modal, SearchPicker, SelectField, TextField, error_message, field_errors, is_saved,
+    refresh_when, server_error, use_base_href,
 };
 
 /// Meldungen über dem Formular (Server-Fehler, Hinweis auf markierte Felder).
@@ -188,8 +190,9 @@ pub fn PositionCreateModal(order_id: i64, order_number: String) -> impl IntoView
         <Modal title=format!("Neue Position in {order_number}") close_href=close.into()>
             <ActionForm action=action>
                 <input type="hidden" name="auftrag_id" value=order_id/>
-                <PositionFormBody
+                <PositionFormLoader
                     initial=PositionInput::new_default()
+                    creating=true
                     errors=Signal::derive(move || field_errors(action.value().get()))
                     server_error=Signal::derive(move || server_error(action.value().get()))
                     pending=action.pending().into()
@@ -210,8 +213,9 @@ pub fn PositionEditModal(position: Position, number: usize) -> impl IntoView {
         <Modal title=format!("Position {number} bearbeiten") close_href=close.into()>
             <ActionForm action=action>
                 <input type="hidden" name="id" value=position.id/>
-                <PositionFormBody
+                <PositionFormLoader
                     initial=position.to_input()
+                    creating=false
                     errors=Signal::derive(move || field_errors(action.value().get()))
                     server_error=Signal::derive(move || server_error(action.value().get()))
                     pending=action.pending().into()
@@ -222,9 +226,52 @@ pub fn PositionEditModal(position: Position, number: usize) -> impl IntoView {
     }
 }
 
+/// Lädt die wählbaren MWST-Codes (ANF-012 AK-9) und zeigt das Formular, sobald sie vorliegen.
+/// Bei einer neuen Position ist der erste Code vorausgewählt.
+#[component]
+fn PositionFormLoader(
+    initial: PositionInput,
+    creating: bool,
+    errors: Signal<FieldErrors>,
+    server_error: Signal<Option<String>>,
+    pending: Signal<bool>,
+    cancel_href: Signal<String>,
+) -> impl IntoView {
+    let codes = Resource::new(|| (), |_| list_purchase_codes());
+    view! {
+        <Transition fallback=|| view! { <span class="loading loading-spinner"></span> }>
+            {move || {
+                let initial = initial.clone();
+                Suspend::new(async move {
+                    match codes.await {
+                        Ok(list) => {
+                            let mut initial = initial;
+                            if creating
+                                && initial.mwst_code.is_empty()
+                                && let Some(first) = list.first()
+                            {
+                                initial.mwst_code = first.id.to_string();
+                            }
+                            view! {
+                                <PositionFormBody initial codes=list errors server_error pending cancel_href/>
+                            }
+                            .into_any()
+                        }
+                        Err(e) => view! {
+                            <div role="alert" class="alert alert-error">{error_message(&e)}</div>
+                        }
+                        .into_any(),
+                    }
+                })
+            }}
+        </Transition>
+    }
+}
+
 #[component]
 fn PositionFormBody(
     initial: PositionInput,
+    codes: Vec<VatCode>,
     errors: Signal<FieldErrors>,
     server_error: Signal<Option<String>>,
     pending: Signal<bool>,
@@ -232,6 +279,12 @@ fn PositionFormBody(
 ) -> impl IntoView {
     let i = initial;
     let required = Signal::stored(true);
+    // Eine Position mit einem Code, der nicht (mehr) wählbar ist, bleibt sichtbar; speichern verlangt eine neue Wahl.
+    let stale = i
+        .mwst_code
+        .parse::<i64>()
+        .is_ok_and(|id| !codes.iter().any(|c| c.id == id));
+    let no_codes = codes.is_empty();
     view! {
         <div class="flex flex-col gap-4">
             <FormAlerts errors server_error/>
@@ -246,7 +299,37 @@ fn PositionFormBody(
                 <SelectField field="einheit" label="Einheit *" options=UNITS value=i.einheit.clone() errors/>
                 <TextField field="einzelpreis" label="Einzelpreis (ohne MWST)" value=i.einzelpreis.clone() errors required inputmode="decimal" maxlength=20/>
                 <TextField field="rabatt_prozent" label="Rabatt %" value=i.rabatt_prozent.clone() errors inputmode="decimal" maxlength=6/>
-                <SelectField field="mwst_satz" label="MWST-Satz *" options=VAT_RATES value=i.mwst_satz.clone() errors/>
+                <fieldset class="fieldset">
+                    <legend class="fieldset-legend">"MWST *"</legend>
+                    <select
+                        name="input[mwst_code]"
+                        class="select w-full"
+                        class:select-error=move || errors.read().contains_key("mwst_code")
+                    >
+                        {(i.mwst_code == ALT_VAT).then(|| view! {
+                            <option value=ALT_VAT selected=true>"Bisheriger Satz (ohne Code)"</option>
+                        })}
+                        {stale.then(|| view! {
+                            <option value=i.mwst_code.clone() selected=true>"Bisheriger Code – bitte neu wählen"</option>
+                        })}
+                        <option value="" selected=i.mwst_code.is_empty()>"ohne MWST"</option>
+                        {codes
+                            .iter()
+                            .map(|c| {
+                                let value = c.id.to_string();
+                                let selected = i.mwst_code == value;
+                                view! { <option value=value selected=selected>{c.choice_label()}</option> }
+                            })
+                            .collect_view()}
+                    </select>
+                    <ErrorText field="mwst_code" errors/>
+                    {no_codes.then(|| view! {
+                        <p class="label">
+                            "Keine MWST-Codes wählbar: Die MWST-Pflicht ist ausgeschaltet oder es gibt keinen gültigen "
+                            "Vorsteuer-Code (Einstellungen → Finanzen → MWST)."
+                        </p>
+                    })}
+                </fieldset>
             </div>
             <FormActions cancel_href pending/>
         </div>

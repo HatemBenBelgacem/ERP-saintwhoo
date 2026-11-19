@@ -52,15 +52,27 @@ pub const UNITS: &[(&str, &str)] = &[
     ("pauschal", "Pauschal"),
 ];
 
-/// MWST-Sätze der Schweiz (Stand 2024): Normalsatz, reduzierter Satz, Beherbergung, steuerfrei.
-pub const VAT_RATES: &[(&str, &str)] = &[
-    ("8.1", "8.1 % (Normalsatz)"),
-    ("2.6", "2.6 % (reduziert)"),
-    ("3.8", "3.8 % (Beherbergung)"),
-    ("0", "0 % (steuerfrei)"),
-];
+/// Auswahlwert im Formular für eine Position, die noch den festen Satz vor ANF-012 trägt (AK-9):
+/// der Satz bleibt unverändert.
+pub const ALT_VAT: &str = "alt";
 
-pub const DEFAULT_VAT: &str = "8.1";
+/// Auswahl des MWST-Codes einer Position (ANF-012 AK-9).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum VatSelection {
+    /// Bisheriger Satz ohne Code bleibt erhalten
+    Keep,
+    /// Ohne MWST (Satz 0, kein Code)
+    Ohne,
+    /// MWST-Code (Kennung aus `mwst_code`)
+    Code(i64),
+}
+
+/// Zu speichernder Stand des MWST-Codes und Satz einer Position (Hundertstel Prozent).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct VatWrite {
+    pub code_id: Option<i64>,
+    pub satz: i64,
+}
 
 /// Grösste erlaubte Menge bzw. grösster Preis (passt zu NUMERIC(12,…) in der Datenbank).
 const MAX_INTEGER_DIGITS: usize = 9;
@@ -202,6 +214,8 @@ pub struct Position {
     pub rabatt_prozent: i64,
     /// Hundertstel Prozent
     pub mwst_satz: i64,
+    /// MWST-Code, aus dem der Satz stammt; `None` bei „ohne MWST“ und bei Positionen vor ANF-012
+    pub mwst_code_id: Option<i64>,
     /// Tausendstel
     pub gelieferte_menge: i64,
 }
@@ -232,7 +246,16 @@ impl Position {
             einheit: self.einheit.clone(),
             einzelpreis: format_fixed(self.einzelpreis, 2),
             rabatt_prozent: format_trimmed(self.rabatt_prozent, 2),
-            mwst_satz: format_trimmed(self.mwst_satz, 2),
+            mwst_code: self.vat_choice(),
+        }
+    }
+
+    /// Auswahl im Formular: Code-Kennung, leer für „ohne MWST“ oder „alt“ für einen Satz ohne Code.
+    pub fn vat_choice(&self) -> String {
+        match self.mwst_code_id {
+            Some(id) => id.to_string(),
+            None if self.mwst_satz == 0 => String::new(),
+            None => ALT_VAT.into(),
         }
     }
 }
@@ -503,7 +526,8 @@ pub struct PositionInput {
     pub einheit: String,
     pub einzelpreis: String,
     pub rabatt_prozent: String,
-    pub mwst_satz: String,
+    /// Auswahl: Kennung eines MWST-Codes, leer für „ohne MWST“ oder „alt“ (siehe `ALT_VAT`)
+    pub mwst_code: String,
 }
 
 /// Geprüfte Werte einer Position in kleinsten Einheiten.
@@ -512,7 +536,7 @@ pub struct PositionValues {
     pub menge: i64,
     pub einzelpreis: i64,
     pub rabatt_prozent: i64,
-    pub mwst_satz: i64,
+    pub mwst: VatSelection,
 }
 
 impl PositionInput {
@@ -520,7 +544,6 @@ impl PositionInput {
         Self {
             menge: "1".into(),
             einheit: "stk".into(),
-            mwst_satz: DEFAULT_VAT.into(),
             ..Default::default()
         }
     }
@@ -533,7 +556,7 @@ impl PositionInput {
             einheit: self.einheit.trim().into(),
             einzelpreis: self.einzelpreis.trim().into(),
             rabatt_prozent: self.rabatt_prozent.trim().into(),
-            mwst_satz: self.mwst_satz.trim().into(),
+            mwst_code: self.mwst_code.trim().into(),
         }
     }
 
@@ -588,24 +611,24 @@ impl PositionInput {
                 "Der Rabatt muss zwischen 0 und 100 % liegen.",
             ),
         }
-        let mwst = VAT_RATES
-            .iter()
-            .any(|(k, _)| *k == self.mwst_satz)
-            .then(|| parse_fixed(&self.mwst_satz, 2))
-            .flatten();
+        let mwst = match self.mwst_code.as_str() {
+            "" => Some(VatSelection::Ohne),
+            ALT_VAT => Some(VatSelection::Keep),
+            other => other.parse::<i64>().ok().map(VatSelection::Code),
+        };
         if mwst.is_none() {
-            err("mwst_satz", "Bitte einen MWST-Satz aus der Liste wählen.");
+            err("mwst_code", "Bitte einen MWST-Code wählen.");
         }
 
         match (menge, einzelpreis, rabatt, mwst) {
-            (Some(menge), Some(einzelpreis), Some(rabatt_prozent), Some(mwst_satz))
+            (Some(menge), Some(einzelpreis), Some(rabatt_prozent), Some(mwst))
                 if errors.is_empty() =>
             {
                 Ok(PositionValues {
                     menge,
                     einzelpreis,
                     rabatt_prozent,
-                    mwst_satz,
+                    mwst,
                 })
             }
             _ => Err(errors),
@@ -685,6 +708,7 @@ mod tests {
             einzelpreis: preis,
             rabatt_prozent: rabatt,
             mwst_satz: mwst,
+            mwst_code_id: None,
             gelieferte_menge: 0,
         }
     }
@@ -792,15 +816,19 @@ mod tests {
                 menge: 1000,
                 einzelpreis: 35,
                 rabatt_prozent: 0,
-                mwst_satz: 810
+                mwst: VatSelection::Ohne,
             }
         );
+        i.mwst_code = "12".into();
+        assert_eq!(i.validate().unwrap().mwst, VatSelection::Code(12));
+        i.mwst_code = ALT_VAT.into();
+        assert_eq!(i.validate().unwrap().mwst, VatSelection::Keep);
 
         let bad = PositionInput {
             menge: "0".into(),
             einzelpreis: "-3".into(),
             rabatt_prozent: "101".into(),
-            mwst_satz: "7.7".into(),
+            mwst_code: "x".into(),
             einheit: "fass".into(),
             ..Default::default()
         };
@@ -810,7 +838,7 @@ mod tests {
             "menge",
             "einzelpreis",
             "rabatt_prozent",
-            "mwst_satz",
+            "mwst_code",
             "einheit",
         ] {
             assert!(e.contains_key(f), "{f} fehlt in {e:?}");
@@ -819,12 +847,26 @@ mod tests {
 
     #[test]
     fn position_round_trip() {
-        let p = pos(2500, 1250, 550, 260);
-        let v = p.to_input().validate().unwrap();
+        // Position vor ANF-012 (ohne Code, Satz 2.6 %) bleibt beim Bearbeiten unverändert
+        let old = pos(2500, 1250, 550, 260);
+        assert_eq!(old.vat_choice(), ALT_VAT);
+        let v = old.to_input().validate().unwrap();
         assert_eq!(
-            (v.menge, v.einzelpreis, v.rabatt_prozent, v.mwst_satz),
-            (2500, 1250, 550, 260)
+            (v.menge, v.einzelpreis, v.rabatt_prozent),
+            (2500, 1250, 550)
         );
+        assert_eq!(v.mwst, VatSelection::Keep);
+        // Position mit Code und ohne MWST
+        let coded = Position {
+            mwst_code_id: Some(7),
+            ..pos(1000, 100, 0, 810)
+        };
+        assert_eq!(coded.vat_choice(), "7");
+        assert_eq!(
+            coded.to_input().validate().unwrap().mwst,
+            VatSelection::Code(7)
+        );
+        assert_eq!(pos(1000, 100, 0, 0).vat_choice(), "");
     }
 
     #[test]

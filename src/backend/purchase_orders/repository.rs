@@ -7,7 +7,9 @@
 use sqlx::{AssertSqlSafe, PgConnection, PgPool};
 use std::collections::HashMap;
 
-use super::model::{OrderDetail, OrderInput, OrderRow, Position, PositionInput, PositionValues};
+use super::model::{
+    OrderDetail, OrderInput, OrderRow, Position, PositionInput, PositionValues, VatWrite,
+};
 
 /// Liefertermin überschritten und Auftrag noch offen (AK-5). Ohne Liefertermin: nicht überfällig.
 const OVERDUE: &str = "coalesce(e.liefertermin < (now() AT TIME ZONE 'Europe/Zurich')::date \
@@ -17,7 +19,7 @@ const OVERDUE: &str = "coalesce(e.liefertermin < (now() AT TIME ZONE 'Europe/Zur
 const POSITION_COLUMNS: &str = "id, bezeichnung, artikelnummer_lieferant, \
      (menge * 1000)::int8 AS menge, einheit, (einzelpreis * 100)::int8 AS einzelpreis, \
      (rabatt_prozent * 100)::int8 AS rabatt_prozent, (mwst_satz * 100)::int8 AS mwst_satz, \
-     (gelieferte_menge * 1000)::int8 AS gelieferte_menge";
+     mwst_code_id, (gelieferte_menge * 1000)::int8 AS gelieferte_menge";
 
 /// Spalten einer Listenzeile (für Liste und Projekt-Detailansicht).
 const ROW_COLUMNS: &str = "e.id, e.nummer, a.anzeigename AS lieferant, e.projekt_id, \
@@ -327,18 +329,33 @@ pub async fn delete_order(conn: &mut PgConnection, id: i64) -> Result<String, sq
 
 // ---------- Positionen schreiben ----------
 
+/// MWST-Stand einer bestehenden Position (Code und Satz), für „bisherigen Satz behalten“ (AK-9).
+pub async fn position_vat(
+    conn: &mut PgConnection,
+    id: i64,
+) -> Result<Option<VatWrite>, sqlx::Error> {
+    let row: Option<(Option<i64>, i64)> = sqlx::query_as(
+        "SELECT mwst_code_id, (mwst_satz * 100)::int8 FROM einkaufsposition WHERE id = $1",
+    )
+    .bind(id)
+    .fetch_optional(conn)
+    .await?;
+    Ok(row.map(|(code_id, satz)| VatWrite { code_id, satz }))
+}
+
 /// Position am Ende des Auftrags anfügen; liefert die Kennung.
 pub async fn insert_position(
     conn: &mut PgConnection,
     order_id: i64,
     input: &PositionInput,
     values: &PositionValues,
+    vat: VatWrite,
 ) -> Result<i64, sqlx::Error> {
     sqlx::query_scalar(
         "INSERT INTO einkaufsposition (einkaufsauftrag_id, reihenfolge, bezeichnung, artikelnummer_lieferant, \
-                                       menge, einheit, einzelpreis, rabatt_prozent, mwst_satz) \
+                                       menge, einheit, einzelpreis, rabatt_prozent, mwst_satz, mwst_code_id) \
          VALUES ($1, (SELECT coalesce(max(reihenfolge), 0) + 1 FROM einkaufsposition WHERE einkaufsauftrag_id = $1), \
-                 $2, $3, $4::numeric / 1000, $5, $6::numeric / 100, $7::numeric / 100, $8::numeric / 100) \
+                 $2, $3, $4::numeric / 1000, $5, $6::numeric / 100, $7::numeric / 100, $8::numeric / 100, $9) \
          RETURNING id",
     )
     .bind(order_id)
@@ -348,7 +365,8 @@ pub async fn insert_position(
     .bind(&input.einheit)
     .bind(values.einzelpreis)
     .bind(values.rabatt_prozent)
-    .bind(values.mwst_satz)
+    .bind(vat.satz)
+    .bind(vat.code_id)
     .fetch_one(conn)
     .await
 }
@@ -359,12 +377,13 @@ pub async fn update_position(
     id: i64,
     input: &PositionInput,
     values: &PositionValues,
+    vat: VatWrite,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         "UPDATE einkaufsposition SET bezeichnung = $1, artikelnummer_lieferant = $2, menge = $3::numeric / 1000, \
                 einheit = $4, einzelpreis = $5::numeric / 100, rabatt_prozent = $6::numeric / 100, \
-                mwst_satz = $7::numeric / 100, geaendert_am = now() \
-         WHERE id = $8",
+                mwst_satz = $7::numeric / 100, mwst_code_id = $8, geaendert_am = now() \
+         WHERE id = $9",
     )
     .bind(&input.bezeichnung)
     .bind(opt(&input.artikelnummer_lieferant))
@@ -372,7 +391,8 @@ pub async fn update_position(
     .bind(&input.einheit)
     .bind(values.einzelpreis)
     .bind(values.rabatt_prozent)
-    .bind(values.mwst_satz)
+    .bind(vat.satz)
+    .bind(vat.code_id)
     .bind(id)
     .execute(conn)
     .await?;
