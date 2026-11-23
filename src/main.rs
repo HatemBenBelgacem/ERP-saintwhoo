@@ -11,6 +11,10 @@ async fn main() {
     let pool = uniqwork::db::connect()
         .await
         .expect("Verbindung zur Datenbank fehlgeschlagen");
+    // ANF-026: eigene Datenbank für Registrierung, Anmeldung und Mandanten
+    let portal = uniqwork::db::connect_portal()
+        .await
+        .expect("Verbindung zur Portal-Datenbank fehlgeschlagen");
 
     let conf = get_configuration(None).expect("Leptos-Konfiguration fehlt");
     // ANF-008: Railway gibt den Port über `PORT` vor; sonst gilt `site-addr` aus Cargo.toml.
@@ -27,7 +31,11 @@ async fn main() {
             routes,
             {
                 let pool = pool.clone();
-                move || provide_context(pool.clone())
+                let portal = portal.clone();
+                move || {
+                    provide_context(pool.clone());
+                    provide_context(portal.clone());
+                }
             },
             {
                 let leptos_options = leptos_options.clone();

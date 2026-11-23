@@ -42,7 +42,7 @@
 | [ANF-023](anforderungen/ANF-023-jahresabschluss.md) | Jahresabschluss und Saldovortrag | Finanzen | Soll | Entwurf |
 | [ANF-024](anforderungen/ANF-024-mahnwesen.md) | Mahnwesen | Finanzen / Einstellungen | Kann | Entwurf |
 | [ANF-025](anforderungen/ANF-025-firma.md) | Firmenverwaltung (eigene Firma, verknüpft mit Adresse) | Einstellungen | Muss | In Umsetzung |
-| [ANF-026](anforderungen/ANF-026-registrierung-mandanten.md) | Registrierung, eigene Datenbank und Mandant | Portal / Mandanten | Muss | Freigegeben |
+| [ANF-026](anforderungen/ANF-026-registrierung-mandanten.md) | Registrierung, eigene Datenbank und Mandant | Portal / Mandanten | Muss | In Umsetzung |
 
 <!-- Neue Zeile pro Anforderung, z. B.:
 | [ANF-027](anforderungen/ANF-027-artikelstamm.md) | Artikelstamm verwalten | Lager | Muss | Entwurf |

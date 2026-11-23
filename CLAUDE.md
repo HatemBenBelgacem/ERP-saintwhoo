@@ -41,12 +41,13 @@ src/
                      system (Datenbank-Status), home, settings, company (ANF-025, Seite unter settings/company) – Details in system-design.md
   backend/finance/<teil>/  Finanzen (ANF-010), je Komponente ein Untermodul: accounts (ANF-011 Kontenplan)
   components/settings/finance/<teil>/  Stammdaten-Seiten der Finanzen unter /einstellungen/finanzen/…
-  db.rs              Verbindungspool + Migrationen (nur ssr)
-migrations/          SQL-Migrationen (sqlx), laufen beim Serverstart automatisch
+  db.rs              Verbindungspools (ERP und Portal) + Migrationen (nur ssr)
+migrations/          SQL-Migrationen der ERP- bzw. Mandanten-Datenbank (sqlx), laufen beim Serverstart automatisch
+migrations_portal/   SQL-Migrationen der Portal-Datenbank (ANF-026: Zugänge, Mandanten, Sitzungen)
 public/              Feste Dateien (Bilder, Seitensymbol), werden unverändert ausgeliefert
 styles/app.css       Tailwind-Eingabe (Quelle, wird bearbeitet)
 styles/output.css    Erzeugtes CSS (nicht bearbeiten, nicht eingecheckt)
-.env                 DATABASE_URL (nicht eingecheckt, Vorlage: .env.example)
+.env                 DATABASE_URL, PORTAL_DATABASE_URL (nicht eingecheckt, Vorlage: .env.example)
 .cargo/config.toml   Übersetzer-Option erase_components (siehe Code)
 Dockerfile           Docker-Image für Railway in Stufen, mit cargo-chef (ANF-008)
 .dockerignore        Was nicht ins Image kommt (target/, node_modules/, .env …)
@@ -75,7 +76,8 @@ cargo test --features ssr
 npm run css:build && cargo leptos build --release
 
 # Migrationen
-sqlx migrate add -r <name>      # neue Migration in migrations/
+sqlx migrate add -r <name>      # neue Migration in migrations/ (ERP)
+sqlx migrate add -r --source migrations_portal <name>   # neue Migration der Portal-Datenbank
 
 # Docker-Image (ANF-008) – lokal bauen und ausprobieren
 docker build -t uniqwork .
@@ -175,6 +177,9 @@ bereit. Umgebungsvariablen in der Railway-Oberfläche: `DATABASE_URL=${{Postgres
 ### Datenbank
 - Schemaänderungen nur über neue Migrationsdateien, bestehende Migrationen nie ändern.
 - Den Verbindungspool in Server-Funktionen mit `crate::db::pool()?` holen (stellt `main.rs` über den Kontext bereit).
+- **Zwei Datenbanken (ANF-026):** Die Portal-Datenbank (`uniqwork_portal`, Pool über `crate::db::portal_pool()?`)
+  enthält nur Zugänge, Sitzungen und das Verzeichnis der Mandanten – nie ERP-Tabellen. Ihre Migrationen stehen in
+  `migrations_portal/`. ERP-Tabellen gehören nach `migrations/`.
 - Eingaben immer als Parameter (`$1`, `.bind(…)`), nie in den SQL-Text einsetzen. Zusammengesetzte SQL-Texte
   verlangt sqlx 0.9 mit `AssertSqlSafe(…)` – nur verwenden, wenn alle Teile feste Texte oder Werte aus einer
   festen Liste sind (Beispiel: Sortierung in `src/backend/addresses/repository.rs`).
