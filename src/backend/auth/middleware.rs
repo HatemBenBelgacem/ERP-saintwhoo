@@ -24,7 +24,7 @@ use super::model::{
     PUBLIC_API_PREFIX, REGISTER_PATH, login_url, query_param, target_after_login,
 };
 use super::{repository, session};
-use crate::db::PortalPool;
+use crate::db::{Databases, PortalPool, TenantPool};
 
 /// Dateiendungen fester Dateien aus `public/` (Bilder, Seitensymbol, Schriften …).
 const STATIC_EXTENSIONS: &[&str] = &[
@@ -67,7 +67,10 @@ pub fn is_portal(path: &str) -> bool {
 }
 
 pub async fn require_login(
-    State(PortalPool(pool)): State<PortalPool>,
+    State(Databases {
+        portal: PortalPool(pool),
+        tenants,
+    }): State<Databases>,
     mut req: Request,
     next: Next,
 ) -> Response {
@@ -88,7 +91,7 @@ pub async fn require_login(
         None => None,
     };
 
-    if let Some(user) = user {
+    if let Some(mut user) = user {
         let erp_access = user.erp_access();
         // ANF-007 AK-9: Bereits angemeldet → Anmeldung und Registrierung überspringen
         if path == LOGIN_PATH || path == REGISTER_PATH {
@@ -111,6 +114,26 @@ pub async fn require_login(
             } else {
                 Redirect::to(PORTAL_PATH).into_response()
             };
+        }
+        // ANF-026 AK-22: Anfrage arbeitet mit der Datenbank des Mandanten; dazu der Benutzer darin
+        if erp_access && let Some(tenant) = &user.mandant {
+            let tenant_pool = tenants.pool(&tenant.datenbankname);
+            match crate::backend::users::repository::id_for_portal_user(
+                &tenant_pool,
+                user.portal_id,
+            )
+            .await
+            {
+                Ok(id) => user.benutzer_id = id,
+                Err(e) => {
+                    leptos::logging::error!(
+                        "Mandanten-Datenbank {} nicht erreichbar: {e}",
+                        tenant.datenbankname
+                    );
+                    return (StatusCode::INTERNAL_SERVER_ERROR, "Datenbankfehler").into_response();
+                }
+            }
+            req.extensions_mut().insert(TenantPool(tenant_pool));
         }
         req.extensions_mut().insert(user);
         return next.run(req).await;

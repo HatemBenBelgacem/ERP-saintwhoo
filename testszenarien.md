@@ -31,13 +31,13 @@ Schlägt ein Szenario fehl, trage es in [task.md](task.md) als offene Aufgabe ei
 | ANF-005 | Benutzer | 35 | Bedienung im Browser noch nicht von Hand geprüft |
 | ANF-006 | Aufgaben | 21 | Bedienung im Browser noch nicht von Hand geprüft |
 | ANF-007 | Anmeldung | 29 | Seit ANF-026 mit E-Mail statt Benutzername; TS-007-26/27 entfallen |
-| ANF-026 | Registrierung, Datenbank, Mandant | 14 | Schritte 1 und 2 (Portal-Datenbank, Registrierung, Anmeldung) |
+| ANF-026 | Registrierung, Datenbank, Mandant | 23 | Schritte 1 bis 3 (Portal-Datenbank, Registrierung, Anmeldung, Datenbank erstellen) |
 
 Die Anforderungen ANF-005 bis ANF-007 haben bisher keine Prüfung im Browser. Mit diesen Szenarien starten.
 
 ## Vorbereitung
 
-1. Eine leere Datenbank `uniqwork` anlegen und `.env` ausfüllen (Vorlage: `.env.example`). Die Migrationen laufen beim Serverstart automatisch.
+1. PostgreSQL bereitstellen und `.env` ausfüllen (Vorlage: `.env.example`). Der Server legt Portal-Datenbank und ERP-Rolle beim Start an, die Mandanten-Datenbank entsteht über „Datenbank erstellen“; die Migrationen laufen automatisch.
 2. Den Server mit `cargo leptos watch` starten und `http://127.0.0.1:3002` öffnen.
 3. Zwei Browser-Fenster bereithalten, eines normal und eines privat. So sind zwei Anmeldungen gleichzeitig möglich, z. B. für TS-007-21.
 4. Die Testdaten in dieser Reihenfolge anlegen. Die Namen stammen aus den Beispielen von ANF-005:
@@ -58,10 +58,10 @@ Die Anforderungen ANF-005 bis ANF-007 haben bisher keine Prüfung im Browser. Mi
 5. Die Ersteinrichtung gibt es seit ANF-026 nicht mehr; der erste Zugang entsteht über `/registrieren`.
 
 > **Hinweis ANF-026:** Seit der Anmeldung über das Portal öffnet sich das ERP nur mit einem bereiten und definierten
-> Mandanten. Bis „Datenbank erstellen“ und „Mandant definieren“ umgesetzt sind (ANF-026 Schritte 3 und 4), lässt sich
-> ein Mandant für Tests von Hand anlegen: in `uniqwork_portal`
-> `INSERT INTO mandant (besitzer_id, status, firmenname) VALUES (<Kennung des Zugangs>, 'bereit', 'Musterfirma AG');`
-> und danach neu anmelden. Das ERP arbeitet bis Schritt 3 noch mit der Datenbank aus `DATABASE_URL`.
+> Mandanten, und jeder Mandant hat eine eigene Datenbank. Ablauf: registrieren → „Datenbank erstellen“. Bis das
+> Modal-Fenster „Mandant definieren“ umgesetzt ist (ANF-026 Schritt 4), den Firmennamen von Hand setzen: in
+> `uniqwork_portal` `UPDATE mandant SET firmenname = 'Musterfirma AG' WHERE besitzer_id = <Kennung des Zugangs>;`
+> und danach eine Seite neu laden. Die Testdaten oben gehören in diese Mandanten-Datenbank.
 > In den Szenarien von ANF-007 steht „Benutzername“ für die **E-Mail** des Portal-Zugangs.
 
 ## ANF-001 Grundgerüst
@@ -291,6 +291,15 @@ Vorbereitung: leere PostgreSQL-Instanz bzw. Datenbanken `uniqwork` und `uniqwork
 | TS-026-12 | 19 | DB: Mandant für Anna mit Status `bereit`, aber ohne Firmennamen anlegen, neu anmelden. Dann den Firmennamen setzen und neu anmelden. | Zuerst weiter nur `/portal`. Mit Firmennamen öffnet die Anmeldung das ERP bzw. das Ziel aus `zurueck`. |
 | TS-026-13 | 23 | Zweiten Zugang „Ben“ registrieren. DB: Bens Sitzung `mandant_id` auf Annas Mandanten setzen. Dann `/` aufrufen. | Ben bleibt auf `/portal`; Annas Mandant wird nicht verwendet. |
 | TS-026-14 | 25 | Mit leerer Portal-Datenbank `/anmelden` öffnen. | Keine Ersteinrichtung mehr, nur Anmeldung mit Verweis auf „Registrieren“. |
+| TS-026-15 | 21 | Nach dem Serverstart: `SELECT rolcreatedb, rolsuper FROM pg_roles WHERE rolname = 'uniqwork_erp';` und `SELECT has_database_privilege('uniqwork_erp', 'uniqwork_portal', 'CONNECT');` | Rolle vorhanden, `false`/`false`; Verbindung zur Portal-Datenbank `false`. |
+| TS-026-16 | 10, 11, 26 | Als Anna ohne Datenbank `/portal` öffnen, „Datenbank erstellen“ klicken und die Zeit messen. | Während des Erstellens ist die Schaltfläche gesperrt („Datenbank wird erstellt …“). Danach Plakette „Bereit“ und Hinweis auf den Mandanten; Dauer unter 30 Sekunden. |
+| TS-026-17 | 12, 15 | DB: `\l` und in `uq_m_000001`: `SELECT benutzername, passwort_hash, portal_benutzer_id FROM benutzer;` | Datenbank `uq_m_000001` vorhanden. Genau ein Benutzer (aus der E-Mail, z. B. `anna`), ohne Passwort, mit der Kennung des Zugangs; dazu eine Adresse „Person“. |
+| TS-026-18 | 21 | In `uq_m_000001`: `SELECT has_table_privilege('uniqwork_erp', 'adresse', 'SELECT,INSERT'), has_table_privilege('uniqwork_erp', 'adresse', 'TRUNCATE'), has_schema_privilege('uniqwork_erp', 'public', 'CREATE');` und `SELECT has_database_privilege('public', 'uq_m_000001', 'CONNECT');` | `true`, `false`, `false`; `PUBLIC` darf sich nicht verbinden. |
+| TS-026-19 | 14 | Als Anna die Server-Funktion „Datenbank erstellen“ erneut aufrufen (z. B. mit `curl`). Mit einem neuen Zugang zwei Aufrufe gleichzeitig senden. | „Sie haben bereits eine Datenbank.“ bzw. „Ihre Datenbank wird bereits erstellt.“ – es entsteht jeweils genau eine Datenbank. |
+| TS-026-20 | 13 | DB: `ALTER ROLE uniqwork_erp RENAME TO weg;`, dann mit einem neuen Zugang „Datenbank erstellen“. Danach zurückbenennen und „Erneut versuchen“. | Meldung „Die Datenbank konnte nicht erstellt werden …“, Plakette „Fehler“, keine halbe Datenbank übrig. Der zweite Versuch verwendet denselben Mandanten und endet mit „Bereit“. |
+| TS-026-21 | 22, 23 | Zwei Zugänge mit je eigener Datenbank und Firmennamen. In beiden `/adressen` öffnen. | Jeder sieht nur seine eigene Person; die Daten des anderen sind nicht erreichbar. |
+| TS-026-22 | 24 | DB: Einen Mandanten auf `wird_erstellt` setzen, Server neu starten. Danach als ein anderer Zugang weiterarbeiten. | Protokoll „Abgebrochene Erstellung … wird aufgeräumt“; Datenbank gelöscht, Status `fehler`. Die anderen Mandanten arbeiten nach dem Neustart weiter (neues Rollenpasswort). |
+| TS-026-23 | 27 | Mit einem Mandanten im ERP arbeiten, dann `SELECT count(*) FROM pg_stat_activity WHERE usename = 'uniqwork_erp';` – und nach 5 Minuten Ruhe erneut. | Höchstens 3 Verbindungen; nach der Ruhezeit 0. |
 
 ## ANF-011 Kontenplan
 

@@ -89,21 +89,21 @@ Jede **Mandanten-Datenbank** enthält das bisherige ERP (alle Migrationen aus `m
   PostgreSQL-Dienst, ohne dass es schon eine Mandanten-Datenbank gibt.
 
 **Datenbank erstellen**
-- [ ] **AK-10:** Gegeben ein angemeldeter Administrator ohne Datenbank, dann zeigt `/portal` den Hinweis
+- [x] **AK-10:** Gegeben ein angemeldeter Administrator ohne Datenbank, dann zeigt `/portal` den Hinweis
   „Noch keine Datenbank“ und die Hauptschaltfläche **„Datenbank erstellen“**.
-- [ ] **AK-11:** Wenn der Administrator „Datenbank erstellen“ wählt, dann legt der Server eine neue
+- [x] **AK-11:** Wenn der Administrator „Datenbank erstellen“ wählt, dann legt der Server eine neue
   PostgreSQL-Datenbank an, führt alle Migrationen aus und trägt den Mandanten mit Status **„Bereit“** in der
   Portal-Datenbank ein. Während des Erstellens zeigt die Seite einen Ladezustand; die Schaltfläche ist gesperrt.
-- [ ] **AK-12:** Der Name der Datenbank wird **vom Server erzeugt** (Muster `uq_m_<laufende Nummer, 6-stellig>`)
+- [x] **AK-12:** Der Name der Datenbank wird **vom Server erzeugt** (Muster `uq_m_<laufende Nummer, 6-stellig>`)
   und nie aus einer Eingabe übernommen.
-- [ ] **AK-13:** Gegeben ein Fehler beim Erstellen oder bei den Migrationen, dann wird eine halb angelegte
+- [x] **AK-13:** Gegeben ein Fehler beim Erstellen oder bei den Migrationen, dann wird eine halb angelegte
   Datenbank wieder entfernt, der Mandant erhält Status **„Fehler“**, und der Benutzer sieht eine verständliche
   Meldung mit der Möglichkeit, es erneut zu versuchen.
-- [ ] **AK-14:** Gegeben die Regel **„eine Datenbank pro Administrator“**,
+- [x] **AK-14:** Gegeben die Regel **„eine Datenbank pro Administrator“**,
   wenn bereits eine Datenbank besteht, dann wird „Datenbank erstellen“ nicht angezeigt, und ein direkter
   Aufruf der Server-Funktion wird abgelehnt – auch bei zwei gleichzeitigen Anfragen (Doppelklick) entsteht
   höchstens eine Datenbank. Die Grenze steht als Prüfregel im Modell und ist an einer Stelle änderbar.
-- [ ] **AK-15:** Beim Erstellen wird der Administrator in der neuen Datenbank als **erster aktiver Benutzer**
+- [x] **AK-15:** Beim Erstellen wird der Administrator in der neuen Datenbank als **erster aktiver Benutzer**
   (ANF-005) mit Adresse vom Typ „Person“ (ANF-002) angelegt, mit den Angaben aus der Registrierung.
 
 **Mandant definieren (Modal-Fenster)**
@@ -121,23 +121,23 @@ Jede **Mandanten-Datenbank** enthält das bisherige ERP (alle Migrationen aus `m
   der Datenbanken).
 
 **Zugriff und Sicherheit**
-- [ ] **AK-21:** Datenbanken werden nur von einer eigenen PostgreSQL-Rolle mit dem Recht `CREATEDB`
+- [x] **AK-21:** Datenbanken werden nur von einer eigenen PostgreSQL-Rolle mit dem Recht `CREATEDB`
   angelegt, die nur der Portal-Teil des Servers verwendet. Die Rolle für den laufenden ERP-Betrieb hat
   dieses Recht **nicht**.
-- [ ] **AK-22:** Jede Anfrage an das ERP arbeitet mit der Datenbank des Mandanten aus der Sitzung.
+- [x] **AK-22:** Jede Anfrage an das ERP arbeitet mit der Datenbank des Mandanten aus der Sitzung.
   Server-Funktionen holen den Verbindungspool weiterhin über `crate::db::pool()`; dieser liefert den Pool
   des Mandanten.
-- [ ] **AK-23:** Gegeben ein Benutzer, der eine fremde Mandanten-Kennung in der Webadresse oder in einer
+- [x] **AK-23:** Gegeben ein Benutzer, der eine fremde Mandanten-Kennung in der Webadresse oder in einer
   Anfrage einsetzt, dann wird der Zugriff abgelehnt (Antwort wie „nicht gefunden“), ohne zu verraten, ob es
   den Mandanten gibt.
-- [ ] **AK-24:** Beim Serverstart werden ausstehende Migrationen für die Portal-Datenbank und für alle
+- [x] **AK-24:** Beim Serverstart werden ausstehende Migrationen für die Portal-Datenbank und für alle
   Mandanten-Datenbanken mit Status „Bereit“ ausgeführt.
-- [ ] **AK-25:** Die bisherige **Ersteinrichtung** (ANF-007 AK-21/22) entfällt; ihre Aufgabe übernimmt
+- [x] **AK-25:** Die bisherige **Ersteinrichtung** (ANF-007 AK-21/22) entfällt; ihre Aufgabe übernimmt
   die Registrierung (AK-4) mit dem Anlegen des ersten Benutzers (AK-15).
 
 **Nicht-funktional**
-- [ ] **AK-26:** Das Erstellen einer Datenbank inklusive Migrationen dauert auf Railway höchstens 30 Sekunden.
-- [ ] **AK-27:** Pro Mandant werden höchstens 3 Datenbankverbindungen gleichzeitig gehalten; unbenutzte
+- [x] **AK-26:** Das Erstellen einer Datenbank inklusive Migrationen dauert auf Railway höchstens 30 Sekunden.
+- [x] **AK-27:** Pro Mandant werden höchstens 3 Datenbankverbindungen gleichzeitig gehalten; unbenutzte
   Pools werden nach einer Wartezeit geschlossen, damit die Verbindungsgrenze von PostgreSQL eingehalten wird.
 
 ## 4. Daten / Felder
@@ -217,3 +217,4 @@ Passwort und Sitzungen stehen nur in der Portal-Datenbank (AK-8).
 | 2026-11-23 | Hatem Ben Belgacem | Entschieden: eine Datenbank pro Administrator, vorläufige Annahmen übernommen; Status Freigegeben |
 | 2026-11-23 | Hatem Ben Belgacem | Schritt 1 umgesetzt: Portal-Datenbank mit eigener Verbindung und Migrationen (AK-7); Status In Umsetzung |
 | 2026-11-23 | Hatem Ben Belgacem | Schritt 2 umgesetzt: Registrierung, Anmeldung über das Portal, Portal-Übersicht, Zugang zum ERP nur mit Mandant (AK-1 bis AK-6, AK-9) |
+| 2026-11-23 | Hatem Ben Belgacem | Schritt 3 umgesetzt: Datenbank erstellen, Rolle `uniqwork_erp`, Pools je Mandant, Migrationen beim Start (AK-10 bis AK-15, AK-21 bis AK-27) |

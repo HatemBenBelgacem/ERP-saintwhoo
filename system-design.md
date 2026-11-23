@@ -62,7 +62,7 @@ src/
 | `projects`         | ANF-003     | model, server_fns, repository                | list, detail, form                          |
 | `purchase_orders`  | ANF-004     | model, server_fns, repository                | list, detail, form                          |
 | `auth`             | ANF-007, ANF-026 | model, server_fns, repository, session, middleware (Portal-Datenbank) | login, register              |
-| `portal`           | ANF-026     | – (nutzt `auth`)                             | page (`/portal`)                            |
+| `portal`           | ANF-026     | model, server_fns, repository, provision (Datenbanken anlegen) | page (`/portal`)          |
 | `tasks`            | ANF-006     | model, server_fns, repository                | list, detail, form                          |
 | `users`            | ANF-005     | model, server_fns, repository, password      | list, detail, form                          |
 | `system`           | ANF-001     | server_fns, repository (Datenbank-Status)    | –                                           |
@@ -145,6 +145,8 @@ Anfrage ──► auth::middleware (Axum-Schicht in main.rs, Zustand: PortalPool
                    übrige Seiten .................................. 303 → /portal
 ```
 
+- Mit Zugang zum ERP legt die Middleware den Pool der Mandanten-Datenbank (`db::TenantPool`) in die Anfrage und
+  ergänzt `CurrentUser::benutzer_id` aus der Tabelle `benutzer` des Mandanten. `crate::db::pool()` liest ihn dort.
 - Server-Funktionen lesen den Zugang mit `auth::session::current_user()` (aus `http::request::Parts`).
   `CurrentUser` enthält Zugang (`portal_id`, E-Mail, Name), den Mandanten der Sitzung und – ab dem Erstellen der
   Datenbank – den Benutzer in der Mandanten-Datenbank (`benutzer_id`).
@@ -171,10 +173,30 @@ Container ──► hört auf 0.0.0.0:$PORT ──► DATABASE_URL ──► Pos
 
 - Migrationen sind über `sqlx::migrate!` im Serverprogramm enthalten und laufen beim Start; fehlt die
   Datenbank, legt der Server sie an (`src/db.rs`).
-- **Portal-Datenbank (ANF-026):** zweite Datenbank `uniqwork_portal` im selben PostgreSQL-Dienst, mit eigenen
-  Migrationen aus `migrations_portal/`. Adresse aus `PORTAL_DATABASE_URL`; fehlt sie, wird `DATABASE_URL` mit dem
-  Datenbanknamen `uniqwork_portal` verwendet. Der Server legt sie beim Start an. Im Leptos-Kontext liegt ihr Pool als
-  eigener Typ `PortalPool` (abrufen mit `crate::db::portal_pool()`), damit er nicht mit dem ERP-Pool verwechselt wird.
+- **Datenbanken (ANF-026)** – alle im selben PostgreSQL-Dienst:
+
+  ```
+  DATABASE_URL (Benutzer mit CREATEDB/CREATEROLE, z. B. postgres)
+    ├─ uniqwork_portal ...... Portal: Zugänge, Sitzungen, Mandanten (migrations_portal/), Pool PortalPool
+    ├─ uq_m_000001 .......... Mandant 1: ERP (migrations/), Eigentümer = Benutzer aus DATABASE_URL
+    ├─ uq_m_000002 .......... Mandant 2 …
+    └─ Rolle uniqwork_erp ... laufender ERP-Betrieb: nur CONNECT auf uq_m_…, Daten lesen/schreiben, keine DDL
+  ```
+
+  - Adresse der Portal-Datenbank aus `PORTAL_DATABASE_URL`; fehlt sie, `DATABASE_URL` mit dem Namen `uniqwork_portal`.
+    Ihre Zugangsdaten dienen auch zum Anlegen, Migrieren und Löschen der Mandanten-Datenbanken.
+  - **Serverstart** (`db::connect`, `portal::provision::startup`): Portal-Datenbank anlegen und migrieren; Rolle
+    `uniqwork_erp` anlegen bzw. mit neuem Zufallspasswort versehen (nie gespeichert, nie protokolliert); abgebrochene
+    Erstellungen (`wird_erstellt`) löschen und auf `fehler` setzen; Migrationen und Rechte in allen bereiten
+    Mandanten-Datenbanken nachführen. Andere Datenbanken legt der Server beim Start nicht an.
+  - **Datenbank erstellen** (`portal::server_fns::create_database`, eigene Tokio-Aufgabe): Zeile des Administrators
+    sperren, Regel „eine pro Administrator“ prüfen, Mandant `wird_erstellt` → `CREATE DATABASE`, `CONNECT` nur für
+    Eigentümer und `uniqwork_erp`, Migrationen, Rechte, erster Benutzer (Adresse „Person“, ohne Passwort, mit
+    `portal_benutzer_id`) → `bereit`. Bei einem Fehler wird die Datenbank gelöscht und der Mandant auf `fehler` gesetzt.
+  - **Pools je Mandant** (`db::TenantPools`): beim ersten Zugriff ohne Verbindung angelegt, höchstens 3 Verbindungen,
+    unbenutzte schliessen nach 5 Minuten.
+  - `CREATE DATABASE` und `GRANT` erlauben keine Parameter: Datenbanknamen kommen nur nach `is_valid_database_name`
+    (`uq_m_` + Ziffern, von der Portal-Datenbank erzeugt) in den SQL-Text.
 - Umgebungsvariablen im Image: `LEPTOS_ENV=PROD`, `LEPTOS_SITE_ROOT=site`, `LEPTOS_SITE_ADDR=0.0.0.0:8080`,
   `RUST_LOG=info`. In Railway zu setzen: `DATABASE_URL`, `SITZUNG_COOKIE_SECURE=1`
   (`PORTAL_DATABASE_URL` nur, wenn die Portal-Datenbank woanders liegen soll).

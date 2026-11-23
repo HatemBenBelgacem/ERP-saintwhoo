@@ -21,15 +21,17 @@ struct SessionRow {
     mandant_id: Option<i64>,
     firmenname: Option<String>,
     status: Option<String>,
+    datenbankname: Option<String>,
 }
 
 impl From<SessionRow> for CurrentUser {
     fn from(r: SessionRow) -> Self {
-        let mandant = match (r.mandant_id, r.status) {
-            (Some(id), Some(status)) => Some(SessionTenant {
+        let mandant = match (r.mandant_id, r.status, r.datenbankname) {
+            (Some(id), Some(status), Some(datenbankname)) => Some(SessionTenant {
                 id,
                 firmenname: r.firmenname,
                 status,
+                datenbankname,
             }),
             _ => None,
         };
@@ -55,7 +57,7 @@ pub async fn user_for_session(
         "WITH s AS ( \
              SELECT s.id, s.zuletzt_aktiv, b.id AS portal_id, b.email, \
                     b.vorname || ' ' || b.nachname AS name, b.ist_administrator, \
-                    m.id AS mandant_id, m.firmenname, m.status \
+                    m.id AS mandant_id, m.firmenname, m.status, m.datenbankname \
              FROM portal_sitzung s \
              JOIN portal_benutzer b ON b.id = s.portal_benutzer_id \
              LEFT JOIN mandant m ON m.id = s.mandant_id AND m.besitzer_id = b.id \
@@ -67,7 +69,8 @@ pub async fn user_for_session(
              UPDATE portal_sitzung SET zuletzt_aktiv = now() \
              WHERE id IN (SELECT id FROM s WHERE zuletzt_aktiv < now() - interval '1 minute') \
          ) \
-         SELECT portal_id, email, name, ist_administrator, mandant_id, firmenname, status FROM s",
+         SELECT portal_id, email, name, ist_administrator, mandant_id, firmenname, status, \
+                datenbankname FROM s",
     )
     .bind(token_hash)
     .bind(SESSION_IDLE_HOURS)
@@ -169,17 +172,18 @@ pub async fn start_session(
     .bind(SESSION_MAX_DAYS)
     .execute(&mut *conn)
     .await?;
-    // Eine Datenbank pro Administrator (ANF-026 AK-14): die erste bereite wird gewählt
+    // Eine Datenbank pro Administrator (ANF-026 AK-14): bevorzugt die bereite, sonst die zuletzt
+    // begonnene (z. B. fehlgeschlagen – dann zeigt das Portal „Erneut versuchen“, AK-13)
     let erp_access: Option<bool> = sqlx::query_scalar(
         "WITH m AS ( \
-             SELECT id, firmenname FROM mandant \
-             WHERE besitzer_id = $2 AND status = $3 ORDER BY id LIMIT 1 \
+             SELECT id, firmenname, status FROM mandant \
+             WHERE besitzer_id = $2 ORDER BY (status = $3) DESC, id DESC LIMIT 1 \
          ), \
          s AS ( \
              INSERT INTO portal_sitzung (merkmal_hash, portal_benutzer_id, mandant_id) \
              VALUES ($1, $2, (SELECT id FROM m)) \
          ) \
-         SELECT firmenname IS NOT NULL FROM m",
+         SELECT status = $3 AND firmenname IS NOT NULL FROM m",
     )
     .bind(token_hash)
     .bind(user_id)

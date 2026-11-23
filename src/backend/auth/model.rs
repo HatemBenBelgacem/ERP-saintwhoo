@@ -54,6 +54,9 @@ pub struct SessionTenant {
     pub firmenname: Option<String>,
     /// `wird_erstellt`, `bereit` oder `fehler`
     pub status: String,
+    /// Name der Mandanten-Datenbank – nur auf dem Server, wird nicht an den Browser gesendet
+    #[serde(skip)]
+    pub datenbankname: String,
 }
 
 impl SessionTenant {
@@ -303,19 +306,27 @@ mod tests {
             id: 1,
             firmenname: None,
             status: TENANT_READY.into(),
+            datenbankname: "uq_m_000001".into(),
         });
         assert!(!user.erp_access(), "Mandant noch nicht definiert");
         user.mandant = Some(SessionTenant {
             id: 1,
             firmenname: Some("Firma AG".into()),
             status: "wird_erstellt".into(),
+            datenbankname: "uq_m_000001".into(),
         });
         assert!(!user.erp_access(), "Datenbank noch nicht bereit");
         user.mandant = Some(SessionTenant {
             id: 1,
             firmenname: Some("Firma AG".into()),
             status: TENANT_READY.into(),
+            datenbankname: "uq_m_000001".into(),
         });
         assert!(user.erp_access());
+        let json = serde_json::to_string(&user).unwrap();
+        assert!(
+            !json.contains("uq_m_"),
+            "Datenbankname nicht an den Browser: {json}"
+        );
     }
 }

@@ -329,3 +329,43 @@ pub async fn end_sessions_except(
         .await?;
     Ok(())
 }
+
+// ---------------------------------------------------------------------------------------------
+// Zuordnung zum Portal (ANF-026)
+
+/// Ersten Benutzer einer neuen Mandanten-Datenbank anlegen (ANF-026 AK-15): Adresse vom Typ „Person“
+/// und aktiver Benutzer ohne Passwort, verknüpft mit dem Zugang im Portal. Liefert die Kennung.
+pub async fn create_owner(
+    conn: &mut sqlx::PgConnection,
+    vorname: &str,
+    nachname: &str,
+    email: &str,
+    username: &str,
+    portal_id: i64,
+) -> Result<i64, sqlx::Error> {
+    let address_id: i64 = sqlx::query_scalar(
+        "INSERT INTO adresse (typ, vorname, nachname, email) VALUES ('person', $1, $2, $3) RETURNING id",
+    )
+    .bind(vorname)
+    .bind(nachname)
+    .bind(email)
+    .fetch_one(&mut *conn)
+    .await?;
+    sqlx::query_scalar(
+        "INSERT INTO benutzer (benutzername, adresse_id, aktiv, portal_benutzer_id) \
+         VALUES ($1, $2, true, $3) RETURNING id",
+    )
+    .bind(username)
+    .bind(address_id)
+    .bind(portal_id)
+    .fetch_one(&mut *conn)
+    .await
+}
+
+/// Aktiver Benutzer der Mandanten-Datenbank zum Zugang im Portal (ANF-026, z. B. „meine Aufgaben“).
+pub async fn id_for_portal_user(pool: &PgPool, portal_id: i64) -> Result<Option<i64>, sqlx::Error> {
+    sqlx::query_scalar("SELECT id FROM benutzer WHERE portal_benutzer_id = $1 AND aktiv")
+        .bind(portal_id)
+        .fetch_optional(pool)
+        .await
+}
