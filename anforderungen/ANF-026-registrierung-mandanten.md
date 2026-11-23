@@ -175,7 +175,8 @@ Passwort und Sitzungen stehen nur in der Portal-Datenbank (AK-8).
 
 - Hängt ab von: ANF-002 (Adressen), ANF-005 (Benutzer), ANF-007 (Anmeldung, Sitzungen, Zugangsschutz),
   ANF-008 (Betrieb auf Railway), ANF-025 (Firma – wird im Modal-Fenster angelegt)
-- Ändert: ANF-007 (Ersteinrichtung entfällt, Anmeldung über die Portal-Datenbank)
+- Ändert: ANF-007 (Ersteinrichtung entfällt; Anmeldung und Sitzungen nur noch über die Portal-Datenbank),
+  ANF-005 (Benutzer in der Mandanten-Datenbank ohne Passwort; Passwort ändern/zurücksetzen erfolgt im Portal)
 - Wird benötigt von: künftige Anforderung „Rollen und Berechtigungen“, Einladen weiterer Benutzer
 
 ## 6. Nicht im Umfang
@@ -198,8 +199,9 @@ Passwort und Sitzungen stehen nur in der Portal-Datenbank (AK-8).
 - [ ] Wie wird die heute bestehende Datenbank (mit echten Daten) zum ersten Mandanten?
 - [ ] Liegen Portal- und Mandanten-Datenbanken im selben PostgreSQL-Dienst auf Railway?
   *(vorläufig: ja; Grenze der Verbindungen und des Speichers beachten, AK-27)*
-- [ ] Was geschieht mit Passwort und Sitzungen der Benutzerverwaltung in der Mandanten-Datenbank
-  (ANF-005, ANF-007)? *(vorläufig: entfallen dort, Anmeldung nur über die Portal-Datenbank)*
+- [x] Was geschieht mit Passwort und Sitzungen der Benutzerverwaltung in der Mandanten-Datenbank
+  (ANF-005, ANF-007)? **Entschieden: Anmeldung nur über das Portal.** Passwort und Sitzungen entfallen in der
+  Mandanten-Datenbank (AK-8).
 - [ ] Ab welcher Anzahl Mandanten ist eine andere Aufteilung (Schema pro Mandant) zu prüfen?
 
 ## 8. Änderungshistorie
@@ -208,3 +210,4 @@ Passwort und Sitzungen stehen nur in der Portal-Datenbank (AK-8).
 |------------|--------------------|-----------------|
 | 2026-11-23 | Hatem Ben Belgacem | Erstellt        |
 | 2026-11-23 | Hatem Ben Belgacem | Registrierung in eigener Portal-Datenbank (AK-6 bis AK-9), folgende AK neu nummeriert |
+| 2026-11-23 | Hatem Ben Belgacem | Entschieden: Anmeldung nur über das Portal |
