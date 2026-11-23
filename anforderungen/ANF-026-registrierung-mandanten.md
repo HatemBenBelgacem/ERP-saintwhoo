@@ -3,7 +3,7 @@
 | Feld          | Wert                                              |
 |---------------|---------------------------------------------------|
 | **Nummer**    | ANF-026                                           |
-| **Status**    | Freigegeben                                       |
+| **Status**    | In Umsetzung                                      |
 | **Priorität** | Muss                                              |
 | **Typ**       | Funktional                                        |
 | **Modul**     | Portal / Mandanten                                |
@@ -77,9 +77,10 @@ Jede **Mandanten-Datenbank** enthält das bisherige ERP (alle Migrationen aus `m
 - [ ] **AK-6:** Registrierung, Anmeldung und Sitzungen laufen in einer **eigenen Datenbank**
   `uniqwork_portal`, getrennt von allen Mandanten-Datenbanken. Die Registrierung schreibt ausschliesslich in
   diese Datenbank; es wird dabei **keine** Mandanten-Datenbank angelegt oder verändert.
-- [ ] **AK-7:** Die Portal-Datenbank wird über eine eigene Variable `PORTAL_DATABASE_URL` angesprochen und hat
+- [x] **AK-7:** Die Portal-Datenbank wird über eine eigene Variable `PORTAL_DATABASE_URL` angesprochen und hat
   eigene Migrationen im Ordner `migrations_portal/`. Die Migrationen in `migrations/` gelten nur für
-  Mandanten-Datenbanken.
+  Mandanten-Datenbanken. Ist `PORTAL_DATABASE_URL` leer, gilt `DATABASE_URL` mit dem Datenbanknamen
+  `uniqwork_portal` (gleicher PostgreSQL-Dienst, keine zusätzliche Einstellung auf Railway nötig).
 - [ ] **AK-8:** Die Portal-Datenbank enthält keine ERP-Tabellen (Adressen, Projekte, Konten …). Die
   Mandanten-Datenbanken enthalten keine Zugangsdaten des Portals (E-Mail als Anmeldename, Passwort-Hash,
   Sitzungen), sondern nur den Verweis `portal_benutzer_id`.
@@ -214,3 +215,4 @@ Passwort und Sitzungen stehen nur in der Portal-Datenbank (AK-8).
 | 2026-11-23 | Hatem Ben Belgacem | Registrierung in eigener Portal-Datenbank (AK-6 bis AK-9), folgende AK neu nummeriert |
 | 2026-11-23 | Hatem Ben Belgacem | Entschieden: Anmeldung nur über das Portal |
 | 2026-11-23 | Hatem Ben Belgacem | Entschieden: eine Datenbank pro Administrator, vorläufige Annahmen übernommen; Status Freigegeben |
+| 2026-11-23 | Hatem Ben Belgacem | Schritt 1 umgesetzt: Portal-Datenbank mit eigener Verbindung und Migrationen (AK-7); Status In Umsetzung |

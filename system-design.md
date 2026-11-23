@@ -35,7 +35,7 @@ src/
   main.rs                     Serverstart: .env, Verbindungspool, Axum-Routen (nur ssr)
   lib.rs                      Module + Einstieg hydrate() für den Browser
   app.rs                      HTML-Rahmen, Komponente `App`, alle Routen
-  db.rs                       Verbindungspool, Migrationen, LIKE-Muster (nur ssr)
+  db.rs                       Verbindungspools (ERP und Portal), Migrationen, LIKE-Muster (nur ssr)
   layout.rs                   Grundgerüst: Kopfzeile + Seitenleiste
   navigation.rs               Navigationseinträge (Haupt- und Einstellungsnavigation)
   forms.rs                    Gemeinsame Formular-Bausteine (Modal, TextField, SearchPicker …)
@@ -163,8 +163,13 @@ Container ──► hört auf 0.0.0.0:$PORT ──► DATABASE_URL ──► Pos
 
 - Migrationen sind über `sqlx::migrate!` im Serverprogramm enthalten und laufen beim Start; fehlt die
   Datenbank, legt der Server sie an (`src/db.rs`).
+- **Portal-Datenbank (ANF-026):** zweite Datenbank `uniqwork_portal` im selben PostgreSQL-Dienst, mit eigenen
+  Migrationen aus `migrations_portal/`. Adresse aus `PORTAL_DATABASE_URL`; fehlt sie, wird `DATABASE_URL` mit dem
+  Datenbanknamen `uniqwork_portal` verwendet. Der Server legt sie beim Start an. Im Leptos-Kontext liegt ihr Pool als
+  eigener Typ `PortalPool` (abrufen mit `crate::db::portal_pool()`), damit er nicht mit dem ERP-Pool verwechselt wird.
 - Umgebungsvariablen im Image: `LEPTOS_ENV=PROD`, `LEPTOS_SITE_ROOT=site`, `LEPTOS_SITE_ADDR=0.0.0.0:8080`,
-  `RUST_LOG=info`. In Railway zu setzen: `DATABASE_URL`, `SITZUNG_COOKIE_SECURE=1`.
+  `RUST_LOG=info`. In Railway zu setzen: `DATABASE_URL`, `SITZUNG_COOKIE_SECURE=1`
+  (`PORTAL_DATABASE_URL` nur, wenn die Portal-Datenbank woanders liegen soll).
 - Im Docker-Bau setzt `RUSTFLAGS="--cfg erase_components"` die Leptos-Option für Linux (`.cargo/config.toml`
   gilt nur für Apple-Rechner). Ohne sie bricht der Release-Bau des Servers mit „queries overflow the depth limit“ ab.
 - Die `cargo chef cook`-Aufrufe müssen dieselben Funktionsschalter, Profile und Zielordner verwenden wie
