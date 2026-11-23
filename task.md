@@ -33,6 +33,7 @@ Stand: 2026-11-24
 ## Erledigt
 
 - [x] ANF-027 Geländeplan eines Projekts erfasst und umgesetzt: 3D-Karte (MapLibre + Three.js) unter `/projekte/<Kennung>/gelaendeplan`, Bühnen/Verpflegungsstände/Festzelte platzieren, drehen, löschen, Rasenfläche abstecken (m², Lageprüfung mit `geo`), Standort im Modal-Fenster, Speichern in `gelaendeplan*`
+- [x] ANF-027 AK-4: Elemente als gestaltete 3D-Modelle statt Quadern (Bühne, Verpflegungsstand, Festzelt)
 - [x] ANF-026 Schritt 3b: Mandanten-Datenbanken ohne Zugangsdaten (Passwort, letzte Anmeldung, Sitzungen), Benutzerverwaltung ohne Passwort, „Passwort ändern“ im Portal – ANF-026 erledigt
 - [x] ANF-026 Schritt 4: Modal-Fenster „Mandant definieren“ (`/portal?mandant=…`), Firma und Firmenadresse in der Mandanten-Datenbank, Firmenname in der Kopfzeile
 - [x] ANF-026 Schritt 3: Datenbank erstellen (`/portal`), Rolle `uniqwork_erp` ohne `CREATEDB`, Pool je Mandant, Migrationen und Aufräumen beim Serverstart, erster Benutzer mit `portal_benutzer_id`

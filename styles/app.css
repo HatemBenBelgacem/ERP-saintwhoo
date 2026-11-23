@@ -19,6 +19,8 @@
   --gelaende-verpflegungsstand: #f59e0b; /* Orange */
   --gelaende-festzelt: #3b82f6; /* Blau */
   --gelaende-flaeche: #22c55e; /* Grün */
+  --gelaende-gestell: #374151; /* Anthrazit: Stützen, Bühnenboden, Lautsprecher, Eingang */
+  --gelaende-plane: #f8fafc; /* Hell: Zeltwände, Thekenplatte, Streifen des Vordachs */
 }
 
 /* daisyUI-Farbschema „light“ (ANF-009). Alle daisyUI-Bausteine nutzen diese Farben automatisch:

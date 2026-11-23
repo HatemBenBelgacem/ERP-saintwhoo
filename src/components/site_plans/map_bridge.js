@@ -202,25 +202,27 @@ export class SitePlanMap {
         const THREE = this.THREE;
         if (!this.group || !this.scene) return;
 
+        // Alte Objekte samt Untergruppen entfernen und Speicher freigeben
         for (const child of [...this.group.children]) {
             this.group.remove(child);
-            child.geometry?.dispose();
-            child.material?.dispose();
+            child.traverse((o) => {
+                o.geometry?.dispose();
+                o.material?.dispose();
+            });
         }
 
-        // Elemente als Quader auf dem Boden
+        // Elemente als einfache 3D-Modelle; Farben aus dem Farbschema
+        const palette = {
+            frame: themeColor(THREE, '--gelaende-gestell', 0x374151),
+            canvas: themeColor(THREE, '--gelaende-plane', 0xf8fafc)
+        };
         for (const el of this.scene.elements) {
-            const color = themeColor(THREE, `--gelaende-${el.kind}`, 0x3b82f6);
-            const geometry = new THREE.BoxGeometry(el.width_m, el.height_m, el.depth_m);
-            const material = new THREE.MeshStandardMaterial({
-                color,
-                transparent: el.outside,
-                opacity: el.outside ? 0.45 : 1.0
-            });
-            const mesh = new THREE.Mesh(geometry, material);
-            mesh.position.set(el.x, el.height_m / 2, el.z);
-            mesh.rotation.y = (el.rotation_deg * Math.PI) / 180;
-            this.group.add(mesh);
+            const accent = themeColor(THREE, `--gelaende-${el.kind}`, 0x3b82f6);
+            const build = MODELS[el.kind] ?? buildBlock;
+            const model = build(THREE, el, { ...palette, accent }, el.outside ? 0.45 : 1.0);
+            model.position.set(el.x, 0, el.z);
+            model.rotation.y = (el.rotation_deg * Math.PI) / 180;
+            this.group.add(model);
         }
 
         // Rasenfläche: Eckpunkte, Umriss und (ab drei Punkten) halbdurchsichtige Fläche
@@ -260,4 +262,135 @@ export class SitePlanMap {
 
         this.map?.triggerRepaint();
     }
+}
+
+// ---------------------------------------------------------------------------------------------
+// 3D-Modelle der Elemente. Jedes Modell steht mit dem Mittelpunkt im Ursprung auf dem Boden (y = 0),
+// Breite entlang x, Tiefe entlang z, Vorderseite in Richtung +z. Es bleibt innerhalb der Grundfläche
+// width_m × depth_m (sie wird in Rust für die Lageprüfung verwendet) und erreicht die Höhe height_m.
+// `opacity` < 1: Element steht ausserhalb der Rasenfläche → halbdurchsichtig.
+
+const MODELS = {
+    buehne: buildStage,
+    verpflegungsstand: buildFoodStall,
+    festzelt: buildTent
+};
+
+function material(THREE, color, opacity) {
+    return new THREE.MeshStandardMaterial({
+        color,
+        roughness: 0.8,
+        transparent: opacity < 1,
+        opacity
+    });
+}
+
+// Quader der Grösse (sx, sy, sz) mit Mittelpunkt (x, y, z)
+function box(THREE, group, [sx, sy, sz], [x, y, z], color, opacity) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), material(THREE, color, opacity));
+    mesh.position.set(x, y, z);
+    group.add(mesh);
+    return mesh;
+}
+
+// Rückfall für unbekannte Arten: einfacher Quader
+function buildBlock(THREE, el, colors, opacity) {
+    const g = new THREE.Group();
+    box(THREE, g, [el.width_m, el.height_m, el.depth_m], [0, el.height_m / 2, 0], colors.accent, opacity);
+    return g;
+}
+
+// Bühne: Podest, Bühnenboden, Rückwand, vier Stützen, Dach und zwei Lautsprecher
+function buildStage(THREE, el, c, opacity) {
+    const g = new THREE.Group();
+    const w = el.width_m, d = el.depth_m, h = el.height_m;
+    const deck = Math.min(1.0, h * 0.25);
+    const roof = 0.25;
+
+    box(THREE, g, [w, deck, d], [0, deck / 2, 0], c.accent, opacity); // Podest (Verkleidung)
+    box(THREE, g, [w, 0.08, d], [0, deck + 0.04, 0], c.frame, opacity); // Bühnenboden
+
+    const wallH = h - roof - deck;
+    box(THREE, g, [w * 0.9, wallH, 0.15], [0, deck + wallH / 2, -d / 2 + 0.35], c.frame, opacity); // Rückwand
+
+    const r = 0.15;
+    for (const sx of [-1, 1]) {
+        for (const sz of [-1, 1]) {
+            const pole = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h - roof, 10), material(THREE, c.frame, opacity));
+            pole.position.set(sx * (w / 2 - 0.2), (h - roof) / 2, sz * (d / 2 - 0.2));
+            g.add(pole);
+        }
+        // Lautsprecher vorne links und rechts
+        box(THREE, g, [0.8, 1.4, 0.7], [sx * (w / 2 - 0.8), deck + 0.7, d / 2 - 0.7], c.frame, opacity);
+    }
+
+    box(THREE, g, [w, roof, d], [0, h - roof / 2, 0], c.accent, opacity); // Dach
+    return g;
+}
+
+// Verpflegungsstand: Theke, Rück- und Seitenwände, Dach und gestreiftes Vordach
+function buildFoodStall(THREE, el, c, opacity) {
+    const g = new THREE.Group();
+    const w = el.width_m, d = el.depth_m, h = el.height_m;
+    const front = Math.min(0.6, d * 0.25); // Platz für das Vordach vor dem Stand
+    const bodyD = d - front;
+    const bodyZ = -front / 2; // Stand nach hinten versetzt
+    const counter = 1.05;
+    const roofY = h - 0.35;
+    const wall = 0.08;
+
+    box(THREE, g, [w, counter, bodyD], [0, counter / 2, bodyZ], c.accent, opacity); // Thekenkörper
+    box(THREE, g, [w, 0.06, bodyD + 0.1], [0, counter + 0.03, bodyZ + 0.05], c.canvas, opacity); // Thekenplatte
+
+    const upper = roofY - counter;
+    box(THREE, g, [w, upper, wall], [0, counter + upper / 2, -d / 2 + wall / 2], c.accent, opacity); // Rückwand
+    for (const sx of [-1, 1]) {
+        box(THREE, g, [wall, upper, bodyD], [sx * (w / 2 - wall / 2), counter + upper / 2, bodyZ], c.accent, opacity);
+    }
+    box(THREE, g, [w, 0.12, bodyD], [0, roofY + 0.06, bodyZ], c.canvas, opacity); // Dach
+
+    // Vordach: Streifen abwechselnd in der Farbe des Stands und hell, nach vorne geneigt
+    const drop = 0.35;
+    const slant = Math.hypot(front, drop);
+    const awning = new THREE.Group();
+    awning.position.set(0, roofY, bodyZ + bodyD / 2);
+    awning.rotation.x = Math.atan2(drop, front);
+    const stripes = 8;
+    for (let i = 0; i < stripes; i++) {
+        const sw = w / stripes;
+        box(THREE, awning, [sw, 0.04, slant], [-w / 2 + sw * (i + 0.5), 0, slant / 2],
+            i % 2 === 0 ? c.accent : c.canvas, opacity);
+    }
+    g.add(awning);
+    return g;
+}
+
+// Festzelt: helle Zeltwände, Giebeldach in der Farbe der Art und dunkler Eingang vorne
+function buildTent(THREE, el, c, opacity) {
+    const g = new THREE.Group();
+    const w = el.width_m, d = el.depth_m, h = el.height_m;
+    const wallH = h * 0.6;
+    const roofH = h - wallH;
+
+    box(THREE, g, [w, wallH, d], [0, wallH / 2, 0], c.canvas, opacity); // Zeltwände
+
+    // Giebeldach: Dreieck (Querschnitt) entlang der Tiefe ausgezogen
+    const shape = new THREE.Shape([
+        new THREE.Vector2(-w / 2, 0),
+        new THREE.Vector2(w / 2, 0),
+        new THREE.Vector2(0, roofH)
+    ]);
+    const roofGeometry = new THREE.ExtrudeGeometry(shape, { depth: d, bevelEnabled: false });
+    roofGeometry.translate(0, 0, -d / 2);
+    const roof = new THREE.Mesh(roofGeometry, material(THREE, c.accent, opacity));
+    roof.position.y = wallH;
+    g.add(roof);
+
+    // Eingang vorne
+    const doorW = Math.min(1.6, w * 0.4);
+    const doorH = Math.min(1.7, wallH * 0.9);
+    box(THREE, g, [doorW, doorH, 0.02], [0, doorH / 2, d / 2 + 0.01], c.frame, opacity);
+    // Firststange
+    box(THREE, g, [0.08, 0.08, d], [0, h, 0], c.frame, opacity);
+    return g;
 }

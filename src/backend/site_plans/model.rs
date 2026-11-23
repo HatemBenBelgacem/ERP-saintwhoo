@@ -66,7 +66,7 @@ impl ElementKind {
         }
     }
 
-    /// Höhe des Quaders in der 3D-Ansicht in Metern.
+    /// Gesamthöhe des 3D-Modells in Metern (Bühne bis Dach, Zelt bis First).
     pub fn height_m(self) -> f64 {
         match self {
             ElementKind::Stage => 4.5,
