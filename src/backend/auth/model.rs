@@ -27,6 +27,8 @@ pub const LOGIN_PATH: &str = "/anmelden";
 pub const REGISTER_PATH: &str = "/registrieren";
 /// Portal-Übersicht: eigene Datenbank und Mandant (ANF-026 AK-4).
 pub const PORTAL_PATH: &str = "/portal";
+/// Parameter in der Webadresse, der auf `/portal` das Modal-Fenster „Mandant definieren“ öffnet (ANF-026 AK-16).
+pub const TENANT_PARAM: &str = "mandant";
 /// Präfix der Server-Funktionen, die ohne Anmeldung erreichbar sind (ANF-007 AK-3).
 pub const PUBLIC_API_PREFIX: &str = "/oeffentlich";
 /// Präfix der Server-Funktionen des Portals: angemeldet, aber ohne Zugang zum ERP erreichbar (ANF-026).
@@ -64,6 +66,20 @@ impl SessionTenant {
     pub fn is_usable(&self) -> bool {
         self.status == TENANT_READY && self.firmenname.is_some()
     }
+
+    /// Datenbank bereit, aber Mandant noch nicht definiert (ANF-026 AK-16, AK-19).
+    pub fn needs_definition(&self) -> bool {
+        self.status == TENANT_READY && self.firmenname.is_none()
+    }
+}
+
+/// Ziel im Portal für einen Zugang ohne Zugang zum ERP: Ist die Datenbank bereit, aber der Mandant noch nicht
+/// definiert, öffnet sich dort das Modal-Fenster „Mandant definieren“ (ANF-026 AK-16, AK-19).
+pub fn portal_target(tenant: Option<&SessionTenant>) -> String {
+    match tenant {
+        Some(t) if t.needs_definition() => format!("{PORTAL_PATH}?{TENANT_PARAM}={}", t.id),
+        _ => PORTAL_PATH.to_string(),
+    }
 }
 
 /// Der angemeldete Zugang aus der Portal-Datenbank (ANF-026).
@@ -85,6 +101,16 @@ impl CurrentUser {
     /// Darf das ERP verwenden: Datenbank bereit und Mandant definiert (ANF-026 AK-19).
     pub fn erp_access(&self) -> bool {
         self.mandant.as_ref().is_some_and(SessionTenant::is_usable)
+    }
+
+    /// Ziel im Portal (siehe `portal_target`).
+    pub fn portal_target(&self) -> String {
+        portal_target(self.mandant.as_ref())
+    }
+
+    /// Firmenname des Mandanten für die Kopfzeile (ANF-026 AK-20).
+    pub fn company_name(&self) -> Option<&str> {
+        self.mandant.as_ref().and_then(|m| m.firmenname.as_deref())
     }
 }
 
@@ -302,6 +328,7 @@ mod tests {
             benutzer_id: None,
         };
         assert!(!user.erp_access());
+        assert_eq!(user.portal_target(), "/portal");
         user.mandant = Some(SessionTenant {
             id: 1,
             firmenname: None,
@@ -309,6 +336,18 @@ mod tests {
             datenbankname: "uq_m_000001".into(),
         });
         assert!(!user.erp_access(), "Mandant noch nicht definiert");
+        assert_eq!(user.portal_target(), "/portal?mandant=1");
+        user.mandant = Some(SessionTenant {
+            id: 1,
+            firmenname: None,
+            status: "fehler".into(),
+            datenbankname: "uq_m_000001".into(),
+        });
+        assert_eq!(
+            user.portal_target(),
+            "/portal",
+            "Fehler: kein Modal-Fenster"
+        );
         user.mandant = Some(SessionTenant {
             id: 1,
             firmenname: Some("Firma AG".into()),
@@ -323,6 +362,7 @@ mod tests {
             datenbankname: "uq_m_000001".into(),
         });
         assert!(user.erp_access());
+        assert_eq!(user.company_name(), Some("Firma AG"));
         let json = serde_json::to_string(&user).unwrap();
         assert!(
             !json.contains("uq_m_"),

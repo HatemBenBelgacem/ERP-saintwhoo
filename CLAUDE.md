@@ -175,7 +175,8 @@ Rolle `uniqwork_erp` wird bei jedem Start neu gesetzt. `PORT` setzt Railway selb
 - Registrierung (`/registrieren`), Anmeldung (E-Mail + Passwort) und Sitzungen laufen über die **Portal-Datenbank**.
 - Jede Anfrage läuft durch `src/backend/auth/middleware.rs`: Seiten ohne Sitzung → `/anmelden`,
   Server-Funktionen unter `/api/…` ohne Sitzung → 401. Mit Sitzung, aber ohne bereiten und definierten Mandanten
-  ist nur das Portal erreichbar: Seiten → `/portal`, ERP-Server-Funktionen → 403.
+  ist nur das Portal erreichbar: Seiten → `/portal` (ist die Datenbank bereit, aber der Mandant nicht definiert:
+  `/portal?mandant=<Kennung>` mit dem Modal-Fenster „Mandant definieren“), ERP-Server-Funktionen → 403.
   Neue `#[server]`-Funktionen sind damit automatisch geschützt.
 - Nur Funktionen, die **ohne** Anmeldung gehen müssen, bekommen `#[server(prefix = "/oeffentlich")]` – sparsam verwenden.
 - Funktionen des Portals, die angemeldet, aber **ohne Mandant** gehen müssen, bekommen `#[server(prefix = "/api/portal")]`.

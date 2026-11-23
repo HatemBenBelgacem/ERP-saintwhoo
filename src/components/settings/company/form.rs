@@ -157,8 +157,9 @@ fn CompanyFields(initial: CompanyInput, errors: Signal<FieldErrors>) -> impl Int
 }
 
 /// Felder einer neuen Firmenadresse (AK-4); Formularnamen `adresse[…]`.
+/// Auch im Modal-Fenster „Mandant definieren“ (ANF-026 AK-17).
 #[component]
-fn NewAddressFields(errors: Signal<FieldErrors>) -> impl IntoView {
+pub fn NewAddressFields(errors: Signal<FieldErrors>) -> impl IntoView {
     let field = move |name: &'static str, label: &'static str, required: bool, max: usize| {
         let has_error = move || errors.read().contains_key(name);
         view! {

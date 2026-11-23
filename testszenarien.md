@@ -31,7 +31,7 @@ Schlägt ein Szenario fehl, trage es in [task.md](task.md) als offene Aufgabe ei
 | ANF-005 | Benutzer | 35 | Bedienung im Browser noch nicht von Hand geprüft |
 | ANF-006 | Aufgaben | 21 | Bedienung im Browser noch nicht von Hand geprüft |
 | ANF-007 | Anmeldung | 29 | Seit ANF-026 mit E-Mail statt Benutzername; TS-007-26/27 entfallen |
-| ANF-026 | Registrierung, Datenbank, Mandant | 23 | Schritte 1 bis 3 (Portal-Datenbank, Registrierung, Anmeldung, Datenbank erstellen) |
+| ANF-026 | Registrierung, Datenbank, Mandant | 29 | Schritte 1 bis 4 (Portal-Datenbank, Registrierung, Anmeldung, Datenbank erstellen, Mandant definieren) |
 
 Die Anforderungen ANF-005 bis ANF-007 haben bisher keine Prüfung im Browser. Mit diesen Szenarien starten.
 
@@ -58,10 +58,9 @@ Die Anforderungen ANF-005 bis ANF-007 haben bisher keine Prüfung im Browser. Mi
 5. Die Ersteinrichtung gibt es seit ANF-026 nicht mehr; der erste Zugang entsteht über `/registrieren`.
 
 > **Hinweis ANF-026:** Seit der Anmeldung über das Portal öffnet sich das ERP nur mit einem bereiten und definierten
-> Mandanten, und jeder Mandant hat eine eigene Datenbank. Ablauf: registrieren → „Datenbank erstellen“. Bis das
-> Modal-Fenster „Mandant definieren“ umgesetzt ist (ANF-026 Schritt 4), den Firmennamen von Hand setzen: in
-> `uniqwork_portal` `UPDATE mandant SET firmenname = 'Musterfirma AG' WHERE besitzer_id = <Kennung des Zugangs>;`
-> und danach eine Seite neu laden. Die Testdaten oben gehören in diese Mandanten-Datenbank.
+> Mandanten, und jeder Mandant hat eine eigene Datenbank. Ablauf: registrieren → „Datenbank erstellen“ → im
+> Modal-Fenster „Mandant definieren“ die Firma erfassen (z. B. **Musterfirma AG**). Die Testdaten oben gehören in diese
+> Mandanten-Datenbank; die Firma „Musterfirma AG“ entsteht dabei schon.
 > In den Szenarien von ANF-007 steht „Benutzername“ für die **E-Mail** des Portal-Zugangs.
 
 ## ANF-001 Grundgerüst
@@ -300,6 +299,12 @@ Vorbereitung: leere PostgreSQL-Instanz bzw. Datenbanken `uniqwork` und `uniqwork
 | TS-026-21 | 22, 23 | Zwei Zugänge mit je eigener Datenbank und Firmennamen. In beiden `/adressen` öffnen. | Jeder sieht nur seine eigene Person; die Daten des anderen sind nicht erreichbar. |
 | TS-026-22 | 24 | DB: Einen Mandanten auf `wird_erstellt` setzen, Server neu starten. Danach als ein anderer Zugang weiterarbeiten. | Protokoll „Abgebrochene Erstellung … wird aufgeräumt“; Datenbank gelöscht, Status `fehler`. Die anderen Mandanten arbeiten nach dem Neustart weiter (neues Rollenpasswort). |
 | TS-026-23 | 27 | Mit einem Mandanten im ERP arbeiten, dann `SELECT count(*) FROM pg_stat_activity WHERE usename = 'uniqwork_erp';` – und nach 5 Minuten Ruhe erneut. | Höchstens 3 Verbindungen; nach der Ruhezeit 0. |
+| TS-026-24 | 16, 17 | Mit einem neuen Zugang „Datenbank erstellen“ klicken. | Danach steht `/portal?mandant=<Kennung>` in der Webadresse und das Modal-Fenster „Mandant definieren“ ist offen: Firmenname, Zusatz, Strasse, Postfach, PLZ, Ort, Land (Schweiz vorgewählt), Telefon, E-Mail, Webseite, UID. |
+| TS-026-25 | 17 | Leer speichern. Dann gültige Anschrift mit UID `CHE-123.456.789`. | Meldungen bei Firmenname, Strasse, PLZ und Ort. Danach „Die Prüfziffer stimmt nicht …“ bei der UID; nichts gespeichert. |
+| TS-026-26 | 18, 20 | „Firma AG“, „Bahnhofstrasse 1“, „8001“, „Zürich“, UID `che 116.281.710` speichern. | Weiterleitung auf die Startseite des ERP; die Kopfzeile zeigt „Firma AG“. Einstellungen › Firma zeigt Anschrift und `CHE-116.281.710`. In `uniqwork_portal` steht der Firmenname beim Mandanten. |
+| TS-026-27 | 19 | Mit einem zweiten Zugang nach „Datenbank erstellen“ das Fenster mit Escape schliessen. | `/portal` zeigt „Mandant noch nicht definiert …“ und die Schaltfläche „Mandant definieren“, die das Fenster wieder öffnet. |
+| TS-026-28 | 19 | Mit diesem Zugang `/adressen` aufrufen, abmelden und neu anmelden. | Beide Male erscheint `/portal?mandant=<Kennung>` mit offenem Fenster; das ERP bleibt geschlossen. |
+| TS-026-29 | 18 | Als Anna (Mandant definiert) die Server-Funktion „Mandant definieren“ erneut aufrufen. | „Der Mandant ist bereits definiert …“; keine zweite Firma. |
 
 ## ANF-011 Kontenplan
 

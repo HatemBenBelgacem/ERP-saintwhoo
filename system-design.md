@@ -143,6 +143,8 @@ Anfrage ──► auth::middleware (Axum-Schicht in main.rs, Zustand: PortalPool
                    /portal, /api/portal/… ......................... erlaubt
                    übrige /api/… .................................. 403 „Kein Mandant gewählt.“
                    übrige Seiten .................................. 303 → /portal
+                                                                    (Datenbank bereit, Mandant nicht definiert:
+                                                                     /portal?mandant=<Kennung> → Modal-Fenster)
 ```
 
 - Mit Zugang zum ERP legt die Middleware den Pool der Mandanten-Datenbank (`db::TenantPool`) in die Anfrage und

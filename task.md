@@ -9,7 +9,6 @@ Stand: 2026-11-23
 ## Offen
 
 - [ ] ANF-026 Schritt 3b: Benutzerverwaltung ohne Passwort (ANF-005 anpassen): Passwortfelder, „Passwort setzen“ (`?passwort=1`) und „Letzte Anmeldung“ entfernen; Spalte `passwort_hash` und Tabellen `sitzung`/`anmeldeversuch` in den Mandanten-Datenbanken löschen (AK-8); Passwort ändern im Portal
-- [ ] ANF-026 Schritt 4: Mandant definieren (Modal-Fenster)
 - [ ] ANF-026: vor Inbetriebnahme klären, wie die bestehende Datenbank zum ersten Mandanten wird
 - [ ] ANF-025 Rest: Bankkonten als Verweis (mit ANF-015), MWST-Nummer nur bei MWST-Pflicht (mit ANF-012), Absender in Druckansichten und Buchungssperre ohne Firma (mit ANF-018)
 - [ ] ANF-011 Rest: Sperre von Nummer/Kontoart nach Buchungen (mit ANF-017), Vorgabe-MWST-Code (mit ANF-012)
@@ -33,6 +32,7 @@ Stand: 2026-11-23
 
 ## Erledigt
 
+- [x] ANF-026 Schritt 4: Modal-Fenster „Mandant definieren“ (`/portal?mandant=…`), Firma und Firmenadresse in der Mandanten-Datenbank, Firmenname in der Kopfzeile
 - [x] ANF-026 Schritt 3: Datenbank erstellen (`/portal`), Rolle `uniqwork_erp` ohne `CREATEDB`, Pool je Mandant, Migrationen und Aufräumen beim Serverstart, erster Benutzer mit `portal_benutzer_id`
 - [x] ANF-026 Schritt 2: Registrierung (`/registrieren`), Anmeldung mit E-Mail über die Portal-Datenbank, Portal-Übersicht (`/portal`), ERP nur mit Mandant; Ersteinrichtung entfernt
 - [x] ANF-026 Schritt 1: Portal-Datenbank mit eigener Verbindung, `migrations_portal/` und Tabellen für Zugänge, Mandanten, Sitzungen

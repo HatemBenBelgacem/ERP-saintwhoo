@@ -3,4 +3,6 @@
 mod form;
 mod page;
 
+pub use form::NewAddressFields;
+
 pub use page::{CompanyPage, SenderBlock};

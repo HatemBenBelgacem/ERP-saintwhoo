@@ -6,7 +6,7 @@ use leptos_router::{
     hooks::{use_location, use_navigate},
 };
 
-use crate::backend::auth::model::{CurrentUser, PORTAL_PATH, login_url};
+use crate::backend::auth::model::{CurrentUser, login_url};
 use crate::backend::auth::server_fns::{Logout, get_current_user};
 
 use crate::icons::{Icon, IconView};
@@ -40,7 +40,9 @@ pub fn AppLayout() -> impl IntoView {
             navigate(&login_url(&target, true), Default::default());
         }
         // ANF-026 AK-19: ohne bereiten und definierten Mandanten nur das Portal
-        Some(Ok(Some(user))) if !user.erp_access() => navigate(PORTAL_PATH, Default::default()),
+        Some(Ok(Some(user))) if !user.erp_access() => {
+            navigate(&user.portal_target(), Default::default())
+        }
         _ => {}
     });
 
@@ -87,10 +89,18 @@ fn Header(me: Resource<Result<Option<CurrentUser>, ServerFnError>>) -> impl Into
             <label for=DRAWER_ID aria-label="Seitenleiste öffnen" class="btn btn-square btn-ghost text-neutral-content lg:invisible">
                 <IconView icon=Icon::Menu/>
             </label>
-            // ANF-007 AK-17: angemeldeter Benutzer und „Abmelden“ rechts
+            // ANF-026 AK-20: Firmenname des Mandanten; ANF-007 AK-17: angemeldeter Benutzer und „Abmelden“ rechts
             <Transition fallback=|| ()>
                 {move || Suspend::new(async move {
-                    me.await.ok().flatten().map(|user| view! { <UserMenu user/> })
+                    me.await.ok().flatten().map(|user| view! {
+                        {user.company_name().map(|name| view! {
+                            <span class="flex min-w-0 items-center gap-2 font-semibold" title="Mandant">
+                                <IconView icon=Icon::Building/>
+                                <span class="truncate">{name.to_string()}</span>
+                            </span>
+                        })}
+                        <UserMenu user/>
+                    })
                 })}
             </Transition>
         </header>

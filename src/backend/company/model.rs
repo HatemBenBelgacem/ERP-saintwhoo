@@ -3,7 +3,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::backend::addresses::model::country_name;
+use crate::backend::addresses::model::{AddressInput, country_name};
 pub use crate::forms::{FieldErrors, PickOption, SaveOutcome};
 
 pub const REGISTER_MAX: usize = 100;
@@ -94,6 +94,30 @@ pub fn company_address_error(
             missing.join(", ")
         )
     })
+}
+
+/// Neue Firmenadresse vorbereiten (AK-4, AK-8; auch ANF-026 „Mandant definieren“): Typ „Firma“, normalisiert
+/// und geprüft (ANF-002); Strasse, PLZ und Ort sind für den Absender der Belege Pflicht.
+/// Liefert die Adresse und ihre Fehler (leer = gültig).
+pub fn prepare_company_address(address: AddressInput) -> (AddressInput, FieldErrors) {
+    let address = AddressInput {
+        typ: "firma".into(),
+        ..address
+    }
+    .normalized();
+    let mut errors = address.validate();
+    for (field, value) in [
+        ("strasse", &address.strasse),
+        ("plz", &address.plz),
+        ("ort", &address.ort),
+    ] {
+        if value.is_empty() {
+            errors
+                .entry(field.into())
+                .or_insert_with(|| "Für den Absender der Belege nötig.".into());
+        }
+    }
+    (address, errors)
 }
 
 /// Dateityp eines Logos anhand des Inhalts (nicht der Dateiendung). `None` = nicht erlaubt.
@@ -410,5 +434,29 @@ mod tests {
         };
         assert_eq!(de.address_lines().last().unwrap(), "Deutschland");
         assert_eq!(de.logo_url().as_deref(), Some("/firma/logo?v=5"));
+    }
+
+    #[test]
+    fn company_address_needs_postal_parts() {
+        let (address, errors) = prepare_company_address(AddressInput {
+            typ: "person".into(),
+            firmenname: " Firma AG ".into(),
+            land: "CH".into(),
+            ..Default::default()
+        });
+        assert_eq!(address.typ, "firma");
+        assert_eq!(address.firmenname, "Firma AG");
+        for f in ["strasse", "plz", "ort"] {
+            assert_eq!(errors[f], "Für den Absender der Belege nötig.", "{f}");
+        }
+        let (_, errors) = prepare_company_address(AddressInput {
+            firmenname: "Firma AG".into(),
+            strasse: "Bahnhofstrasse 1".into(),
+            plz: "8001".into(),
+            ort: "Zürich".into(),
+            land: "CH".into(),
+            ..Default::default()
+        });
+        assert!(errors.is_empty(), "{errors:?}");
     }
 }

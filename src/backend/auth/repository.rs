@@ -150,13 +150,13 @@ pub async fn create_user(
 /// Nach erfolgreicher Anmeldung bzw. Registrierung: Fehlversuche der E-Mail löschen, abgelaufene
 /// Sitzungen und alte Fehlversuche aufräumen (ANF-007 AK-23), neue Sitzung mit dem Mandanten des
 /// Zugangs anlegen und „Letzte Anmeldung“ setzen (ANF-007 AK-10).
-/// Liefert `true`, wenn der Mandant bereit und definiert ist (Zugang zum ERP, ANF-026 AK-19).
+/// Liefert den gewählten Mandanten (ANF-026), falls der Zugang einen hat.
 pub async fn start_session(
     conn: &mut PgConnection,
     user_id: i64,
     email: &str,
     token_hash: &str,
-) -> Result<bool, sqlx::Error> {
+) -> Result<Option<SessionTenant>, sqlx::Error> {
     sqlx::query(
         "DELETE FROM portal_anmeldeversuch \
          WHERE lower(email) = lower($1) OR zeitpunkt < now() - interval '1 day'",
@@ -174,16 +174,16 @@ pub async fn start_session(
     .await?;
     // Eine Datenbank pro Administrator (ANF-026 AK-14): bevorzugt die bereite, sonst die zuletzt
     // begonnene (z. B. fehlgeschlagen – dann zeigt das Portal „Erneut versuchen“, AK-13)
-    let erp_access: Option<bool> = sqlx::query_scalar(
+    let tenant: Option<(i64, Option<String>, String, String)> = sqlx::query_as(
         "WITH m AS ( \
-             SELECT id, firmenname, status FROM mandant \
+             SELECT id, firmenname, status, datenbankname FROM mandant \
              WHERE besitzer_id = $2 ORDER BY (status = $3) DESC, id DESC LIMIT 1 \
          ), \
          s AS ( \
              INSERT INTO portal_sitzung (merkmal_hash, portal_benutzer_id, mandant_id) \
              VALUES ($1, $2, (SELECT id FROM m)) \
          ) \
-         SELECT status = $3 AND firmenname IS NOT NULL FROM m",
+         SELECT id, firmenname, status, datenbankname FROM m",
     )
     .bind(token_hash)
     .bind(user_id)
@@ -194,7 +194,14 @@ pub async fn start_session(
         .bind(user_id)
         .execute(&mut *conn)
         .await?;
-    Ok(erp_access.unwrap_or(false))
+    Ok(
+        tenant.map(|(id, firmenname, status, datenbankname)| SessionTenant {
+            id,
+            firmenname,
+            status,
+            datenbankname,
+        }),
+    )
 }
 
 /// Eine Sitzung beenden (Abmelden, ANF-007 AK-18).

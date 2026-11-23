@@ -103,7 +103,7 @@ pub async fn require_login(
                         .as_deref(),
                 )
             } else {
-                PORTAL_PATH.to_string()
+                user.portal_target()
             };
             return Redirect::to(&target).into_response();
         }
@@ -112,7 +112,8 @@ pub async fn require_login(
             return if path.starts_with("/api/") {
                 (StatusCode::FORBIDDEN, MSG_NO_TENANT).into_response()
             } else {
-                Redirect::to(PORTAL_PATH).into_response()
+                // AK-19: ist die Datenbank bereit, erscheint dort „Mandant definieren“
+                Redirect::to(&user.portal_target()).into_response()
             };
         }
         // ANF-026 AK-22: Anfrage arbeitet mit der Datenbank des Mandanten; dazu der Benutzer darin
