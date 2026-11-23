@@ -46,23 +46,8 @@ pub async fn create_company(
     let pool = crate::db::pool()?;
 
     let new_address = if input.creates_address() {
-        let address = AddressInput {
-            typ: "firma".into(),
-            ..adresse
-        }
-        .normalized();
-        errors.extend(address.validate());
-        for (field, value) in [
-            ("strasse", &address.strasse),
-            ("plz", &address.plz),
-            ("ort", &address.ort),
-        ] {
-            if value.is_empty() {
-                errors
-                    .entry(field.into())
-                    .or_insert_with(|| "Für den Absender der Belege nötig.".into());
-            }
-        }
+        let (address, address_errors) = super::model::prepare_company_address(adresse);
+        errors.extend(address_errors);
         Some(address)
     } else {
         check_address(&pool, &input, &mut errors).await?;

@@ -107,17 +107,18 @@ Jede **Mandanten-Datenbank** enthält das bisherige ERP (alle Migrationen aus `m
   (ANF-005) mit Adresse vom Typ „Person“ (ANF-002) angelegt, mit den Angaben aus der Registrierung.
 
 **Mandant definieren (Modal-Fenster)**
-- [ ] **AK-16:** Direkt nach erfolgreichem Erstellen öffnet sich das Modal-Fenster **„Mandant definieren“**
+- [x] **AK-16:** Direkt nach erfolgreichem Erstellen öffnet sich das Modal-Fenster **„Mandant definieren“**
   (`/portal?mandant=<kennung>`), damit Neuladen und Zurück-Taste funktionieren.
-- [ ] **AK-17:** Das Modal-Fenster enthält Firmenname (Pflicht, z. B. „Firma AG“), Zusatz, Strasse, PLZ, Ort,
+- [x] **AK-17:** Das Modal-Fenster enthält Firmenname (Pflicht, z. B. „Firma AG“), Zusatz, Strasse, PLZ, Ort,
   Land (Vorgabe Schweiz), Telefon, E-Mail, Webseite und UID (optional, Prüfung wie ANF-025).
-- [ ] **AK-18:** Beim Speichern wird in der **Mandanten-Datenbank** eine Adresse vom Typ „Firma“ (ANF-002) und
+  Strasse, PLZ und Ort sind wie bei ANF-025 AK-8 Pflicht (Absender der Belege); zusätzlich das Feld Postfach.
+- [x] **AK-18:** Beim Speichern wird in der **Mandanten-Datenbank** eine Adresse vom Typ „Firma“ (ANF-002) und
   die eigene Firma (ANF-025) mit dieser Adresse angelegt; in der Portal-Datenbank wird der Firmenname beim
   Mandanten gespeichert. Danach leitet das System auf die Startseite des ERP weiter.
-- [ ] **AK-19:** Gegeben ein Mandant ohne definierte Firma, dann sind die Seiten des ERP nicht erreichbar:
+- [x] **AK-19:** Gegeben ein Mandant ohne definierte Firma, dann sind die Seiten des ERP nicht erreichbar:
   der Benutzer wird nach `/portal` geleitet, wo das Modal-Fenster erneut erscheint. Wird es geschlossen,
   zeigt `/portal` den Hinweis „Mandant noch nicht definiert“ mit der Schaltfläche **„Mandant definieren“**.
-- [ ] **AK-20:** Der Firmenname erscheint danach in der Kopfzeile des ERP (bzw. auf `/portal` in der Liste
+- [x] **AK-20:** Der Firmenname erscheint danach in der Kopfzeile des ERP (bzw. auf `/portal` in der Liste
   der Datenbanken).
 
 **Zugriff und Sicherheit**
@@ -204,6 +205,8 @@ Passwort und Sitzungen stehen nur in der Portal-Datenbank (AK-8).
 - [x] Was geschieht mit Passwort und Sitzungen der Benutzerverwaltung in der Mandanten-Datenbank
   (ANF-005, ANF-007)? **Entschieden: Anmeldung nur über das Portal.** Passwort und Sitzungen entfallen in der
   Mandanten-Datenbank (AK-8).
+- [ ] Firmenname im Portal nachführen, wenn die Firma im ERP umbenannt wird? Die Kopfzeile zeigt den Namen aus dem
+  Portal (Stand beim Definieren des Mandanten). *(vorläufig: nein; Änderung über Einstellungen › Firma wirkt nur im ERP)*
 - [ ] Ab welcher Anzahl Mandanten ist eine andere Aufteilung (Schema pro Mandant) zu prüfen? *(blockiert die
   Umsetzung nicht; im Betrieb beobachten)*
 
@@ -218,3 +221,4 @@ Passwort und Sitzungen stehen nur in der Portal-Datenbank (AK-8).
 | 2026-11-23 | Hatem Ben Belgacem | Schritt 1 umgesetzt: Portal-Datenbank mit eigener Verbindung und Migrationen (AK-7); Status In Umsetzung |
 | 2026-11-23 | Hatem Ben Belgacem | Schritt 2 umgesetzt: Registrierung, Anmeldung über das Portal, Portal-Übersicht, Zugang zum ERP nur mit Mandant (AK-1 bis AK-6, AK-9) |
 | 2026-11-23 | Hatem Ben Belgacem | Schritt 3 umgesetzt: Datenbank erstellen, Rolle `uniqwork_erp`, Pools je Mandant, Migrationen beim Start (AK-10 bis AK-15, AK-21 bis AK-27) |
+| 2026-11-23 | Hatem Ben Belgacem | Schritt 4 umgesetzt: Modal-Fenster „Mandant definieren“, Firmenname in der Kopfzeile (AK-16 bis AK-20) |

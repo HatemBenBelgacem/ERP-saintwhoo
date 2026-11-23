@@ -2,11 +2,15 @@
 
 use leptos::prelude::*;
 use leptos_meta::Title;
+use leptos_router::hooks::use_query_map;
 
-use crate::backend::auth::model::{CurrentUser, SessionTenant, TENANT_READY};
+use crate::backend::auth::model::{CurrentUser, SessionTenant, TENANT_PARAM, TENANT_READY};
 use crate::backend::auth::server_fns::get_current_user;
+use crate::backend::company::model::FieldErrors;
 use crate::backend::portal::model::STATUS_FAILED;
-use crate::backend::portal::server_fns::CreateDatabase;
+use crate::backend::portal::server_fns::{CreateDatabase, DefineTenant};
+use crate::components::settings::NewAddressFields;
+use crate::forms::{Modal, TextField, field_errors, server_error, use_base_href, with_params};
 use crate::icons::{Icon, IconView};
 use crate::layout::UserMenu;
 
@@ -99,7 +103,19 @@ fn CreateButton(create: ServerAction<CreateDatabase>, label: &'static str) -> im
 #[component]
 fn TenantInfo(tenant: SessionTenant, create: ServerAction<CreateDatabase>) -> impl IntoView {
     let failed = tenant.status == STATUS_FAILED;
-    let undefined = tenant.status == TENANT_READY && tenant.firmenname.is_none();
+    let undefined = tenant.needs_definition();
+    let query = use_query_map();
+    let base = use_base_href();
+    let id = tenant.id;
+    // AK-16, AK-19: Modal-Fenster, solange der Mandant nicht definiert ist und die Webadresse es verlangt
+    let modal_open = move || {
+        undefined
+            && query
+                .read()
+                .get(TENANT_PARAM)
+                .and_then(|v| v.parse::<i64>().ok())
+                == Some(id)
+    };
     let usable = tenant.is_usable();
     let (label, badge) = match tenant.status.as_str() {
         TENANT_READY => ("Bereit", "badge badge-success"),
@@ -122,11 +138,62 @@ fn TenantInfo(tenant: SessionTenant, create: ServerAction<CreateDatabase>) -> im
             <p>"Beim Erstellen ist ein Fehler aufgetreten. Es wurden keine Daten angelegt."</p>
             <CreateButton create label="Erneut versuchen"/>
         })}
-        // Das Modal-Fenster „Mandant definieren“ folgt mit ANF-026 Schritt 4 (AK-16)
+        // AK-19: Fenster geschlossen → Hinweis und Schaltfläche
         {undefined.then(|| view! {
-            <div role="status" class="alert alert-info">
-                "Ihre Datenbank ist bereit. Als Nächstes erfassen Sie Ihre Firma (Mandant) – das wird in Kürze freigeschaltet."
+            <div role="status" class="alert alert-warning">
+                "Mandant noch nicht definiert. Erfassen Sie Ihre Firma, um mit dem ERP zu arbeiten."
+            </div>
+            <div class="card-actions">
+                <a href=move || with_params(&base.get(), &[(TENANT_PARAM, id.to_string())]) class="btn btn-primary">
+                    "Mandant definieren"
+                </a>
             </div>
         })}
+        {move || modal_open().then(|| view! { <DefineTenantModal/> })}
+    }
+}
+
+/// Modal-Fenster „Mandant definieren“ (ANF-026 AK-16 bis AK-18, Webadresse `?mandant=<Kennung>`):
+/// Firmenadresse wie ANF-025 und UID. Nach dem Speichern geht es zur Startseite des ERP.
+#[component]
+fn DefineTenantModal() -> impl IntoView {
+    let action = ServerAction::<DefineTenant>::new();
+    let close = use_base_href();
+    let errors: Signal<FieldErrors> = Signal::derive(move || field_errors(action.value().get()));
+
+    view! {
+        <Modal title="Mandant definieren".to_string() close_href=close.into()>
+            <ActionForm action=action>
+                // Typ der Adresse ist immer „Firma“
+                <input type="hidden" name="adresse[typ]" value="firma"/>
+                <div class="flex flex-col gap-4">
+                    <p class="text-base-content/70">
+                        "Erfassen Sie Ihre Firma. Sie ist der Absender auf allen Belegen und erscheint in der Kopfzeile."
+                    </p>
+                    {move || server_error(action.value().get()).map(|e| view! { <div role="alert" class="alert alert-error">{e}</div> })}
+                    {move || (!errors.read().is_empty()).then(|| view! {
+                        <div role="alert" class="alert alert-warning">"Bitte die markierten Felder korrigieren."</div>
+                    })}
+                    <NewAddressFields errors/>
+                    <div class="grid gap-x-4 md:grid-cols-2">
+                        <div>
+                            <TextField field="uid" label="UID" value=String::new() errors maxlength=25/>
+                            <p class="text-xs text-base-content/60">
+                                "Freiwillig. Format CHE-123.456.789; die Prüfziffer wird kontrolliert."
+                            </p>
+                        </div>
+                    </div>
+                    <p class="text-sm text-base-content/60">
+                        "* Pflichtfeld. Handelsregister, Fusszeile und Logo ergänzen Sie später im ERP unter Einstellungen › Firma."
+                    </p>
+                    <div class="modal-action mt-0">
+                        <a href=move || close.get() class="btn btn-ghost">"Abbrechen"</a>
+                        <button type="submit" class="btn btn-primary" disabled=move || action.pending().get()>
+                            {move || if action.pending().get() { "Speichern …" } else { "Speichern" }}
+                        </button>
+                    </div>
+                </div>
+            </ActionForm>
+        </Modal>
     }
 }

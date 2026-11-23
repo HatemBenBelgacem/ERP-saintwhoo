@@ -14,6 +14,9 @@ pub const MSG_NOT_ADMIN: &str = "Nur Administratoren können eine Datenbank erst
 pub const MSG_LIMIT: &str = "Sie haben bereits eine Datenbank.";
 pub const MSG_RUNNING: &str = "Ihre Datenbank wird bereits erstellt.";
 pub const MSG_FAILED: &str = "Die Datenbank konnte nicht erstellt werden. Bitte erneut versuchen.";
+pub const MSG_NOT_READY: &str = "Ihre Datenbank ist noch nicht bereit.";
+pub const MSG_ALREADY_DEFINED: &str =
+    "Der Mandant ist bereits definiert. Änderungen erfolgen im ERP unter Einstellungen › Firma.";
 
 /// Was beim Klick auf „Datenbank erstellen“ geschieht (ANF-026 AK-11, AK-13, AK-14).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -112,15 +112,15 @@ pub async fn login(
     // ANF-007 AK-16: immer ein neues Merkmal
     let token = session::new_token();
     let mut tx = pool.begin().await?;
-    let erp_access =
+    let tenant =
         repository::start_session(&mut tx, user_id, &email, &session::token_hash(&token)).await?;
     tx.commit().await?;
 
     session::set_cookie(&session::session_cookie(&token));
-    let target = if erp_access {
-        super::model::target_after_login(zurueck.as_deref())
-    } else {
-        PORTAL_PATH.to_string()
+    let target = match &tenant {
+        Some(t) if t.is_usable() => super::model::target_after_login(zurueck.as_deref()),
+        // ANF-026 AK-19: Mandant noch nicht definiert → Modal-Fenster im Portal
+        _ => super::model::portal_target(tenant.as_ref()),
     };
     leptos_axum::redirect(&target);
     Ok(SaveOutcome::Saved(user_id))

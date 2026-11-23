@@ -2,11 +2,14 @@
 
 use leptos::prelude::*;
 
+use crate::backend::addresses::model::AddressInput;
+use crate::backend::company::model::{CompanyInput, SaveOutcome};
+
 #[cfg(feature = "ssr")]
 use super::{
     model::{
-        CreationDecision, MSG_FAILED, MSG_LIMIT, MSG_NOT_ADMIN, MSG_RUNNING, STATUS_FAILED,
-        STATUS_READY, creation_decision,
+        CreationDecision, MSG_ALREADY_DEFINED, MSG_FAILED, MSG_LIMIT, MSG_NOT_ADMIN, MSG_NOT_READY,
+        MSG_RUNNING, STATUS_FAILED, STATUS_READY, creation_decision,
     },
     provision, repository,
 };
@@ -53,8 +56,66 @@ pub async fn create_database() -> Result<(), ServerFnError> {
         return Err(ServerFnError::new(MSG_FAILED));
     }
     repository::set_status(&portal, id, STATUS_READY).await?;
-    leptos_axum::redirect(crate::backend::auth::model::PORTAL_PATH);
+    // AK-16: direkt danach das Modal-Fenster „Mandant definieren“
+    leptos_axum::redirect(&format!(
+        "{}?{}={id}",
+        crate::backend::auth::model::PORTAL_PATH,
+        crate::backend::auth::model::TENANT_PARAM
+    ));
     Ok(())
+}
+
+/// Mandant definieren (ANF-026 AK-16 bis AK-18): In der Mandanten-Datenbank eine Adresse vom Typ „Firma“ und
+/// die eigene Firma (ANF-025) anlegen, im Portal den Firmennamen setzen. Danach geht es ins ERP.
+/// `input` enthält nur die UID (Prüfung wie ANF-025); Handelsregister, Fusszeile und Logo folgen im ERP.
+#[server(prefix = "/api/portal")]
+pub async fn define_tenant(
+    input: CompanyInput,
+    adresse: AddressInput,
+) -> Result<SaveOutcome, ServerFnError> {
+    let user = crate::backend::auth::session::require_user()?;
+    let Some(tenant) = user.mandant.as_ref().filter(|t| t.status == STATUS_READY) else {
+        return Err(ServerFnError::new(MSG_NOT_READY));
+    };
+    if tenant.firmenname.is_some() {
+        return Err(ServerFnError::new(MSG_ALREADY_DEFINED));
+    }
+
+    let input = CompanyInput {
+        modus: "neu".into(),
+        uid: input.uid,
+        ..CompanyInput::default()
+    }
+    .normalized();
+    let mut errors = input.validate();
+    let (address, address_errors) =
+        crate::backend::company::model::prepare_company_address(adresse);
+    errors.extend(address_errors);
+    if !errors.is_empty() {
+        return Ok(SaveOutcome::Invalid(errors));
+    }
+
+    // Die Middleware legt ohne definierten Mandanten keinen Pool in die Anfrage – hier gezielt der eigene
+    let pool = crate::db::tenant_pools()?.pool(&tenant.datenbankname);
+    // Wiederholung nach einem Abbruch zwischen beiden Datenbanken: bestehende Firma übernehmen
+    let company_name = match crate::backend::company::repository::find(&pool).await? {
+        Some(company) => company.name,
+        None => {
+            let mut tx = pool.begin().await?;
+            let address_id =
+                crate::backend::addresses::repository::insert(&mut *tx, &address).await?;
+            crate::backend::company::repository::insert(&mut tx, address_id, &input).await?;
+            tx.commit().await?;
+            address.firmenname.clone()
+        }
+    };
+
+    let portal = crate::db::portal_pool()?;
+    if repository::define_tenant(&portal, tenant.id, user.portal_id, &company_name).await? == 0 {
+        return Err(ServerFnError::new(MSG_ALREADY_DEFINED));
+    }
+    leptos_axum::redirect("/");
+    Ok(SaveOutcome::Saved(tenant.id))
 }
 
 #[cfg(test)]
@@ -67,7 +128,11 @@ mod tests {
     #[test]
     fn reachable_without_tenant() {
         // Ohne Mandant lässt die Middleware nur `/api/portal/…` durch (ANF-026 AK-19)
-        let path = <CreateDatabase as ServerFn>::PATH;
-        assert!(path.starts_with(&format!("{PORTAL_API_PREFIX}/")), "{path}");
+        for path in [
+            <CreateDatabase as ServerFn>::PATH,
+            <DefineTenant as ServerFn>::PATH,
+        ] {
+            assert!(path.starts_with(&format!("{PORTAL_API_PREFIX}/")), "{path}");
+        }
     }
 }

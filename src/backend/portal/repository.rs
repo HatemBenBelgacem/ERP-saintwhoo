@@ -169,6 +169,27 @@ pub async fn owner_details(
         .await
 }
 
+/// Firmennamen setzen: der Mandant ist damit definiert (ANF-026 AK-18). Nur für den Besitzer, nur bei bereiter
+/// Datenbank und nur einmal; liefert die Anzahl geänderter Zeilen (0 = nicht erlaubt bzw. schon definiert).
+pub async fn define_tenant(
+    pool: &PgPool,
+    id: i64,
+    owner_id: i64,
+    company_name: &str,
+) -> Result<u64, sqlx::Error> {
+    let result = sqlx::query(
+        "UPDATE mandant SET firmenname = $3, geaendert_am = now() \
+         WHERE id = $1 AND besitzer_id = $2 AND status = $4 AND firmenname IS NULL",
+    )
+    .bind(id)
+    .bind(owner_id)
+    .bind(company_name)
+    .bind(STATUS_READY)
+    .execute(pool)
+    .await?;
+    Ok(result.rows_affected())
+}
+
 /// Mandanten mit dem Status `status`: (Kennung, Datenbankname).
 pub async fn tenants_with_status(
     pool: &PgPool,
