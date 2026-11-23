@@ -4,7 +4,7 @@ Projektrahmen und Arbeitsregeln für Claude Code in diesem Projektarchiv.
 
 ## Projekt
 
-**ERP-saintwhoo** – ein ERP-System, geschrieben in **Rust** (Edition 2024).
+**uniqwork** – ein ERP-System, geschrieben in **Rust** (Edition 2024).
 
 | Schicht         | Technik |
 |-----------------|---------|
@@ -78,8 +78,8 @@ npm run css:build && cargo leptos build --release
 sqlx migrate add -r <name>      # neue Migration in migrations/
 
 # Docker-Image (ANF-008) – lokal bauen und ausprobieren
-docker build -t erp-saintwhoo .
-docker run --rm -p 8080:8080 -e PORT=8080 -e DATABASE_URL=postgres://… erp-saintwhoo
+docker build -t uniqwork .
+docker run --rm -p 8080:8080 -e PORT=8080 -e DATABASE_URL=postgres://… uniqwork
 ```
 
 Betrieb auf Railway (ANF-008): Railway baut bei jedem neuen Stand auf `main` das `Dockerfile` und stellt es

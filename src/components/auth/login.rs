@@ -13,12 +13,12 @@ pub fn LoginPage() -> impl IntoView {
     let setup = Resource::new(|| (), |_| setup_required());
 
     view! {
-        <Title text="Anmelden – ERP-saintwhoo"/>
+        <Title text="Anmelden – uniqwork"/>
         // Zentrierte Karte ohne Seitenleiste; schmale Karte als bewusste Ausnahme (wie ein Dialog)
         <main class="flex min-h-dvh items-center justify-center bg-base-200 p-4">
             <div class="card w-full max-w-sm bg-base-100 shadow-lg">
                 <div class="card-body gap-4">
-                    <h1 class="text-center text-2xl font-semibold">"ERP-saintwhoo"</h1>
+                    <h1 class="text-center text-2xl font-semibold">"uniqwork"</h1>
                     <Suspense fallback=|| view! { <span class="loading loading-spinner mx-auto"></span> }>
                         {move || Suspend::new(async move {
                             match setup.await {

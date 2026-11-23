@@ -95,7 +95,7 @@ pub fn OrderDetailPage() -> impl IntoView {
 #[component]
 fn NotFound() -> impl IntoView {
     view! {
-        <Title text="Einkaufsauftrag nicht gefunden – ERP-saintwhoo"/>
+        <Title text="Einkaufsauftrag nicht gefunden – uniqwork"/>
         <div class="card bg-base-100 shadow">
             <div class="card-body">
                 <h1 class="card-title">"Einkaufsauftrag nicht gefunden"</h1>
@@ -195,7 +195,7 @@ fn OrderView(detail: OrderDetail) -> impl IntoView {
     };
 
     view! {
-        <Title text=format!("{} – Einkauf – ERP-saintwhoo", order.nummer)/>
+        <Title text=format!("{} – Einkauf – uniqwork", order.nummer)/>
         <div class="space-y-4">
             <Breadcrumbs items=vec![
                 ("Einkauf".to_string(), Some("/einkauf".to_string())),

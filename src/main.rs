@@ -2,13 +2,13 @@
 #[tokio::main]
 async fn main() {
     use axum::Router;
-    use erp_saintwhoo::app::{App, shell};
     use leptos::logging::log;
     use leptos::prelude::*;
     use leptos_axum::{LeptosRoutes, generate_route_list};
+    use uniqwork::app::{App, shell};
 
     let _ = dotenvy::dotenv();
-    let pool = erp_saintwhoo::db::connect()
+    let pool = uniqwork::db::connect()
         .await
         .expect("Verbindung zur Datenbank fehlgeschlagen");
 
@@ -36,17 +36,17 @@ async fn main() {
         )
         // ANF-025: Firmenlogo aus der Datenbank
         .route(
-            erp_saintwhoo::backend::company::model::LOGO_URL,
+            uniqwork::backend::company::model::LOGO_URL,
             axum::routing::get({
                 let pool = pool.clone();
-                move || erp_saintwhoo::backend::company::logo::logo_response(pool.clone())
+                move || uniqwork::backend::company::logo::logo_response(pool.clone())
             }),
         )
         .fallback(leptos_axum::file_and_error_handler(shell))
         // ANF-007: Zugangsschutz für alle Seiten und Server-Funktionen (auch die Rückfallroute)
         .layer(axum::middleware::from_fn_with_state(
             pool.clone(),
-            erp_saintwhoo::backend::auth::middleware::require_login,
+            uniqwork::backend::auth::middleware::require_login,
         ))
         .with_state(leptos_options);
 

@@ -48,7 +48,7 @@ pub fn AddressDetailPage() -> impl IntoView {
 #[component]
 pub fn NotFound() -> impl IntoView {
     view! {
-        <Title text="Adresse nicht gefunden – ERP-saintwhoo"/>
+        <Title text="Adresse nicht gefunden – uniqwork"/>
         <div class="card bg-base-100 shadow">
             <div class="card-body">
                 <h1 class="card-title">"Adresse nicht gefunden"</h1>
@@ -100,7 +100,7 @@ fn AddressDetail(address: Address, saved: Signal<bool>) -> impl IntoView {
         .join(" ");
 
     view! {
-        <Title text=format!("{} – Adressen – ERP-saintwhoo", address.anzeigename)/>
+        <Title text=format!("{} – Adressen – uniqwork", address.anzeigename)/>
         <div class="space-y-4">
             <div class="breadcrumbs text-sm">
                 <ul>

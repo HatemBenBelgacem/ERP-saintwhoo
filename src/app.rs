@@ -43,8 +43,8 @@ pub fn App() -> impl IntoView {
     provide_context(crate::forms::DataVersion(RwSignal::new(0)));
 
     view! {
-        <Stylesheet id="leptos" href="/pkg/erp-saintwhoo.css"/>
-        <Title text="ERP-saintwhoo"/>
+        <Stylesheet id="leptos" href="/pkg/uniqwork.css"/>
+        <Title text="uniqwork"/>
         <Router>
             <Routes fallback=|| view! { <p class="p-8">"Seite nicht gefunden."</p> }>
                 // ANF-007: Anmeldeseite ohne Grundgerüst (öffentlich, siehe auth::middleware)

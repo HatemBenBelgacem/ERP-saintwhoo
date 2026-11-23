@@ -10,7 +10,7 @@ use crate::navigation::{NavItem, modules};
 #[component]
 pub fn HomePage() -> impl IntoView {
     view! {
-        <Title text="Startseite – ERP-saintwhoo"/>
+        <Title text="Startseite – uniqwork"/>
         <div class="space-y-4">
             <h1 class="text-2xl font-semibold">"Startseite"</h1>
             // Karten kommen aus der Hauptnavigation – neue Module erscheinen automatisch

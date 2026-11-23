@@ -387,7 +387,7 @@ mod tests {
             adresse_id: 3,
             adresse_nummer: "A-0003".into(),
             adresse_typ: "firma".into(),
-            name: "Saintwhoo AG".into(),
+            name: "Uniqwork AG".into(),
             zusatz: None,
             strasse: Some("Bahnhofstrasse 1".into()),
             postfach: Some(String::new()),
@@ -400,7 +400,7 @@ mod tests {
         };
         assert_eq!(
             c.address_lines(),
-            ["Saintwhoo AG", "Bahnhofstrasse 1", "8001 Zürich"]
+            ["Uniqwork AG", "Bahnhofstrasse 1", "8001 Zürich"]
         );
         assert_eq!(c.logo_url(), None);
         let de = Company {

@@ -196,7 +196,7 @@ Vorläufige Annahmen in Klammern.
 - [ ] Wie wird der erste Benutzer angelegt? *(vorerst: Ersteinrichtung auf der Anmeldeseite, solange es keinen Benutzer gibt, AK-21)*
 - [ ] Sollen Benutzer ihr eigenes Passwort ändern können? *(vorerst: nein, eigene Anforderung)*
 - [ ] Wird das ERP über HTTPS betrieben (Cookie `Secure`)? *(vorerst: im Betrieb ja, in der Entwicklung über `http://127.0.0.1` ohne `Secure`)*
-- [ ] Soll die Anmeldeseite ein Logo bzw. einen Leitspruch zeigen? *(vorerst: nur der Name „ERP-saintwhoo“)*
+- [ ] Soll die Anmeldeseite ein Logo bzw. einen Leitspruch zeigen? *(vorerst: nur der Name „uniqwork“)*
 
 ## Umsetzung
 

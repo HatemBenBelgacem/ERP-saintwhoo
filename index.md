@@ -1,4 +1,4 @@
-# ERP-saintwhoo – Übersicht
+# uniqwork – Übersicht
 
 Übersicht über alle Dokumente und Anforderungen des Projekts.
 

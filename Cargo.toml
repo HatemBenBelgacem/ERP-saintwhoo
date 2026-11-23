@@ -1,5 +1,5 @@
 [package]
-name = "erp-saintwhoo"
+name = "uniqwork"
 version = "0.1.0"
 edition = "2024"
 
@@ -50,7 +50,7 @@ codegen-units = 1
 panic = "abort"
 
 [package.metadata.leptos]
-output-name = "erp-saintwhoo"
+output-name = "uniqwork"
 site-root = "target/site"
 site-pkg-dir = "pkg"
 # wird von `npm run css:build` / `css:watch` erzeugt (Tailwind + daisyUI)

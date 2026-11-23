@@ -1,6 +1,6 @@
 # Aufgaben
 
-Stand: 2026-11-18
+Stand: 2026-11-23
 
 ## In Arbeit
 
@@ -15,7 +15,7 @@ Stand: 2026-11-18
 - [ ] ANF-008: Railway einrichten – Projekt mit PostgreSQL (Region Europa), GitHub verbinden, `DATABASE_URL` und `SITZUNG_COOKIE_SECURE=1` setzen; danach AK-9, 10, 14, 16 prüfen
 - [ ] Module des ERP festlegen (z. B. Lager, Einkauf, Verkauf, Buchhaltung)
 - [ ] Erste Anforderungen mit der [Vorlage](anforderungen/_VORLAGE.md) erfassen
-- [ ] Datenbank `erp_saintwhoo` anlegen und `.env` mit Zugangsdaten füllen
+- [ ] Datenbank `uniqwork` anlegen und `.env` mit Zugangsdaten füllen
 - [ ] ANF-005: offene Fragen klären (vorläufige Annahmen: Adresstyp Person, Löschen/Sperren, Passwortregeln, erster Benutzer, alle Ebenen verantwortlich)
 - [ ] Anforderung für Rollen und Berechtigungen erfassen
 - [ ] ANF-007: offene Fragen klären (vorläufige Annahmen: 12 h / 7 Tage, 5 Fehlversuche / 15 Min., Ersteinrichtung, HTTPS über `SITZUNG_COOKIE_SECURE`)
@@ -30,6 +30,7 @@ Stand: 2026-11-18
 
 ## Erledigt
 
+- [x] Projekt umbenannt: ERP-saintwhoo → uniqwork (Paket, Programm, CSS/WASM-Dateien, Docker-Image, Seitentitel, Dokumentation)
 - [x] Rust-Projekt angelegt (`cargo new`)
 - [x] Projektstruktur für Anforderungen, Übersicht und Aufgaben erstellt
 - [x] Tailwind CSS v4 und daisyUI v5 installiert und eingerichtet

@@ -89,7 +89,7 @@ pub fn AddressListPage() -> impl IntoView {
     let create_open = move || query.read().get("neu").is_some();
 
     view! {
-        <Title text="Adressen – ERP-saintwhoo"/>
+        <Title text="Adressen – uniqwork"/>
         <div class="space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <h1 class="text-2xl font-semibold">"Adressen"</h1>

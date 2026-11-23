@@ -126,7 +126,7 @@ pub fn ProjectListPage() -> impl IntoView {
     let collapsed = RwSignal::new(HashSet::<String>::new());
 
     view! {
-        <Title text="Projekte – ERP-saintwhoo"/>
+        <Title text="Projekte – uniqwork"/>
         <div class="space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <h1 class="text-2xl font-semibold">"Projekte"</h1>
