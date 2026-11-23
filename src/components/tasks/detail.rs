@@ -48,7 +48,7 @@ pub fn TaskDetailPage() -> impl IntoView {
 #[component]
 fn NotFound() -> impl IntoView {
     view! {
-        <Title text="Aufgabe nicht gefunden – ERP-saintwhoo"/>
+        <Title text="Aufgabe nicht gefunden – uniqwork"/>
         <div class="card bg-base-100 shadow">
             <div class="card-body">
                 <h1 class="card-title">"Aufgabe nicht gefunden"</h1>
@@ -65,7 +65,7 @@ fn NotFound() -> impl IntoView {
 #[component]
 fn InProject(id: i64) -> impl IntoView {
     view! {
-        <Title text="Projektaufgabe – ERP-saintwhoo"/>
+        <Title text="Projektaufgabe – uniqwork"/>
         <div class="card bg-base-100 shadow">
             <div class="card-body">
                 <h1 class="card-title">"Diese Aufgabe gehört zu einem Projekt"</h1>
@@ -106,7 +106,7 @@ fn TaskView(task: StandaloneTask, toggle: ServerAction<ToggleTask>) -> impl Into
     };
 
     view! {
-        <Title text=format!("{} – Aufgaben – ERP-saintwhoo", task.name)/>
+        <Title text=format!("{} – Aufgaben – uniqwork", task.name)/>
         <div class="space-y-4">
             <Breadcrumbs items=vec![
                 ("Aufgaben".to_string(), Some(user_tasks_url(assignee.id))),

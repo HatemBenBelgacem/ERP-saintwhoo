@@ -48,7 +48,7 @@ pub fn UserDetailPage() -> impl IntoView {
 #[component]
 fn NotFound() -> impl IntoView {
     view! {
-        <Title text="Benutzer nicht gefunden – ERP-saintwhoo"/>
+        <Title text="Benutzer nicht gefunden – uniqwork"/>
         <div class="card bg-base-100 shadow">
             <div class="card-body">
                 <h1 class="card-title">"Benutzer nicht gefunden"</h1>
@@ -80,7 +80,7 @@ fn UserView(detail: UserDetail) -> impl IntoView {
     let last_login = user.letzte_anmeldung.clone();
 
     view! {
-        <Title text=format!("{} – Benutzer – ERP-saintwhoo", user.benutzername)/>
+        <Title text=format!("{} – Benutzer – uniqwork", user.benutzername)/>
         <div class="space-y-4">
             <Breadcrumbs items=vec![
                 ("Einstellungen".to_string(), Some("/einstellungen".to_string())),

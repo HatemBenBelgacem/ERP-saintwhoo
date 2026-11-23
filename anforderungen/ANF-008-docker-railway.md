@@ -49,7 +49,7 @@ beim Start automatisch.
 ## 3. Akzeptanzkriterien
 
 **Docker-Image**
-- [x] **AK-1:** Gegeben das Projektarchiv, wenn `docker build -t erp-saintwhoo .` ausgeführt wird, dann
+- [x] **AK-1:** Gegeben das Projektarchiv, wenn `docker build -t uniqwork .` ausgeführt wird, dann
   entsteht ohne Fehler ein Image. Es gibt dafür ein `Dockerfile` und eine `.dockerignore` im
   Hauptordner.
 - [x] **AK-2:** Das `Dockerfile` baut in mehreren Stufen (CSS, Rust, Laufzeit). Das Laufzeit-Image enthält
@@ -120,7 +120,7 @@ Umgebungsvariablen im Betrieb:
 ## 6. Nicht im Umfang
 
 - Datensicherung der Datenbank (Backups) und Wiederherstellung
-- Eigene Domain (z. B. `erp.saintwhoo.ch`) – zunächst die Webadresse von Railway
+- Eigene Domain (z. B. `erp.uniqwork.ch`) – zunächst die Webadresse von Railway
 - Automatische Prüfungen vor dem Bereitstellen (GitHub Actions mit `cargo test`, `clippy`)
 - Getrennte Umgebungen (Test / Betrieb)
 - `docker-compose` für die lokale Entwicklung

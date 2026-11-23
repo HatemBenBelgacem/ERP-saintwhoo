@@ -52,7 +52,7 @@ pub fn AccountsPage() -> impl IntoView {
     let param = move |name: &str| query.read().get(name);
 
     view! {
-        <Title text="Kontenplan – Einstellungen – ERP-saintwhoo"/>
+        <Title text="Kontenplan – Einstellungen – uniqwork"/>
         <div class="space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <h1 class="text-2xl font-semibold">"Kontenplan"</h1>

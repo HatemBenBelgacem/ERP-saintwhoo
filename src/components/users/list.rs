@@ -84,7 +84,7 @@ pub fn UserListPage() -> impl IntoView {
     let create_open = move || query.read().get("neu").is_some();
 
     view! {
-        <Title text="Benutzer – Einstellungen – ERP-saintwhoo"/>
+        <Title text="Benutzer – Einstellungen – uniqwork"/>
         <div class="space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <h1 class="text-2xl font-semibold">"Benutzer"</h1>

@@ -62,7 +62,7 @@ fn use_tree(
 pub fn NotFound(level: Level) -> impl IntoView {
     let text = format!("{} nicht gefunden", level.label());
     view! {
-        <Title text=format!("{text} – ERP-saintwhoo")/>
+        <Title text=format!("{text} – uniqwork")/>
         <div class="card bg-base-100 shadow">
             <div class="card-body">
                 <h1 class="card-title">{text}</h1>
@@ -135,7 +135,7 @@ fn ProjectView(tree: ProjectTree) -> impl IntoView {
     provide_context(DeleteOpen(RwSignal::new(false)));
 
     view! {
-        <Title text=format!("{} {} – ERP-saintwhoo", p.nummer, p.name)/>
+        <Title text=format!("{} {} – uniqwork", p.nummer, p.name)/>
         <div class="space-y-4">
             <Breadcrumbs items=crumbs/>
             <Notices/>
@@ -235,7 +235,7 @@ fn ElementView(
     provide_context(DeleteOpen(RwSignal::new(false)));
 
     view! {
-        <Title text=format!("{} – ERP-saintwhoo", node.title())/>
+        <Title text=format!("{} – uniqwork", node.title())/>
         <div class="space-y-4">
             <Breadcrumbs items=crumbs/>
             <Notices/>

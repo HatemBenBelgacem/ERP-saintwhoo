@@ -1,4 +1,4 @@
-# Testszenarien – ERP-saintwhoo
+# Testszenarien – uniqwork
 
 Stand: 2026-11-12 · Grundlage: Akzeptanzkriterien (AK) der Anforderungen ANF-001 bis ANF-007, ANF-011 und ANF-025
 
@@ -36,7 +36,7 @@ Die Anforderungen ANF-005 bis ANF-007 haben bisher keine Prüfung im Browser. Mi
 
 ## Vorbereitung
 
-1. Eine leere Datenbank `erp_saintwhoo` anlegen und `.env` ausfüllen (Vorlage: `.env.example`). Die Migrationen laufen beim Serverstart automatisch.
+1. Eine leere Datenbank `uniqwork` anlegen und `.env` ausfüllen (Vorlage: `.env.example`). Die Migrationen laufen beim Serverstart automatisch.
 2. Den Server mit `cargo leptos watch` starten und `http://127.0.0.1:3002` öffnen.
 3. Zwei Browser-Fenster bereithalten, eines normal und eines privat. So sind zwei Anmeldungen gleichzeitig möglich, z. B. für TS-007-21.
 4. Die Testdaten in dieser Reihenfolge anlegen. Die Namen stammen aus den Beispielen von ANF-005:
@@ -236,7 +236,7 @@ Hinweis: AK-5 (Navigation an einer zentralen Stelle definiert) wird im Code gepr
 | TS-007-01 | 1 | Im privaten Fenster ohne Anmeldung `/projekte/4` aufrufen. Dann die Seite neu laden. | Beide Male wirst du nach `/anmelden?zurueck=/projekte/4` umgeleitet. |
 | TS-007-02 | 2 | Ohne Anmeldung und ohne Cookie eine Server-Funktion unter `/api/…` aufrufen, z. B. mit `curl`. | Die Antwort ist HTTP 401 mit „Nicht angemeldet“. Es kommen keine Daten zurück. |
 | TS-007-03 | 3 | Ohne Anmeldung `/anmelden` öffnen und das Netzwerk prüfen. | Stylesheet und Seitensymbol laden ohne Umleitung. |
-| TS-007-04 | 4 | `/anmelden` auf dem Mobiltelefon und auf dem grossen Bildschirm öffnen. | Eine zentrierte Karte mit dem Namen „ERP-saintwhoo“, den Feldern Benutzername und Passwort und der Schaltfläche „Anmelden“ (Indigo). Keine Seitenleiste. |
+| TS-007-04 | 4 | `/anmelden` auf dem Mobiltelefon und auf dem grossen Bildschirm öffnen. | Eine zentrierte Karte mit dem Namen „uniqwork“, den Feldern Benutzername und Passwort und der Schaltfläche „Anmelden“ (Indigo). Keine Seitenleiste. |
 | TS-007-05 | 5 | Mit Anna anmelden. | Die Startseite erscheint. Die Kopfzeile zeigt „Muster Anna“ und „Abmelden“. |
 | TS-007-06 | 5 | Mit Enter statt Klick anmelden. Vorher `/anmelden?zurueck=/projekte/4` aufrufen. | Enter funktioniert. Nach der Anmeldung erscheint `/projekte/4`. |
 | TS-007-07 | 5 | `/anmelden?zurueck=https://boese.example.com` mit richtigen Daten verwenden. Dann mit `zurueck=//boese.example.com` wiederholen. | Beide Male landest du auf der Startseite und nicht auf einer fremden Adresse. |

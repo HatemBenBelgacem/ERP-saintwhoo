@@ -114,7 +114,7 @@ pub fn TaskListPage() -> impl IntoView {
     });
 
     view! {
-        <Title text="Aufgaben – ERP-saintwhoo"/>
+        <Title text="Aufgaben – uniqwork"/>
         <div class="space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <h1 class="text-2xl font-semibold">"Aufgaben"</h1>

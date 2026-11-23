@@ -1,12 +1,12 @@
 # Systementwurf
 
-Aufbau des Quellcodes von ERP-saintwhoo: welche Schicht wo liegt, wer wen aufrufen darf
+Aufbau des Quellcodes von uniqwork: welche Schicht wo liegt, wer wen aufrufen darf
 und wie ein neues Modul angelegt wird. Ergänzt [CLAUDE.md](CLAUDE.md) (Arbeitsregeln) und
 [index.md](index.md) (Anforderungen).
 
 ## Überblick
 
-ERP-saintwhoo ist **ein** Rust-Paket, das zweimal übersetzt wird:
+uniqwork ist **ein** Rust-Paket, das zweimal übersetzt wird:
 
 | Übersetzung | Schalter  | Ergebnis                                    | Enthält                                     |
 |-------------|-----------|---------------------------------------------|---------------------------------------------|
@@ -154,9 +154,9 @@ git push main ──► Railway (railway.toml) ──► docker build (Dockerfil
    planer    cargo chef prepare ──► recipe.json (nur Abhängigkeiten, ohne eigenen Code)
    bau       cargo chef cook (ssr, release)              ┐ zwischengespeichert, solange
              cargo chef cook (hydrate, wasm-release)     ┘ Cargo.toml/Cargo.lock gleich bleiben
-             cargo leptos build --release ──► target/release/erp-saintwhoo + target/site
+             cargo leptos build --release ──► target/release/uniqwork + target/site
    laufzeit  debian slim, Benutzer „erp“ (nicht root):
-             /app/erp-saintwhoo, /app/site, /app/Cargo.toml
+             /app/uniqwork, /app/site, /app/Cargo.toml
                                                 │
 Container ──► hört auf 0.0.0.0:$PORT ──► DATABASE_URL ──► PostgreSQL-Dienst (Railway, Europa)
 ```

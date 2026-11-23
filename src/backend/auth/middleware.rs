@@ -116,7 +116,7 @@ mod tests {
     fn public_paths() {
         assert!(is_public("/anmelden"));
         assert!(is_public("/oeffentlich/login123"));
-        assert!(is_public("/pkg/erp-saintwhoo.wasm"));
+        assert!(is_public("/pkg/uniqwork.wasm"));
         assert!(is_public("/favicon.ico"));
         assert!(!is_public("/"));
         assert!(!is_public("/anmelden/x"));

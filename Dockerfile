@@ -8,8 +8,8 @@
 #   laufzeit – schlankes Image nur mit Serverprogramm und site/ (ohne cargo, node, Quellcode)
 #
 # Lokal ausprobieren:
-#   docker build -t erp-saintwhoo .
-#   docker run --rm -p 8080:8080 -e PORT=8080 -e DATABASE_URL=postgres://… erp-saintwhoo
+#   docker build -t uniqwork .
+#   docker run --rm -p 8080:8080 -e PORT=8080 -e DATABASE_URL=postgres://… uniqwork
 
 ARG RUST_VERSION=1.97
 ARG NODE_VERSION=22
@@ -65,7 +65,7 @@ WORKDIR /app
 # damit die Laufzeit-Stufe kein apt-get braucht
 COPY --from=bau /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-COPY --from=bau /app/target/release/erp-saintwhoo /app/erp-saintwhoo
+COPY --from=bau /app/target/release/uniqwork /app/uniqwork
 COPY --from=bau /app/target/site /app/site
 # Leptos liest die Einstellungen aus [package.metadata.leptos]
 COPY --from=bau /app/Cargo.toml /app/Cargo.toml
@@ -78,4 +78,4 @@ ENV LEPTOS_ENV=PROD \
 EXPOSE 8080
 
 USER erp
-CMD ["/app/erp-saintwhoo"]
+CMD ["/app/uniqwork"]

@@ -18,7 +18,7 @@ pub fn CompanyPage() -> impl IntoView {
     let param = move |name: &str| query.read().get(name);
 
     view! {
-        <Title text="Firma – Einstellungen – ERP-saintwhoo"/>
+        <Title text="Firma – Einstellungen – uniqwork"/>
         <div class="space-y-4">
             <h1 class="text-2xl font-semibold">"Firma"</h1>
             {move || param("gespeichert").map(|v| {
