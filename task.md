@@ -34,6 +34,7 @@ Stand: 2026-11-24
 
 - [x] ANF-027 Geländeplan eines Projekts erfasst und umgesetzt: 3D-Karte (MapLibre + Three.js) unter `/projekte/<Kennung>/gelaendeplan`, Bühnen/Verpflegungsstände/Festzelte platzieren, drehen, löschen, Rasenfläche abstecken (m², Lageprüfung mit `geo`), Standort im Modal-Fenster, Speichern in `gelaendeplan*`
 - [x] ANF-027 AK-4: Elemente als gestaltete 3D-Modelle statt Quadern (Bühne, Verpflegungsstand, Festzelt)
+- [x] ANF-027 AK-18 bis AK-20: Elemente auswählen und verschieben (Ziehen mit Maus oder Finger, Pfeiltasten, Rücksprung ausserhalb der Rasenfläche)
 - [x] ANF-027 AK-12a/b, AK-15 bis AK-17: Adresssuche (Nominatim) mit hinterlegter Standort-Adresse, Messwerkzeuge Strecke und Fläche
 - [x] ANF-026 Schritt 3b: Mandanten-Datenbanken ohne Zugangsdaten (Passwort, letzte Anmeldung, Sitzungen), Benutzerverwaltung ohne Passwort, „Passwort ändern“ im Portal – ANF-026 erledigt
 - [x] ANF-026 Schritt 4: Modal-Fenster „Mandant definieren“ (`/portal?mandant=…`), Firma und Firmenadresse in der Mandanten-Datenbank, Firmenname in der Kopfzeile

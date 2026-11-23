@@ -45,11 +45,19 @@ function themeColor(THREE, name, fallback) {
 }
 
 export class SitePlanMap {
-    // container: HTML-Element der Karte; onClick(x, z) meldet Klicks in Metern;
+    // container: HTML-Element der Karte; onEvent(ereignis) meldet Bedienungen an Rust (Meter relativ
+    // zum Ursprung):
+    //   { type: 'click', x, z }                    Klick auf eine freie Stelle
+    //   { type: 'pick', index }                     Element angeklickt bzw. Ziehen begonnen
+    //   { type: 'drag', index, x, z }               Element wird gezogen (neuer Mittelpunkt)
+    //   { type: 'drop', index, start_x, start_z }   Ziehen beendet (mit Ausgangslage)
     // onError(text) meldet, wenn die Karte nicht geladen werden konnte.
-    constructor(container, originLng, originLat, onClick, onError) {
+    constructor(container, originLng, originLat, onEvent, onError) {
         this.origin = [originLng, originLat];
-        this.onClick = onClick;
+        this.onEvent = onEvent;
+        this.drag = null; // laufendes Ziehen eines Elements
+        this.suppressClick = false; // Klick nach dem Anfassen eines Elements nicht als Platzieren werten
+        this.elementModels = [];
         this.scene = null; // zuletzt gemeldeter Inhalt aus Rust
         this.destroyed = false;
         this.map = null;
@@ -148,11 +156,81 @@ export class SitePlanMap {
             this.#addMeasureLayers();
         });
 
-        // Klick auf die Karte in Meter relativ zum Ursprung umrechnen und an Rust melden
+        // Klick auf eine freie Stelle in Meter relativ zum Ursprung umrechnen und an Rust melden
         map.on('click', (e) => {
+            if (this.suppressClick) {
+                this.suppressClick = false;
+                return;
+            }
             const { x, z } = this.#toLocal(e.lngLat.lng, e.lngLat.lat);
-            this.onClick(x, z);
+            this.onEvent({ type: 'click', x, z });
         });
+
+        // Elemente verschieben: Element anfassen (Maus oder ein Finger) und ziehen. Die Karte bewegt
+        // sich dabei nicht. Das Element folgt dem Bodenpunkt unter dem Zeiger.
+        const start = (e) => {
+            this.suppressClick = false;
+            if (!this.scene?.interactive) return;
+            if (e.type === 'touchstart' && e.points.length !== 1) return;
+            const index = this.#pick(e.point);
+            if (index < 0) return;
+            e.preventDefault(); // kein Verschieben oder Drehen der Karte
+            const el = this.scene.elements[index];
+            const p = this.#toLocal(e.lngLat.lng, e.lngLat.lat);
+            this.drag = { index, startX: el.x, startZ: el.z, grabX: p.x - el.x, grabZ: p.z - el.z, moved: false };
+            this.suppressClick = true;
+            this.onEvent({ type: 'pick', index });
+        };
+        const move = (e) => {
+            if (!this.drag) {
+                // Zeiger zeigt an, ob unter ihm ein Element liegt, das man ziehen kann
+                if (e.type === 'mousemove') {
+                    const over = this.scene?.interactive && this.#pick(e.point) >= 0;
+                    map.getCanvas().style.cursor = over ? 'move' : 'crosshair';
+                }
+                return;
+            }
+            const p = this.#toLocal(e.lngLat.lng, e.lngLat.lat);
+            this.drag.moved = true;
+            this.onEvent({ type: 'drag', index: this.drag.index, x: p.x - this.drag.grabX, z: p.z - this.drag.grabZ });
+        };
+        this.endDrag = () => {
+            const d = this.drag;
+            if (!d) return;
+            this.drag = null;
+            if (d.moved) this.onEvent({ type: 'drop', index: d.index, start_x: d.startX, start_z: d.startZ });
+        };
+        map.on('mousedown', start);
+        map.on('touchstart', start);
+        map.on('mousemove', move);
+        map.on('touchmove', move);
+        map.on('mouseup', this.endDrag);
+        map.on('touchend', this.endDrag);
+        map.on('touchcancel', this.endDrag);
+        // Loslassen ausserhalb der Karte beendet das Ziehen ebenfalls
+        window.addEventListener('mouseup', this.endDrag);
+    }
+
+    // Element unter einem Bildschirmpunkt (Index in der Liste aus Rust) oder -1. Der Strahl durch
+    // den Punkt wird mit der umgekehrten Kameramatrix in Meter-Koordinaten der Szene umgerechnet.
+    #pick(point) {
+        if (!this.camera || this.elementModels.length === 0) return -1;
+        const THREE = this.THREE;
+        const canvas = this.map.getCanvas();
+        const nx = (point.x / canvas.clientWidth) * 2 - 1;
+        const ny = 1 - (point.y / canvas.clientHeight) * 2;
+        const inverse = this.camera.projectionMatrix.clone().invert();
+        const near = new THREE.Vector3(nx, ny, -1).applyMatrix4(inverse);
+        const far = new THREE.Vector3(nx, ny, 1).applyMatrix4(inverse);
+        this.raycaster ??= new THREE.Raycaster();
+        this.raycaster.set(near, far.sub(near).normalize());
+        this.group.updateMatrixWorld(true);
+        for (const hit of this.raycaster.intersectObjects(this.elementModels, true)) {
+            let o = hit.object;
+            while (o && o.userData.index === undefined) o = o.parent;
+            if (o) return o.userData.index;
+        }
+        return -1;
     }
 
     // Umrechnung vom Ursprung in Mercator-Koordinaten von MapLibre
@@ -240,7 +318,8 @@ export class SitePlanMap {
         source.setData({ type: 'FeatureCollection', features });
     }
 
-    // Inhalt aus Rust: { elements: [{ kind, x, z, rotation_deg, width_m, depth_m, height_m, outside }],
+    // Inhalt aus Rust: { interactive,  // Elemente lassen sich anfassen und ziehen
+    //                    elements: [{ kind, x, z, rotation_deg, width_m, depth_m, height_m, outside, selected }],
     //                    corners: [[x, z], …],
     //                    measure: null | { points: [[x, z], …], closed, labels: [{ x, z, text, main }] } }
     sync(scene) {
@@ -264,6 +343,7 @@ export class SitePlanMap {
 
     destroy() {
         this.destroyed = true;
+        if (this.endDrag) window.removeEventListener('mouseup', this.endDrag);
         if (this.map) {
             this.map.remove();
             this.map = null;
@@ -289,14 +369,28 @@ export class SitePlanMap {
             frame: themeColor(THREE, '--gelaende-gestell', 0x374151),
             canvas: themeColor(THREE, '--gelaende-plane', 0xf8fafc)
         };
-        for (const el of this.scene.elements) {
+        const selectColor = themeColor(THREE, '--gelaende-auswahl', 0xffffff);
+        this.elementModels = [];
+        this.scene.elements.forEach((el, index) => {
             const accent = themeColor(THREE, `--gelaende-${el.kind}`, 0x3b82f6);
             const build = MODELS[el.kind] ?? buildBlock;
             const model = build(THREE, el, { ...palette, accent }, el.outside ? 0.45 : 1.0);
+            if (el.selected) {
+                // Ausgewählt: leicht aufgehellt und mit Rahmen um die Grundfläche
+                model.traverse((o) => o.material?.emissive?.setHex(0x333333));
+                const frame = new THREE.LineSegments(
+                    new THREE.EdgesGeometry(new THREE.BoxGeometry(el.width_m + 0.4, el.height_m + 0.2, el.depth_m + 0.4)),
+                    new THREE.LineBasicMaterial({ color: selectColor })
+                );
+                frame.position.y = (el.height_m + 0.2) / 2;
+                model.add(frame);
+            }
+            model.userData.index = index;
             model.position.set(el.x, 0, el.z);
             model.rotation.y = (el.rotation_deg * Math.PI) / 180;
             this.group.add(model);
-        }
+            this.elementModels.push(model);
+        });
 
         // Rasenfläche: Eckpunkte, Umriss und (ab drei Punkten) halbdurchsichtige Fläche
         const corners = this.scene.corners;

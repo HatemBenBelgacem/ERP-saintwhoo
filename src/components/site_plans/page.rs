@@ -10,7 +10,7 @@ use leptos::prelude::*;
 use leptos_meta::Title;
 use leptos_router::hooks::{use_navigate, use_params_map, use_query_map};
 
-use super::bridge::{MapView, search_address};
+use super::bridge::{MapEvent, MapView, ViewState, search_address};
 use crate::backend::site_plans::model::{
     AddressHit, Corner, ElementKind, MeasureKind, OriginInput, ROTATION_STEP_DEG, SiteElement,
     SitePlan, SitePlanPage, format_area, format_distance, format_m, measure,
@@ -21,9 +21,10 @@ use crate::forms::{
 };
 use crate::icons::{Icon, IconView};
 
-/// Gewähltes Werkzeug: Element platzieren, Rasenfläche abstecken oder messen.
+/// Gewähltes Werkzeug: auswählen und verschieben, Element platzieren, Rasenfläche abstecken oder messen.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Tool {
+    Select,
     Place(ElementKind),
     Area,
     Measure(MeasureKind),
@@ -47,6 +48,8 @@ struct Editor {
     measure_kind: RwSignal<MeasureKind>,
     /// Postanschrift des Kunden – Vorschlag für die Adresssuche.
     customer_address: StoredValue<Option<String>>,
+    /// Ausgewähltes Element (Index in `plan.elements`).
+    selected: RwSignal<Option<usize>>,
 }
 
 impl Editor {
@@ -57,15 +60,47 @@ impl Editor {
     /// Plan und Messung an die Karte geben (liest die Signale beobachtend).
     fn sync_map(self) {
         let kind = self.measure_kind.get();
+        let selected = self.selected.get();
+        // Ziehen geht beim Auswählen und beim Platzieren, nicht beim Abstecken und Messen
+        let interactive = matches!(self.tool.get(), Tool::Select | Tool::Place(_));
         self.plan.with(|p| {
             self.measure_points.with(|pts| {
+                let view = ViewState {
+                    measurement: Some((kind, pts.as_slice())),
+                    selected: selected.filter(|i| *i < p.elements.len()),
+                    interactive,
+                };
                 self.map.with_value(|m| {
                     if let Some(m) = m {
-                        m.sync(p, Some((kind, pts.as_slice())));
+                        m.sync(p, &view);
                     }
                 })
             })
         });
+    }
+
+    /// Verschiebt das Element `i` um (dx, dz) Meter – nicht über den Rand der Rasenfläche hinaus,
+    /// wenn es vorher darauf stand. Liefert `false`, wenn die Verschiebung abgewiesen wurde.
+    fn nudge(self, i: usize, dx: f64, dz: f64) -> bool {
+        let Some((moved, fitted)) = self.plan.with_untracked(|p| {
+            p.elements.get(i).map(|e| {
+                let mut m = e.clone();
+                m.x += dx;
+                m.z += dz;
+                (m, p.fits(e))
+            })
+        }) else {
+            return false;
+        };
+        if fitted && !self.plan.with_untracked(|p| p.fits(&moved)) {
+            self.notice.set(Some(
+                "Verschoben würde das Element über die Rasenfläche hinausragen.".into(),
+            ));
+            return false;
+        }
+        self.notice.set(None);
+        self.plan.update(|p| p.elements[i] = moved);
+        true
     }
 }
 
@@ -100,11 +135,12 @@ fn SitePlanEditor(page: SitePlanPage) -> impl IntoView {
         plan: RwSignal::new(initial.clone()),
         saved: RwSignal::new(initial),
         stored: RwSignal::new(page.plan.is_some()),
-        tool: RwSignal::new(Tool::Place(ElementKind::FoodStall)),
+        tool: RwSignal::new(Tool::Select),
         notice: RwSignal::new(None),
         map: StoredValue::new_local(None),
         measure_points: RwSignal::new(Vec::new()),
         measure_kind: RwSignal::new(MeasureKind::Distance),
+        selected: RwSignal::new(None),
         customer_address: StoredValue::new(page.kunde_adresse.clone()),
     };
     provide_context(ed);
@@ -122,7 +158,7 @@ fn SitePlanEditor(page: SitePlanPage) -> impl IntoView {
         let view = MapView::mount(
             &el,
             origin,
-            move |x, z| place(ed, x, z),
+            move |event| handle_event(ed, event),
             move |msg| map_error.set(Some(msg)),
         );
         ed.map.set_value(Some(view));
@@ -142,6 +178,43 @@ fn SitePlanEditor(page: SitePlanPage) -> impl IntoView {
         }
     });
     on_cleanup(move || unload.remove());
+
+    // Tastatur: Pfeiltasten verschieben das ausgewählte Element um 0,5 m (mit Umschalt um 5 m),
+    // Escape hebt die Auswahl auf. Nicht in Eingabefeldern und nicht bei offenem Modal-Fenster.
+    let keys = window_event_listener(leptos::ev::keydown, move |ev| {
+        let Some(i) = ed.selected.get_untracked() else {
+            return;
+        };
+        let in_field = ev
+            .target()
+            .and_then(|t| {
+                leptos::wasm_bindgen::JsCast::dyn_into::<leptos::web_sys::Element>(t).ok()
+            })
+            .is_some_and(|el| matches!(el.tag_name().as_str(), "INPUT" | "TEXTAREA" | "SELECT"));
+        let modal_open = leptos::prelude::document()
+            .query_selector(".modal-open")
+            .ok()
+            .flatten()
+            .is_some();
+        if in_field || modal_open {
+            return;
+        }
+        let step = if ev.shift_key() { 5.0 } else { 0.5 };
+        let (dx, dz) = match ev.key().as_str() {
+            "ArrowLeft" => (-step, 0.0),
+            "ArrowRight" => (step, 0.0),
+            "ArrowUp" => (0.0, -step),
+            "ArrowDown" => (0.0, step),
+            "Escape" => {
+                ed.selected.set(None);
+                return;
+            }
+            _ => return,
+        };
+        ev.prevent_default();
+        ed.nudge(i, dx, dz);
+    });
+    on_cleanup(move || keys.remove());
 
     let crumbs = vec![
         ("Projekte".to_string(), Some("/projekte".to_string())),
@@ -187,9 +260,54 @@ fn SitePlanEditor(page: SitePlanPage) -> impl IntoView {
     }
 }
 
-/// Klick auf die Karte: Eckpunkt setzen, Messpunkt setzen oder Element platzieren (nur auf der Rasenfläche).
+/// Bedienung auf der Karte: auswählen, verschieben oder Klick an eine freie Stelle.
+fn handle_event(ed: Editor, event: MapEvent) {
+    match event {
+        MapEvent::Click { x, z } => place(ed, x, z),
+        MapEvent::Pick { index } => {
+            ed.selected.set(Some(index));
+            ed.notice.set(None);
+        }
+        // Während des Ziehens folgt das Element dem Zeiger; geprüft wird beim Loslassen
+        MapEvent::Drag { index, x, z } => ed.plan.update(|p| {
+            if let Some(e) = p.elements.get_mut(index) {
+                e.x = x;
+                e.z = z;
+            }
+        }),
+        MapEvent::Drop {
+            index,
+            start_x,
+            start_z,
+        } => {
+            let verdict = ed.plan.with_untracked(|p| {
+                p.elements.get(index).map(|e| {
+                    let mut before = e.clone();
+                    before.x = start_x;
+                    before.z = start_z;
+                    // Abgewiesen, wenn es vorher auf der Fläche stand und jetzt hinausragt
+                    p.fits(&before) && !p.fits(e)
+                })
+            });
+            if verdict == Some(true) {
+                ed.plan.update(|p| {
+                    p.elements[index].x = start_x;
+                    p.elements[index].z = start_z;
+                });
+                ed.notice.set(Some(
+                    "Das Element wurde zurückgesetzt: An der neuen Stelle stünde es nicht ganz auf der Rasenfläche."
+                        .into(),
+                ));
+            }
+        }
+    }
+}
+
+/// Klick auf eine freie Stelle: Auswahl aufheben, Eckpunkt oder Messpunkt setzen oder Element
+/// platzieren (nur auf der Rasenfläche).
 fn place(ed: Editor, x: f64, z: f64) {
     match ed.tool.get_untracked() {
+        Tool::Select => ed.selected.set(None),
         Tool::Area => {
             ed.plan.update(|p| p.corners.push(Corner { x, z }));
             ed.notice.set(None);
@@ -279,6 +397,7 @@ fn Header(
                     on:click=move |_| {
                         let saved = ed.saved.get_untracked();
                         let origin = (saved.origin_lng, saved.origin_lat);
+                        ed.selected.set(None);
                         ed.plan.set(saved);
                         ed.map.with_value(|m| if let Some(m) = m { m.set_origin(origin.0, origin.1) });
                         ed.notice.set(None);
@@ -319,9 +438,21 @@ fn ToolCard() -> impl IntoView {
             <div class="card-body gap-3">
                 <h2 class="card-title text-base">"Werkzeug"</h2>
                 <p class="text-sm text-base-content/70">
-                    "Element wählen und auf die Karte klicken, um es dort zu platzieren."
+                    "Element wählen und auf die Karte klicken, um es dort zu platzieren. Platzierte Elemente "
+                    "mit der Maus oder dem Finger anfassen und ziehen, um sie zu verschieben."
                 </p>
                 <div class="flex flex-col gap-2">
+                    <button
+                        type="button"
+                        class="btn justify-start"
+                        class:btn-primary=move || ed.tool.get() == Tool::Select
+                        class:btn-outline=move || ed.tool.get() != Tool::Select
+                        aria-pressed=move || (ed.tool.get() == Tool::Select).to_string()
+                        on:click=move |_| ed.tool.set(Tool::Select)
+                    >
+                        <IconView icon=Icon::Move/>
+                        "Auswählen und verschieben"
+                    </button>
                     {ElementKind::ALL
                         .into_iter()
                         .map(|kind| {
@@ -554,6 +685,14 @@ fn ElementList() -> impl IntoView {
     };
     let remove = move |i: usize| {
         ed.notice.set(None);
+        // Auswahl folgt dem Element bzw. entfällt mit ihm
+        ed.selected.update(|s| {
+            *s = match *s {
+                Some(j) if j == i => None,
+                Some(j) if j > i => Some(j - 1),
+                other => other,
+            }
+        });
         ed.plan.update(|p| {
             if i < p.elements.len() {
                 p.elements.remove(i);
@@ -585,15 +724,27 @@ fn ElementList() -> impl IntoView {
                                     let fits = plan.fits(e);
                                     let name = format!("{} {}", e.kind.label(), i + 1);
                                     view! {
-                                        <li class="flex items-center justify-between gap-2 rounded-box bg-base-200 p-2 text-sm">
-                                            <div class="flex min-w-0 items-center gap-2">
+                                        <li
+                                            class="flex items-center justify-between gap-2 rounded-box p-2 text-sm"
+                                            class:bg-base-200=move || ed.selected.get() != Some(i)
+                                            class=("bg-primary/15", move || ed.selected.get() == Some(i))
+                                            class=("ring-1", move || ed.selected.get() == Some(i))
+                                            class=("ring-primary", move || ed.selected.get() == Some(i))
+                                        >
+                                            <button
+                                                type="button"
+                                                class="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left"
+                                                title=format!("{name} auswählen")
+                                                aria-pressed=move || (ed.selected.get() == Some(i)).to_string()
+                                                on:click=move |_| ed.selected.set(Some(i))
+                                            >
                                                 <span class=e.kind.swatch_class()></span>
-                                                <div class="min-w-0">
-                                                    <div class="flex items-center gap-2 font-semibold">
+                                                <span class="block min-w-0">
+                                                    <span class="flex items-center gap-2 font-semibold">
                                                         {name.clone()}
                                                         {(!fits).then(|| view! { <span class="badge badge-warning badge-sm">"ausserhalb"</span> })}
-                                                    </div>
-                                                    <div class="text-xs text-base-content/60">
+                                                    </span>
+                                                    <span class="block text-xs text-base-content/60">
                                                         {format!(
                                                             "{} × {} m · X {} m · Z {} m · {}°",
                                                             format_m(e.width_m),
@@ -602,9 +753,9 @@ fn ElementList() -> impl IntoView {
                                                             format_m(e.z),
                                                             format_m(e.rotation_deg),
                                                         )}
-                                                    </div>
-                                                </div>
-                                            </div>
+                                                    </span>
+                                                </span>
+                                            </button>
                                             <div class="flex shrink-0 gap-1">
                                                 <button
                                                     type="button"
