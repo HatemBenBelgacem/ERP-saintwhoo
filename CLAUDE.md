@@ -87,7 +87,9 @@ docker run --rm -p 8080:8080 -e PORT=8080 -e DATABASE_URL=postgres://… uniqwor
 
 Betrieb auf Railway (ANF-008): Railway baut bei jedem neuen Stand auf `main` das `Dockerfile` und stellt es
 bereit. Umgebungsvariablen in der Railway-Oberfläche: `DATABASE_URL=${{Postgres.DATABASE_URL}}`,
-`SITZUNG_COOKIE_SECURE=1`. `PORT` setzt Railway selbst; der Server hört dann auf `0.0.0.0:$PORT`
+`SITZUNG_COOKIE_SECURE=1`. Der Benutzer in `DATABASE_URL` muss Datenbanken und Rollen anlegen dürfen
+(ANF-026; auf Railway der Benutzer `postgres`). Nur **eine** Server-Instanz je PostgreSQL-Dienst: Das Passwort der
+Rolle `uniqwork_erp` wird bei jedem Start neu gesetzt. `PORT` setzt Railway selbst; der Server hört dann auf `0.0.0.0:$PORT`
 (`listen_addr` in `src/main.rs`), sonst auf `site-addr` aus `Cargo.toml`. Details in `system-design.md`.
 
 ## Arbeitsregeln
@@ -182,10 +184,14 @@ bereit. Umgebungsvariablen in der Railway-Oberfläche: `DATABASE_URL=${{Postgres
 
 ### Datenbank
 - Schemaänderungen nur über neue Migrationsdateien, bestehende Migrationen nie ändern.
-- Den Verbindungspool in Server-Funktionen mit `crate::db::pool()?` holen (stellt `main.rs` über den Kontext bereit).
-- **Zwei Datenbanken (ANF-026):** Die Portal-Datenbank (`uniqwork_portal`, Pool über `crate::db::portal_pool()?`)
-  enthält nur Zugänge, Sitzungen und das Verzeichnis der Mandanten – nie ERP-Tabellen. Ihre Migrationen stehen in
-  `migrations_portal/`. ERP-Tabellen gehören nach `migrations/`.
+- Den Verbindungspool in Server-Funktionen mit `crate::db::pool()?` holen. Er ist der Pool der **Mandanten-Datenbank**
+  der laufenden Anfrage (die Middleware legt ihn in die Anfrage); ohne Mandant liefert er „Kein Mandant gewählt.“
+- **Datenbanken (ANF-026):** Die Portal-Datenbank (`uniqwork_portal`, Pool über `crate::db::portal_pool()?`)
+  enthält nur Zugänge, Sitzungen und das Verzeichnis der Mandanten – nie ERP-Tabellen; Migrationen in
+  `migrations_portal/`. Jeder Mandant hat eine eigene Datenbank `uq_m_…` mit den Migrationen aus `migrations/`;
+  ERP-Tabellen gehören nur dorthin. Neue Migrationen laufen beim Serverstart in allen Mandanten-Datenbanken.
+- Das ERP arbeitet mit der Rolle `uniqwork_erp`: Daten lesen/schreiben ja, Tabellen anlegen/ändern, `TRUNCATE` und
+  `CREATE DATABASE` nein. Schemaänderungen deshalb nur über Migrationen, nie zur Laufzeit.
 - Eingaben immer als Parameter (`$1`, `.bind(…)`), nie in den SQL-Text einsetzen. Zusammengesetzte SQL-Texte
   verlangt sqlx 0.9 mit `AssertSqlSafe(…)` – nur verwenden, wenn alle Teile feste Texte oder Werte aus einer
   festen Liste sind (Beispiel: Sortierung in `src/backend/addresses/repository.rs`).

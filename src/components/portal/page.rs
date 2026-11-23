@@ -5,12 +5,16 @@ use leptos_meta::Title;
 
 use crate::backend::auth::model::{CurrentUser, SessionTenant, TENANT_READY};
 use crate::backend::auth::server_fns::get_current_user;
+use crate::backend::portal::model::STATUS_FAILED;
+use crate::backend::portal::server_fns::CreateDatabase;
 use crate::icons::{Icon, IconView};
 use crate::layout::UserMenu;
 
 #[component]
 pub fn PortalPage() -> impl IntoView {
-    let me = Resource::new(|| (), |_| get_current_user());
+    // Nach „Datenbank erstellen“ neu laden (die Weiterleitung bleibt auf derselben Seite)
+    let create = ServerAction::<CreateDatabase>::new();
+    let me = Resource::new(move || create.version().get(), |_| get_current_user());
 
     view! {
         <Title text="Portal – uniqwork"/>
@@ -28,7 +32,7 @@ pub fn PortalPage() -> impl IntoView {
                 <Suspense fallback=|| view! { <span class="loading loading-spinner"></span> }>
                     {move || Suspend::new(async move {
                         match me.await {
-                            Ok(Some(user)) => view! { <PortalContent user/> }.into_any(),
+                            Ok(Some(user)) => view! { <PortalContent user create/> }.into_any(),
                             Ok(None) => view! {
                                 <div role="alert" class="alert alert-warning">"Nicht angemeldet."</div>
                             }
@@ -46,7 +50,7 @@ pub fn PortalPage() -> impl IntoView {
 }
 
 #[component]
-fn PortalContent(user: CurrentUser) -> impl IntoView {
+fn PortalContent(user: CurrentUser, create: ServerAction<CreateDatabase>) -> impl IntoView {
     view! {
         <h1 class="text-2xl font-semibold">"Willkommen, " {user.name.clone()}</h1>
         <div class="card bg-base-100 shadow">
@@ -56,28 +60,46 @@ fn PortalContent(user: CurrentUser) -> impl IntoView {
                     "Ihre Datenbank"
                 </h2>
                 {match user.mandant {
-                    None => view! { <NoDatabase/> }.into_any(),
-                    Some(tenant) => view! { <TenantInfo tenant/> }.into_any(),
+                    None => view! { <NoDatabase create/> }.into_any(),
+                    Some(tenant) => view! { <TenantInfo tenant create/> }.into_any(),
                 }}
+                {move || create.value().get().and_then(Result::err).map(|e| view! {
+                    <div role="alert" class="alert alert-error">{crate::forms::error_message(&e)}</div>
+                })}
             </div>
         </div>
     }
 }
 
-/// Noch keine Datenbank (ANF-026 AK-10). Das Erstellen folgt mit ANF-026 Schritt 3.
+/// Noch keine Datenbank (ANF-026 AK-10).
 #[component]
-fn NoDatabase() -> impl IntoView {
+fn NoDatabase(create: ServerAction<CreateDatabase>) -> impl IntoView {
     view! {
-        <p>"Sie haben noch keine Datenbank."</p>
-        <div role="status" class="alert alert-info">
-            "Das Erstellen einer eigenen Datenbank wird in Kürze freigeschaltet."
-        </div>
+        <p>"Sie haben noch keine Datenbank. Erstellen Sie jetzt Ihre eigene Datenbank – danach erfassen Sie Ihre Firma."</p>
+        <CreateButton create label="Datenbank erstellen"/>
     }
 }
 
-/// Datenbank vorhanden: Status, Mandant und Verweis ins ERP.
+/// Hauptschaltfläche „Datenbank erstellen“; gesperrt mit Ladeanzeige, solange erstellt wird (AK-11).
 #[component]
-fn TenantInfo(tenant: SessionTenant) -> impl IntoView {
+fn CreateButton(create: ServerAction<CreateDatabase>, label: &'static str) -> impl IntoView {
+    view! {
+        <ActionForm action=create>
+            <div class="card-actions">
+                <button type="submit" class="btn btn-primary" disabled=move || create.pending().get()>
+                    {move || create.pending().get().then(|| view! { <span class="loading loading-spinner"></span> })}
+                    {move || if create.pending().get() { "Datenbank wird erstellt …" } else { label }}
+                </button>
+            </div>
+        </ActionForm>
+    }
+}
+
+/// Datenbank vorhanden: Status, Mandant und Verweis ins ERP; nach einem Fehler erneut versuchen (AK-13).
+#[component]
+fn TenantInfo(tenant: SessionTenant, create: ServerAction<CreateDatabase>) -> impl IntoView {
+    let failed = tenant.status == STATUS_FAILED;
+    let undefined = tenant.status == TENANT_READY && tenant.firmenname.is_none();
     let usable = tenant.is_usable();
     let (label, badge) = match tenant.status.as_str() {
         TENANT_READY => ("Bereit", "badge badge-success"),
@@ -94,6 +116,16 @@ fn TenantInfo(tenant: SessionTenant) -> impl IntoView {
         {usable.then(|| view! {
             <div class="card-actions">
                 <a href="/" class="btn btn-primary">"Zum ERP"</a>
+            </div>
+        })}
+        {failed.then(|| view! {
+            <p>"Beim Erstellen ist ein Fehler aufgetreten. Es wurden keine Daten angelegt."</p>
+            <CreateButton create label="Erneut versuchen"/>
+        })}
+        // Das Modal-Fenster „Mandant definieren“ folgt mit ANF-026 Schritt 4 (AK-16)
+        {undefined.then(|| view! {
+            <div role="status" class="alert alert-info">
+                "Ihre Datenbank ist bereit. Als Nächstes erfassen Sie Ihre Firma (Mandant) – das wird in Kürze freigeschaltet."
             </div>
         })}
     }

@@ -8,13 +8,14 @@ async fn main() {
     use uniqwork::app::{App, shell};
 
     let _ = dotenvy::dotenv();
-    let pool = uniqwork::db::connect()
-        .await
-        .expect("Verbindung zur Datenbank fehlgeschlagen");
-    // ANF-026: eigene Datenbank für Registrierung, Anmeldung und Mandanten
-    let portal = uniqwork::db::connect_portal()
+    // ANF-026: Portal-Datenbank (Registrierung, Anmeldung, Mandanten) und Pools der Mandanten-Datenbanken
+    let databases = uniqwork::db::connect()
         .await
         .expect("Verbindung zur Portal-Datenbank fehlgeschlagen");
+    // ANF-026 AK-24: abgebrochene Erstellungen aufräumen, Migrationen in allen Mandanten-Datenbanken
+    uniqwork::backend::portal::provision::startup(&databases.portal.0, &databases.tenants)
+        .await
+        .expect("Mandanten-Datenbanken konnten nicht vorbereitet werden");
 
     let conf = get_configuration(None).expect("Leptos-Konfiguration fehlt");
     // ANF-008: Railway gibt den Port über `PORT` vor; sonst gilt `site-addr` aus Cargo.toml.
@@ -30,11 +31,10 @@ async fn main() {
             &leptos_options,
             routes,
             {
-                let pool = pool.clone();
-                let portal = portal.clone();
+                let databases = databases.clone();
                 move || {
-                    provide_context(pool.clone());
-                    provide_context(portal.clone());
+                    provide_context(databases.portal.clone());
+                    provide_context(databases.tenants.clone());
                 }
             },
             {
@@ -42,19 +42,20 @@ async fn main() {
                 move || shell(leptos_options.clone())
             },
         )
-        // ANF-025: Firmenlogo aus der Datenbank
+        // ANF-025: Firmenlogo aus der Datenbank des Mandanten (Pool legt die Middleware in die Anfrage)
         .route(
             uniqwork::backend::company::model::LOGO_URL,
-            axum::routing::get({
-                let pool = pool.clone();
-                move || uniqwork::backend::company::logo::logo_response(pool.clone())
-            }),
+            axum::routing::get(
+                |axum::Extension(uniqwork::db::TenantPool(pool)): axum::Extension<
+                    uniqwork::db::TenantPool,
+                >| uniqwork::backend::company::logo::logo_response(pool),
+            ),
         )
         .fallback(leptos_axum::file_and_error_handler(shell))
         // ANF-007/ANF-026: Zugangsschutz für alle Seiten und Server-Funktionen (auch die Rückfallroute);
         // Sitzungen liegen in der Portal-Datenbank
         .layer(axum::middleware::from_fn_with_state(
-            portal.clone(),
+            databases.clone(),
             uniqwork::backend::auth::middleware::require_login,
         ))
         .with_state(leptos_options);

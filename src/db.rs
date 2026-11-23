@@ -1,60 +1,147 @@
 //! Datenbankzugriff (nur Server).
+//!
+//! Zwei Arten von Datenbanken im selben PostgreSQL-Dienst (ANF-026):
+//! - **Portal-Datenbank** `uniqwork_portal`: Zugänge, Sitzungen, Verzeichnis der Mandanten.
+//!   Pool `PortalPool`, Migrationen in `migrations_portal/`.
+//! - **Mandanten-Datenbanken** `uq_m_…`: je Mandant das ERP, Migrationen in `migrations/`.
+//!   Das ERP verbindet sich mit der Rolle `uniqwork_erp` ohne `CREATEDB` (ANF-026 AK-21);
+//!   Pools je Mandant verwaltet `TenantPools` (AK-22, AK-27).
+
+use std::{
+    collections::HashMap,
+    str::FromStr,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 use sqlx::{
     PgPool, Postgres,
     migrate::{MigrateDatabase, Migrator},
-    postgres::PgPoolOptions,
+    postgres::{PgConnectOptions, PgPoolOptions},
 };
 
-/// Migrationen der Mandanten-Datenbank (das ERP).
-static ERP_MIGRATIONS: Migrator = sqlx::migrate!("./migrations");
+/// Migrationen der Mandanten-Datenbanken (das ERP).
+pub static ERP_MIGRATIONS: Migrator = sqlx::migrate!("./migrations");
 /// Migrationen der Portal-Datenbank (ANF-026 AK-7).
 static PORTAL_MIGRATIONS: Migrator = sqlx::migrate!("./migrations_portal");
 
 /// Name der Portal-Datenbank, wenn `PORTAL_DATABASE_URL` fehlt (ANF-026).
 pub const PORTAL_DATABASE_NAME: &str = "uniqwork_portal";
+/// PostgreSQL-Rolle für den laufenden ERP-Betrieb, ohne `CREATEDB` (ANF-026 AK-21).
+pub const ERP_ROLE: &str = "uniqwork_erp";
+/// Höchstens so viele Verbindungen je Mandant (ANF-026 AK-27).
+pub const TENANT_MAX_CONNECTIONS: u32 = 3;
+/// Unbenutzte Verbindungen eines Mandanten werden nach so vielen Sekunden geschlossen (ANF-026 AK-27).
+pub const TENANT_IDLE_SECONDS: u64 = 300;
 
 /// Verbindungspool der Portal-Datenbank (ANF-026).
-/// Eigener Typ, damit er im Leptos-Kontext nicht mit dem ERP-Pool (`PgPool`) verwechselt wird.
+/// Eigener Typ, damit er im Leptos-Kontext nicht mit einem ERP-Pool verwechselt wird.
 #[derive(Clone, Debug)]
 pub struct PortalPool(pub PgPool);
 
-/// Legt die ERP-Datenbank bei Bedarf an, baut den Verbindungspool auf
-/// und führt ausstehende Migrationen aus.
-pub async fn connect() -> Result<PgPool, Box<dyn std::error::Error>> {
-    let url = database_url()?;
-    open(&url, &ERP_MIGRATIONS, "Datenbank").await
+/// Pool der Mandanten-Datenbank der laufenden Anfrage. Die Middleware legt ihn in die Anfrage,
+/// wenn der Zugang einen bereiten und definierten Mandanten hat (ANF-026 AK-22).
+#[derive(Clone, Debug)]
+pub struct TenantPool(pub PgPool);
+
+/// Verbindungen zu den Mandanten-Datenbanken (ANF-026 AK-22, AK-27).
+///
+/// - `admin`: Zugangsdaten der Portal-Rolle (mit `CREATEDB`) – nur zum Anlegen, Migrieren und Löschen.
+/// - `erp`: Rolle `uniqwork_erp` ohne `CREATEDB` – für den laufenden Betrieb.
+///
+/// Pools entstehen beim ersten Zugriff ohne Verbindung (`connect_lazy`); unbenutzte Verbindungen werden
+/// nach `TENANT_IDLE_SECONDS` geschlossen, ein ruhender Mandant belegt also keine Verbindung.
+#[derive(Clone)]
+pub struct TenantPools {
+    admin: PgConnectOptions,
+    erp: PgConnectOptions,
+    pools: Arc<Mutex<HashMap<String, PgPool>>>,
 }
 
-/// Legt die Portal-Datenbank bei Bedarf an (ANF-026 AK-9), baut ihren Verbindungspool auf
-/// und führt die Migrationen aus `migrations_portal/` aus.
-pub async fn connect_portal() -> Result<PortalPool, Box<dyn std::error::Error>> {
+impl std::fmt::Debug for TenantPools {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("TenantPools { … }")
+    }
+}
+
+impl TenantPools {
+    /// Verbindungsdaten der Portal-Rolle für die Datenbank `database` (Anlegen, Migrationen).
+    pub fn admin_options(&self, database: &str) -> PgConnectOptions {
+        self.admin.clone().database(database)
+    }
+
+    /// Pool der ERP-Rolle für die Mandanten-Datenbank `database`; wird beim ersten Aufruf angelegt.
+    pub fn pool(&self, database: &str) -> PgPool {
+        let mut pools = self.pools.lock().unwrap_or_else(|e| e.into_inner());
+        pools
+            .entry(database.to_string())
+            .or_insert_with(|| {
+                PgPoolOptions::new()
+                    .max_connections(TENANT_MAX_CONNECTIONS)
+                    .min_connections(0)
+                    .idle_timeout(Duration::from_secs(TENANT_IDLE_SECONDS))
+                    .connect_lazy_with(self.erp.clone().database(database))
+            })
+            .clone()
+    }
+
+    /// Pool eines Mandanten schliessen und vergessen (z. B. bevor seine Datenbank gelöscht wird).
+    pub async fn forget(&self, database: &str) {
+        let pool = self
+            .pools
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .remove(database);
+        if let Some(pool) = pool {
+            pool.close().await;
+        }
+    }
+}
+
+/// Alle Verbindungen beim Serverstart (ANF-026).
+#[derive(Clone, Debug)]
+pub struct Databases {
+    pub portal: PortalPool,
+    pub tenants: TenantPools,
+}
+
+/// Legt die Portal-Datenbank bei Bedarf an (ANF-026 AK-9) und führt ihre Migrationen aus, richtet die
+/// Rolle `uniqwork_erp` mit einem neuen Zufallspasswort ein (AK-21) und bereitet die Pools der
+/// Mandanten vor. Andere Datenbanken legt der Server beim Start nicht an.
+///
+/// Das Passwort der ERP-Rolle wird bei jedem Start neu erzeugt und nirgends gespeichert. Mehrere
+/// gleichzeitig laufende Server teilen sich deshalb keinen PostgreSQL-Dienst (Railway: eine Instanz).
+pub async fn connect() -> Result<Databases, Box<dyn std::error::Error>> {
     let explicit = std::env::var("PORTAL_DATABASE_URL").ok();
     let url = portal_url(explicit.as_deref(), &database_url()?)?;
-    Ok(PortalPool(
-        open(&url, &PORTAL_MIGRATIONS, "Portal-Datenbank").await?,
-    ))
+    if !Postgres::database_exists(&url).await? {
+        Postgres::create_database(&url).await?;
+        leptos::logging::log!("Portal-Datenbank angelegt");
+    }
+    let portal = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&url)
+        .await?;
+    PORTAL_MIGRATIONS.run(&portal).await?;
+
+    let admin = PgConnectOptions::from_str(&url)?;
+    let password = crate::backend::auth::session::new_token();
+    crate::backend::portal::repository::ensure_erp_role(&portal, ERP_ROLE, &password).await?;
+    let erp = admin.clone().username(ERP_ROLE).password(&password);
+
+    Ok(Databases {
+        portal: PortalPool(portal),
+        tenants: TenantPools {
+            admin,
+            erp,
+            pools: Arc::default(),
+        },
+    })
 }
 
 fn database_url() -> Result<String, &'static str> {
     std::env::var("DATABASE_URL")
         .map_err(|_| "DATABASE_URL ist nicht gesetzt (.env anlegen, Vorlage: .env.example)")
-}
-
-/// Datenbank anlegen, falls sie fehlt, Pool aufbauen und Migrationen ausführen.
-async fn open(
-    url: &str,
-    migrator: &Migrator,
-    label: &str,
-) -> Result<PgPool, Box<dyn std::error::Error>> {
-    if !Postgres::database_exists(url).await? {
-        Postgres::create_database(url).await?;
-        leptos::logging::log!("{label} angelegt");
-    }
-
-    let pool = PgPoolOptions::new().max_connections(5).connect(url).await?;
-    migrator.run(&pool).await?;
-    Ok(pool)
 }
 
 /// Webadresse der Portal-Datenbank: `PORTAL_DATABASE_URL`, wenn gesetzt und nicht leer;
@@ -80,10 +167,20 @@ pub fn portal_url(explicit: Option<&str>, database_url: &str) -> Result<String, 
     ))
 }
 
-/// Verbindungspool aus dem Leptos-Kontext (in `main.rs` bereitgestellt).
+/// Pool der Mandanten-Datenbank der laufenden Anfrage (ANF-026 AK-22).
+/// Fehlt er, hat der Zugang keinen bereiten und definierten Mandanten.
 pub fn pool() -> Result<PgPool, leptos::prelude::ServerFnError> {
-    leptos::prelude::use_context::<PgPool>()
-        .ok_or_else(|| leptos::prelude::ServerFnError::new("Kein Datenbank-Pool im Kontext"))
+    leptos::prelude::use_context::<axum::http::request::Parts>()
+        .and_then(|parts| parts.extensions.get::<TenantPool>().map(|p| p.0.clone()))
+        .ok_or_else(|| {
+            leptos::prelude::ServerFnError::new(crate::backend::auth::model::MSG_NO_TENANT)
+        })
+}
+
+/// Pools der Mandanten aus dem Leptos-Kontext (Anlegen einer Datenbank, ANF-026 AK-11).
+pub fn tenant_pools() -> Result<TenantPools, leptos::prelude::ServerFnError> {
+    leptos::prelude::use_context::<TenantPools>()
+        .ok_or_else(|| leptos::prelude::ServerFnError::new("Keine Mandanten-Pools im Kontext"))
 }
 
 /// Verbindungspool der Portal-Datenbank aus dem Leptos-Kontext (ANF-026).
