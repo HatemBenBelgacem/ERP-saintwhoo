@@ -59,10 +59,10 @@ Plan mit.
   - **Verpflegungsstand** (2,8 m): orange Theke mit heller Platte, Rück- und Seitenwände, Dach, orange-hell
     gestreiftes Vordach nach vorne.
   - **Festzelt** (3 m): helle Zeltwände, blaues Giebeldach mit Firststange, dunkler Eingang vorne.
-- [x] **AK-5:** Gegeben ein Element in der Liste, wenn ich „↻“ wähle, dann dreht es sich um 45°; mit „✕“ wird
-  es entfernt.
+- [x] **AK-5:** Gegeben ein Element in der Liste, wenn ich „↺“ bzw. „↻“ wähle, dann dreht es sich um 15° gegen
+  bzw. im Uhrzeigersinn um die eigene Achse (Mittelpunkt); mit „✕“ wird es entfernt.
 - [x] **AK-6:** Gegeben das Werkzeug „Rasenfläche abstecken“, wenn ich auf die Karte klicke, dann setzt jeder
-  Klick einen Eckpunkt; ab drei Eckpunkten erscheint die Fläche halbdurchsichtig grün und ihre Grösse in m²
+  Klick einen Eckpunkt; ab drei Eckpunkten erscheint die Fläche halbdurchsichtig lila und ihre Grösse in m²
   wird laufend angezeigt. „Letzten Eckpunkt entfernen“ und „Fläche entfernen“ machen Eckpunkte rückgängig.
 - [x] **AK-7:** Gegeben eine abgesteckte Rasenfläche, wenn ich ein Element so platzieren will, dass es nicht
   ganz auf der Fläche steht, dann wird es nicht platziert und ein Hinweis erscheint.
@@ -112,6 +112,15 @@ Plan mit.
 - [x] **AK-20:** Gegeben ein ausgewähltes Element, wenn ich die Pfeiltasten drücke, dann verschiebt es sich
   um 0,5 m (mit Umschalt um 5 m) nach Osten, Westen, Norden bzw. Süden, nicht über den Rand der
   Rasenfläche hinaus; Escape hebt die Auswahl auf. In Eingabefeldern und bei offenem Modal-Fenster nicht.
+- [x] **AK-21:** Gegeben ein ausgewähltes Element, dann zeigt die Karte vor seiner Vorderseite einen weissen
+  **Drehgriff**, verbunden mit dem Mittelpunkt. Wenn ich den Griff mit Maus oder Finger ziehe, dreht sich das
+  Element um die eigene Achse und zeigt zum Zeiger (ganze Grad, mit Umschalt in 15°-Schritten). Taste R dreht
+  das ausgewählte Element um 15° im Uhrzeigersinn, Umschalt + R dagegen. Ragt ein Element, das auf der
+  Rasenfläche stand, nach dem Loslassen hinaus, springt die Drehung mit Hinweis zurück.
+- [x] **AK-22:** Gegeben eine Rasenfläche, wenn ich einen Eckpunkt mit Maus oder Finger anfasse und ziehe
+  (beim Auswählen, Platzieren und Abstecken, nicht beim Messen), dann folgt er dem Zeiger; Fläche in m²,
+  Lageprüfung der Elemente und Markierung „ausserhalb“ werden laufend nachgeführt. Ein Klick auf einen
+  bestehenden Eckpunkt setzt keinen neuen. Fläche, Umriss und Eckpunkte sind **lila**.
 - [x] **AK-14:** Gegeben die Karte kann nicht geladen werden (z. B. ohne Internet), dann erscheint eine
   Fehlermeldung; der Rest der Seite bleibt bedienbar.
 
@@ -149,7 +158,7 @@ Tabelle `gelaendeplan_eckpunkt`: `reihenfolge`, `x_m`, `z_m` (leer = keine Rasen
 
 - Suche während des Tippens (Vorschläge); die Nutzungsregeln von Nominatim verbieten das.
 - Messungen speichern, Höhen messen, an Elementen oder Eckpunkten einrasten.
-- Freie Grösse je Element, Drehen per Ziehen, mehrere Elemente gleichzeitig verschieben.
+- Freie Grösse je Element, mehrere Elemente gleichzeitig verschieben, Eckpunkte einfügen oder einzeln löschen.
 - Fertige 3D-Modelle aus Dateien (`.glb` über den `GLTFLoader`); die Modelle werden aus Grundformen gebaut.
 - Mehrere Pläne oder Versionen je Projekt, Druckansicht, Export.
 - Gleichzeitiges Bearbeiten durch mehrere Benutzer (wer zuletzt speichert, gewinnt).
@@ -178,5 +187,6 @@ Vorläufige Annahmen, bis sie geklärt sind:
 |------------|-------|-----------------|
 | 2026-11-23 | Hatem Ben Belgacem | Erstellt und umgesetzt (Vorgabe: Anleitung Leptos + MapLibre + Three.js) |
 | 2026-11-24 | Hatem Ben Belgacem | AK-4: gestaltete 3D-Modelle statt Quadern (Bühne, Verpflegungsstand, Festzelt) |
+| 2026-11-24 | Hatem Ben Belgacem | AK-5, AK-21: Drehen um die eigene Achse (Drehgriff, Taste R, 15°-Schritte); AK-6, AK-22: Rasenfläche lila, Eckpunkte ziehbar |
 | 2026-11-24 | Hatem Ben Belgacem | AK-18 bis AK-20: Elemente auswählen und verschieben (Ziehen mit Maus/Finger, Pfeiltasten) |
 | 2026-11-24 | Hatem Ben Belgacem | AK-12a/b: Adresssuche und Standort-Adresse; AK-15 bis AK-17: Messwerkzeuge Strecke und Fläche; AK-11: Umriss ohne Überschneidung |

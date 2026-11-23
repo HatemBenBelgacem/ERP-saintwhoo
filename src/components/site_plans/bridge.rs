@@ -25,6 +25,12 @@ pub enum MapEvent {
         start_x: f64,
         start_z: f64,
     },
+    /// Element wird am Drehgriff um die eigene Achse gedreht: neuer Winkel (0 ≤ Grad < 360).
+    Rotate { index: usize, deg: f64 },
+    /// Drehen beendet; `start_deg` ist der Winkel vor dem Drehen.
+    Rotated { index: usize, start_deg: f64 },
+    /// Eckpunkt der Rasenfläche wird gezogen: neue Lage.
+    Corner { index: usize, x: f64, z: f64 },
 }
 
 /// Ein Element, wie es die 3D-Szene braucht.
@@ -114,8 +120,10 @@ impl SceneMeasure {
 /// Inhalt der 3D-Szene.
 #[derive(Serialize)]
 struct Scene {
-    /// Elemente lassen sich anfassen und ziehen (nicht beim Abstecken und Messen).
-    interactive: bool,
+    /// Elemente lassen sich anfassen, ziehen und drehen (nicht beim Abstecken und Messen).
+    drag_elements: bool,
+    /// Eckpunkte der Rasenfläche lassen sich ziehen (nicht beim Messen).
+    drag_corners: bool,
     elements: Vec<SceneElement>,
     corners: Vec<[f64; 2]>,
     measure: Option<SceneMeasure>,
@@ -127,14 +135,17 @@ pub struct ViewState<'a> {
     pub measurement: Option<(MeasureKind, &'a [Corner])>,
     /// Ausgewähltes Element (Index in `plan.elements`).
     pub selected: Option<usize>,
-    /// Elemente lassen sich anfassen und ziehen.
-    pub interactive: bool,
+    /// Elemente lassen sich anfassen, ziehen und drehen.
+    pub drag_elements: bool,
+    /// Eckpunkte der Rasenfläche lassen sich ziehen.
+    pub drag_corners: bool,
 }
 
 impl Scene {
     fn from_plan(plan: &SitePlan, view: &ViewState) -> Self {
         Self {
-            interactive: view.interactive,
+            drag_elements: view.drag_elements,
+            drag_corners: view.drag_corners,
             measure: view
                 .measurement
                 .and_then(|(kind, points)| SceneMeasure::new(kind, points)),
@@ -320,6 +331,28 @@ mod tests {
         assert_eq!(
             parse(r#"{"type":"pick","index":3}"#),
             MapEvent::Pick { index: 3 }
+        );
+        assert_eq!(
+            parse(r#"{"type":"rotate","index":1,"deg":90}"#),
+            MapEvent::Rotate {
+                index: 1,
+                deg: 90.0
+            }
+        );
+        assert_eq!(
+            parse(r#"{"type":"rotated","index":1,"start_deg":0}"#),
+            MapEvent::Rotated {
+                index: 1,
+                start_deg: 0.0
+            }
+        );
+        assert_eq!(
+            parse(r#"{"type":"corner","index":2,"x":1,"z":2}"#),
+            MapEvent::Corner {
+                index: 2,
+                x: 1.0,
+                z: 2.0
+            }
         );
         assert_eq!(
             parse(r#"{"type":"drop","index":0,"start_x":4,"start_z":5}"#),

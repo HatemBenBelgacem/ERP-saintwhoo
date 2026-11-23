@@ -61,14 +61,17 @@ impl Editor {
     fn sync_map(self) {
         let kind = self.measure_kind.get();
         let selected = self.selected.get();
-        // Ziehen geht beim Auswählen und beim Platzieren, nicht beim Abstecken und Messen
-        let interactive = matches!(self.tool.get(), Tool::Select | Tool::Place(_));
+        // Elemente ziehen und drehen: beim Auswählen und Platzieren; Eckpunkte ziehen: ausser beim Messen
+        let tool = self.tool.get();
+        let drag_elements = matches!(tool, Tool::Select | Tool::Place(_));
+        let drag_corners = !matches!(tool, Tool::Measure(_));
         self.plan.with(|p| {
             self.measure_points.with(|pts| {
                 let view = ViewState {
                     measurement: Some((kind, pts.as_slice())),
                     selected: selected.filter(|i| *i < p.elements.len()),
-                    interactive,
+                    drag_elements,
+                    drag_corners,
                 };
                 self.map.with_value(|m| {
                     if let Some(m) = m {
@@ -77,6 +80,26 @@ impl Editor {
                 })
             })
         });
+    }
+
+    /// Dreht das Element `i` um `step` Grad um die eigene Achse (positiv = gegen den Uhrzeigersinn) –
+    /// nicht über den Rand der Rasenfläche hinaus, wenn es vorher darauf stand.
+    fn rotate_by(self, i: usize, step: f64) -> bool {
+        let Some((rotated, fitted)) = self
+            .plan
+            .with_untracked(|p| p.elements.get(i).map(|e| (e.rotated(step), p.fits(e))))
+        else {
+            return false;
+        };
+        if fitted && !self.plan.with_untracked(|p| p.fits(&rotated)) {
+            self.notice.set(Some(
+                "Gedreht würde das Element über die Rasenfläche hinausragen.".into(),
+            ));
+            return false;
+        }
+        self.notice.set(None);
+        self.plan.update(|p| p.elements[i] = rotated);
+        true
     }
 
     /// Verschiebt das Element `i` um (dx, dz) Meter – nicht über den Rand der Rasenfläche hinaus,
@@ -180,7 +203,7 @@ fn SitePlanEditor(page: SitePlanPage) -> impl IntoView {
     on_cleanup(move || unload.remove());
 
     // Tastatur: Pfeiltasten verschieben das ausgewählte Element um 0,5 m (mit Umschalt um 5 m),
-    // Escape hebt die Auswahl auf. Nicht in Eingabefeldern und nicht bei offenem Modal-Fenster.
+    // R dreht es um 15° (mit Umschalt in die Gegenrichtung), Escape hebt die Auswahl auf. Nicht in Eingabefeldern und nicht bei offenem Modal-Fenster.
     let keys = window_event_listener(leptos::ev::keydown, move |ev| {
         let Some(i) = ed.selected.get_untracked() else {
             return;
@@ -205,6 +228,17 @@ fn SitePlanEditor(page: SitePlanPage) -> impl IntoView {
             "ArrowRight" => (step, 0.0),
             "ArrowUp" => (0.0, -step),
             "ArrowDown" => (0.0, step),
+            // R dreht im Uhrzeigersinn, Umschalt + R dagegen
+            "r" | "R" => {
+                ev.prevent_default();
+                let step = if ev.shift_key() {
+                    ROTATION_STEP_DEG
+                } else {
+                    -ROTATION_STEP_DEG
+                };
+                ed.rotate_by(i, step);
+                return;
+            }
             "Escape" => {
                 ed.selected.set(None);
                 return;
@@ -300,6 +334,39 @@ fn handle_event(ed: Editor, event: MapEvent) {
                 ));
             }
         }
+        // Drehgriff: während des Drehens folgt der Winkel dem Zeiger; geprüft wird beim Loslassen
+        MapEvent::Rotate { index, deg } => ed.plan.update(|p| {
+            if let Some(e) = p.elements.get_mut(index) {
+                e.rotation_deg = deg.rem_euclid(360.0);
+            }
+        }),
+        MapEvent::Rotated { index, start_deg } => {
+            let verdict = ed.plan.with_untracked(|p| {
+                p.elements.get(index).map(|e| {
+                    let before = SiteElement {
+                        rotation_deg: start_deg,
+                        ..e.clone()
+                    };
+                    p.fits(&before) && !p.fits(e)
+                })
+            });
+            if verdict == Some(true) {
+                ed.plan
+                    .update(|p| p.elements[index].rotation_deg = start_deg.rem_euclid(360.0));
+                ed.notice.set(Some(
+                    "Die Drehung wurde zurückgesetzt: So gedreht stünde das Element nicht ganz auf der Rasenfläche."
+                        .into(),
+                ));
+            } else {
+                ed.notice.set(None);
+            }
+        }
+        // Eckpunkt der Rasenfläche verschieben; Elemente ausserhalb werden danach markiert (AK-9)
+        MapEvent::Corner { index, x, z } => ed.plan.update(|p| {
+            if let Some(c) = p.corners.get_mut(index) {
+                *c = Corner { x, z };
+            }
+        }),
     }
 }
 
@@ -439,7 +506,9 @@ fn ToolCard() -> impl IntoView {
                 <h2 class="card-title text-base">"Werkzeug"</h2>
                 <p class="text-sm text-base-content/70">
                     "Element wählen und auf die Karte klicken, um es dort zu platzieren. Platzierte Elemente "
-                    "mit der Maus oder dem Finger anfassen und ziehen, um sie zu verschieben."
+                    "anfassen und ziehen, um sie zu verschieben. Am weissen Griff des ausgewählten Elements "
+                    "ziehen, um es um die eigene Achse zu drehen (mit Umschalt in 15°-Schritten). "
+                    "Eckpunkte der Rasenfläche lassen sich ebenfalls ziehen."
                 </p>
                 <div class="flex flex-col gap-2">
                     <button
@@ -664,24 +733,8 @@ fn AreaCard() -> impl IntoView {
 #[component]
 fn ElementList() -> impl IntoView {
     let ed = expect_context::<Editor>();
-    let rotate = move |i: usize| {
-        let rotated = ed.plan.with_untracked(|p| {
-            p.elements
-                .get(i)
-                .map(|e| (e.rotated(ROTATION_STEP_DEG), p.fits(e)))
-        });
-        let Some((rotated, fitted)) = rotated else {
-            return;
-        };
-        // Ein Element, das auf der Fläche steht, darf durch Drehen nicht hinausragen
-        if fitted && !ed.plan.with_untracked(|p| p.fits(&rotated)) {
-            ed.notice.set(Some(
-                "Gedreht würde das Element über die Rasenfläche hinausragen.".into(),
-            ));
-            return;
-        }
-        ed.notice.set(None);
-        ed.plan.update(|p| p.elements[i] = rotated);
+    let rotate = move |i: usize, step: f64| {
+        ed.rotate_by(i, step);
     };
     let remove = move |i: usize| {
         ed.notice.set(None);
@@ -760,9 +813,16 @@ fn ElementList() -> impl IntoView {
                                                 <button
                                                     type="button"
                                                     class="btn btn-ghost btn-xs"
-                                                    title=format!("{name} um 45° drehen")
-                                                    aria-label=format!("{name} um 45° drehen")
-                                                    on:click=move |_| rotate(i)
+                                                    title=format!("{name} um 15° gegen den Uhrzeigersinn drehen")
+                                                    aria-label=format!("{name} um 15° gegen den Uhrzeigersinn drehen")
+                                                    on:click=move |_| rotate(i, ROTATION_STEP_DEG)
+                                                >"↺"</button>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-ghost btn-xs"
+                                                    title=format!("{name} um 15° im Uhrzeigersinn drehen")
+                                                    aria-label=format!("{name} um 15° im Uhrzeigersinn drehen")
+                                                    on:click=move |_| rotate(i, -ROTATION_STEP_DEG)
                                                 >"↻"</button>
                                                 <button
                                                     type="button"

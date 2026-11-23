@@ -20,8 +20,8 @@ pub const MAX_SIZE_M: f64 = 200.0;
 pub const MAX_DISTANCE_M: f64 = 5_000.0;
 /// Höchstlänge der Standort-Adresse bzw. -Bezeichnung.
 pub const MAX_ADDRESS_LEN: usize = 300;
-/// Drehschritt der Schaltfläche „Drehen“.
-pub const ROTATION_STEP_DEG: f64 = 45.0;
+/// Drehschritt der Schaltflächen ↺/↻ und der Taste R.
+pub const ROTATION_STEP_DEG: f64 = 15.0;
 
 /// Art eines platzierten Elements.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
