@@ -51,6 +51,9 @@ export class SitePlanMap {
     //   { type: 'pick', index }                     Element angeklickt bzw. Ziehen begonnen
     //   { type: 'drag', index, x, z }               Element wird gezogen (neuer Mittelpunkt)
     //   { type: 'drop', index, start_x, start_z }   Ziehen beendet (mit Ausgangslage)
+    //   { type: 'rotate', index, deg }              Element wird am Drehgriff gedreht (neuer Winkel)
+    //   { type: 'rotated', index, start_deg }       Drehen beendet (mit Ausgangswinkel)
+    //   { type: 'corner', index, x, z }             Eckpunkt der Rasenfläche wird gezogen
     // onError(text) meldet, wenn die Karte nicht geladen werden konnte.
     constructor(container, originLng, originLat, onEvent, onError) {
         this.origin = [originLng, originLat];
@@ -151,9 +154,14 @@ export class SitePlanMap {
             }
         };
 
+        // Reihenfolge der Ebenen: Rasenfläche (unter den Modellen), 3D-Modelle, Eckpunkte, Messung, Drehgriff
         map.on('style.load', () => {
+            this.#addAreaLayers();
             map.addLayer(layer);
+            this.#addCornerLayer();
             this.#addMeasureLayers();
+            this.#addHandleLayers();
+            this.#updateOverlays();
         });
 
         // Klick auf eine freie Stelle in Meter relativ zum Ursprung umrechnen und an Rust melden
@@ -166,39 +174,65 @@ export class SitePlanMap {
             this.onEvent({ type: 'click', x, z });
         });
 
-        // Elemente verschieben: Element anfassen (Maus oder ein Finger) und ziehen. Die Karte bewegt
-        // sich dabei nicht. Das Element folgt dem Bodenpunkt unter dem Zeiger.
+        // Ziehen mit Maus oder einem Finger – die Karte bewegt sich dabei nicht:
+        //   Drehgriff des ausgewählten Elements → Element um die eigene Achse drehen
+        //   Eckpunkt der Rasenfläche            → Eckpunkt verschieben
+        //   Element                             → Element verschieben (folgt dem Bodenpunkt unter dem Zeiger)
         const start = (e) => {
             this.suppressClick = false;
-            if (!this.scene?.interactive) return;
+            if (!this.scene) return;
             if (e.type === 'touchstart' && e.points.length !== 1) return;
-            const index = this.#pick(e.point);
-            if (index < 0) return;
+            const target = this.#target(e.point);
+            if (!target) return;
             e.preventDefault(); // kein Verschieben oder Drehen der Karte
-            const el = this.scene.elements[index];
-            const p = this.#toLocal(e.lngLat.lng, e.lngLat.lat);
-            this.drag = { index, startX: el.x, startZ: el.z, grabX: p.x - el.x, grabZ: p.z - el.z, moved: false };
             this.suppressClick = true;
-            this.onEvent({ type: 'pick', index });
+            const p = this.#toLocal(e.lngLat.lng, e.lngLat.lat);
+            if (target.kind === 'element') {
+                const el = this.scene.elements[target.index];
+                this.drag = { ...target, startX: el.x, startZ: el.z, grabX: p.x - el.x, grabZ: p.z - el.z, moved: false };
+                this.onEvent({ type: 'pick', index: target.index });
+            } else if (target.kind === 'rotate') {
+                this.drag = { ...target, startDeg: this.scene.elements[target.index].rotation_deg, moved: false };
+            } else {
+                const [cx, cz] = this.scene.corners[target.index];
+                this.drag = { ...target, grabX: p.x - cx, grabZ: p.z - cz, moved: false };
+            }
         };
         const move = (e) => {
-            if (!this.drag) {
-                // Zeiger zeigt an, ob unter ihm ein Element liegt, das man ziehen kann
+            const d = this.drag;
+            if (!d) {
+                // Zeiger zeigt, was sich unter ihm anfassen lässt
                 if (e.type === 'mousemove') {
-                    const over = this.scene?.interactive && this.#pick(e.point) >= 0;
-                    map.getCanvas().style.cursor = over ? 'move' : 'crosshair';
+                    const t = this.#target(e.point);
+                    map.getCanvas().style.cursor = !t ? 'crosshair' : t.kind === 'rotate' ? 'grab' : 'move';
                 }
                 return;
             }
             const p = this.#toLocal(e.lngLat.lng, e.lngLat.lat);
-            this.drag.moved = true;
-            this.onEvent({ type: 'drag', index: this.drag.index, x: p.x - this.drag.grabX, z: p.z - this.drag.grabZ });
+            d.moved = true;
+            if (d.kind === 'element') {
+                this.onEvent({ type: 'drag', index: d.index, x: p.x - d.grabX, z: p.z - d.grabZ });
+            } else if (d.kind === 'rotate') {
+                // Winkel vom Mittelpunkt zum Zeiger; ganze Grad, mit Umschalt in 15°-Schritten
+                const el = this.scene.elements[d.index];
+                let deg = Math.atan2(p.x - el.x, p.z - el.z) * 180 / Math.PI;
+                deg = e.originalEvent?.shiftKey ? Math.round(deg / 15) * 15 : Math.round(deg);
+                deg = ((deg % 360) + 360) % 360;
+                this.onEvent({ type: 'rotate', index: d.index, deg });
+            } else {
+                this.onEvent({ type: 'corner', index: d.index, x: p.x - d.grabX, z: p.z - d.grabZ });
+            }
         };
         this.endDrag = () => {
             const d = this.drag;
             if (!d) return;
             this.drag = null;
-            if (d.moved) this.onEvent({ type: 'drop', index: d.index, start_x: d.startX, start_z: d.startZ });
+            if (!d.moved) return;
+            if (d.kind === 'element') {
+                this.onEvent({ type: 'drop', index: d.index, start_x: d.startX, start_z: d.startZ });
+            } else if (d.kind === 'rotate') {
+                this.onEvent({ type: 'rotated', index: d.index, start_deg: d.startDeg });
+            }
         };
         map.on('mousedown', start);
         map.on('touchstart', start);
@@ -209,6 +243,33 @@ export class SitePlanMap {
         map.on('touchcancel', this.endDrag);
         // Loslassen ausserhalb der Karte beendet das Ziehen ebenfalls
         window.addEventListener('mouseup', this.endDrag);
+    }
+
+    // Was liegt unter dem Bildschirmpunkt? Drehgriff und Eckpunkte werden in Bildschirmpixeln
+    // gesucht (gut zu treffen in jeder Zoomstufe), Elemente mit einem Strahl durch die 3D-Szene.
+    #target(point) {
+        const s = this.scene;
+        if (!s || !this.map) return null;
+        const near = (x, z, radius) => {
+            const q = this.map.project(this.#toLngLat(x, z));
+            return Math.hypot(q.x - point.x, q.y - point.y) <= radius;
+        };
+        if (s.drag_elements) {
+            const index = s.elements.findIndex((el) => el.selected);
+            if (index >= 0) {
+                const [hx, hz] = handlePosition(s.elements[index]);
+                if (near(hx, hz, 14)) return { kind: 'rotate', index };
+            }
+        }
+        if (s.drag_corners) {
+            const index = s.corners.findIndex(([x, z]) => near(x, z, 12));
+            if (index >= 0) return { kind: 'corner', index };
+        }
+        if (s.drag_elements) {
+            const index = this.#pick(point);
+            if (index >= 0) return { kind: 'element', index };
+        }
+        return null;
     }
 
     // Element unter einem Bildschirmpunkt (Index in der Liste aus Rust) oder -1. Der Strahl durch
@@ -256,6 +317,80 @@ export class SitePlanMap {
         const lng = oLng + (x / (EARTH_RADIUS_M * Math.cos(oLat * Math.PI / 180))) * 180 / Math.PI;
         const lat = oLat - (z / EARTH_RADIUS_M) * 180 / Math.PI;
         return [lng, lat];
+    }
+
+    // Rasenfläche als Ebenen von MapLibre: Füllung und Umriss liegen unter den 3D-Modellen.
+    #addAreaLayers() {
+        const color = cssColor('--gelaende-flaeche', '#a855f7');
+        this.map.addSource('flaeche', { type: 'geojson', data: emptyCollection() });
+        this.map.addLayer({
+            id: 'flaeche-fuellung', type: 'fill', source: 'flaeche',
+            filter: ['==', '$type', 'Polygon'],
+            paint: { 'fill-color': color, 'fill-opacity': 0.35 }
+        });
+        this.map.addLayer({
+            id: 'flaeche-linie', type: 'line', source: 'flaeche',
+            filter: ['==', '$type', 'LineString'],
+            paint: { 'line-color': color, 'line-width': 2.5 }
+        });
+    }
+
+    // Eckpunkte über den Modellen, damit man sie immer anfassen kann
+    #addCornerLayer() {
+        this.map.addLayer({
+            id: 'flaeche-ecke', type: 'circle', source: 'flaeche',
+            filter: ['==', '$type', 'Point'],
+            paint: {
+                'circle-color': cssColor('--gelaende-flaeche', '#a855f7'),
+                'circle-radius': 6,
+                'circle-stroke-color': cssColor('--gelaende-auswahl', '#ffffff'),
+                'circle-stroke-width': 2
+            }
+        });
+    }
+
+    // Drehgriff des ausgewählten Elements: Linie vom Mittelpunkt zum Griff und der Griff selbst
+    #addHandleLayers() {
+        const color = cssColor('--gelaende-auswahl', '#ffffff');
+        this.map.addSource('drehgriff', { type: 'geojson', data: emptyCollection() });
+        this.map.addLayer({
+            id: 'drehgriff-linie', type: 'line', source: 'drehgriff',
+            filter: ['==', '$type', 'LineString'],
+            paint: { 'line-color': color, 'line-width': 2 }
+        });
+        this.map.addLayer({
+            id: 'drehgriff-punkt', type: 'circle', source: 'drehgriff',
+            filter: ['==', '$type', 'Point'],
+            paint: { 'circle-color': color, 'circle-radius': 8, 'circle-stroke-color': '#000', 'circle-stroke-width': 1.5 }
+        });
+    }
+
+    // Rasenfläche, Drehgriff und Messung aus dem zuletzt gemeldeten Inhalt zeichnen.
+    #updateOverlays() {
+        const area = this.map?.getSource('flaeche');
+        const handle = this.map?.getSource('drehgriff');
+        if (!area || !handle || !this.scene) return;
+
+        const coords = this.scene.corners.map(([x, z]) => this.#toLngLat(x, z));
+        const features = coords.map((c, index) => point(c, { index }));
+        if (coords.length >= 2) {
+            features.push(lineString(coords.length >= 3 ? [...coords, coords[0]] : coords));
+        }
+        if (coords.length >= 3) {
+            features.push({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[...coords, coords[0]]] }, properties: {} });
+        }
+        area.setData({ type: 'FeatureCollection', features });
+
+        const selected = this.scene.drag_elements ? this.scene.elements.find((el) => el.selected) : null;
+        if (selected) {
+            const center = this.#toLngLat(selected.x, selected.z);
+            const grip = this.#toLngLat(...handlePosition(selected));
+            handle.setData({ type: 'FeatureCollection', features: [lineString([center, grip]), point(grip, {})] });
+        } else {
+            handle.setData(emptyCollection());
+        }
+
+        this.#updateMeasure();
     }
 
     // Messung als Ebenen von MapLibre: Linien und Punkte in Bildschirmpixeln, damit sie in jeder
@@ -318,7 +453,8 @@ export class SitePlanMap {
         source.setData({ type: 'FeatureCollection', features });
     }
 
-    // Inhalt aus Rust: { interactive,  // Elemente lassen sich anfassen und ziehen
+    // Inhalt aus Rust: { drag_elements,  // Elemente lassen sich anfassen, ziehen und drehen
+    //                    drag_corners,   // Eckpunkte der Rasenfläche lassen sich ziehen
     //                    elements: [{ kind, x, z, rotation_deg, width_m, depth_m, height_m, outside, selected }],
     //                    corners: [[x, z], …],
     //                    measure: null | { points: [[x, z], …], closed, labels: [{ x, z, text, main }] } }
@@ -332,7 +468,7 @@ export class SitePlanMap {
         this.origin = [lng, lat];
         if (!this.map) return;
         this.#computeTransform();
-        this.#updateMeasure(); // Messung bleibt relativ zum Plan
+        this.#updateOverlays(); // Fläche, Griff und Messung bleiben relativ zum Plan
         this.map.flyTo({ center: this.origin, zoom: Math.max(this.map.getZoom(), 16) });
         this.map.triggerRepaint();
     }
@@ -392,42 +528,8 @@ export class SitePlanMap {
             this.elementModels.push(model);
         });
 
-        // Rasenfläche: Eckpunkte, Umriss und (ab drei Punkten) halbdurchsichtige Fläche
-        const corners = this.scene.corners;
-        if (corners.length > 0) {
-            const areaColor = themeColor(THREE, '--gelaende-flaeche', 0x22c55e);
-            for (const [x, z] of corners) {
-                const marker = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.4, 0.4, 1.2, 12),
-                    new THREE.MeshStandardMaterial({ color: areaColor })
-                );
-                marker.position.set(x, 0.6, z);
-                this.group.add(marker);
-            }
-            if (corners.length >= 2) {
-                const points = corners.map(([x, z]) => new THREE.Vector3(x, 0.1, z));
-                const outline = corners.length >= 3
-                    ? new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(points), new THREE.LineBasicMaterial({ color: areaColor }))
-                    : new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), new THREE.LineBasicMaterial({ color: areaColor }));
-                this.group.add(outline);
-            }
-            if (corners.length >= 3) {
-                const shape = new THREE.Shape(corners.map(([x, z]) => new THREE.Vector2(x, z)));
-                const geometry = new THREE.ShapeGeometry(shape);
-                geometry.rotateX(Math.PI / 2); // Form (x, z) aus der xy-Ebene auf den Boden legen
-                const fill = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
-                    color: areaColor,
-                    transparent: true,
-                    opacity: 0.25,
-                    side: THREE.DoubleSide,
-                    depthWrite: false
-                }));
-                fill.position.y = 0.05;
-                this.group.add(fill);
-            }
-        }
-
-        if (this.map) this.#updateMeasure();
+        // Rasenfläche, Drehgriff und Messung zeichnet MapLibre (siehe #updateOverlays)
+        if (this.map) this.#updateOverlays();
         this.map?.triggerRepaint();
     }
 }
@@ -464,6 +566,30 @@ export async function searchAddress(query) {
     return results
         .map((r) => ({ label: r.display_name, lng: parseFloat(r.lon), lat: parseFloat(r.lat) }))
         .filter((r) => Number.isFinite(r.lng) && Number.isFinite(r.lat));
+}
+
+// Lage des Drehgriffs: vor der Vorderseite des Elements (Richtung +z, mitgedreht), 5 m über den Rand
+function handlePosition(el) {
+    const r = Math.max(el.width_m, el.depth_m) / 2 + 5;
+    const a = (el.rotation_deg * Math.PI) / 180;
+    return [el.x + Math.sin(a) * r, el.z + Math.cos(a) * r];
+}
+
+// Farbe aus dem Farbschema als CSS-Text (für die Ebenen von MapLibre)
+function cssColor(name, fallback) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+
+function emptyCollection() {
+    return { type: 'FeatureCollection', features: [] };
+}
+
+function point(coordinates, properties) {
+    return { type: 'Feature', geometry: { type: 'Point', coordinates }, properties };
+}
+
+function lineString(coordinates) {
+    return { type: 'Feature', geometry: { type: 'LineString', coordinates }, properties: {} };
 }
 
 // ---------------------------------------------------------------------------------------------
