@@ -37,7 +37,8 @@ src/
   forms.rs           Gemeinsame Formular-Bausteine: TextField, SelectField, SearchPicker, Fehler, Pfadleiste, SaveOutcome
   backend/<modul>/   model.rs (Datentypen + Prüfregeln), server_fns.rs (#[server]), repository.rs (SQL, nur ssr)
   components/<modul>/ Eine Datei pro Komponente bzw. Ansicht (list.rs, detail.rs, form.rs …)
-                     Module: addresses (ANF-002), projects (ANF-003), purchase_orders (ANF-004), users (ANF-005), tasks (ANF-006), auth (ANF-007),
+                     Module: addresses (ANF-002), projects (ANF-003), purchase_orders (ANF-004), users (ANF-005), tasks (ANF-006), auth (ANF-007, ANF-026),
+                     portal (ANF-026, Seite /portal),
                      system (Datenbank-Status), home, settings, company (ANF-025, Seite unter settings/company) – Details in system-design.md
   backend/finance/<teil>/  Finanzen (ANF-010), je Komponente ein Untermodul: accounts (ANF-011 Kontenplan)
   components/settings/finance/<teil>/  Stammdaten-Seiten der Finanzen unter /einstellungen/finanzen/…
@@ -168,11 +169,16 @@ bereit. Umgebungsvariablen in der Railway-Oberfläche: `DATABASE_URL=${{Postgres
 - Einstellungsseiten liegen unter `/einstellungen/…` – dann zeigt die Seitenleiste automatisch die Einstellungsnavigation.
 - Interne Verweise als normales `<a href>` – Leptos wechselt die Seite dann ohne Neuladen.
 
-### Anmeldung und Zugangsschutz (ANF-007)
+### Anmeldung und Zugangsschutz (ANF-007, ANF-026)
+- Registrierung (`/registrieren`), Anmeldung (E-Mail + Passwort) und Sitzungen laufen über die **Portal-Datenbank**.
 - Jede Anfrage läuft durch `src/backend/auth/middleware.rs`: Seiten ohne Sitzung → `/anmelden`,
-  Server-Funktionen unter `/api/…` ohne Sitzung → 401. Neue `#[server]`-Funktionen sind damit automatisch geschützt.
+  Server-Funktionen unter `/api/…` ohne Sitzung → 401. Mit Sitzung, aber ohne bereiten und definierten Mandanten
+  ist nur das Portal erreichbar: Seiten → `/portal`, ERP-Server-Funktionen → 403.
+  Neue `#[server]`-Funktionen sind damit automatisch geschützt.
 - Nur Funktionen, die **ohne** Anmeldung gehen müssen, bekommen `#[server(prefix = "/oeffentlich")]` – sparsam verwenden.
-- Den angemeldeten Benutzer in Server-Funktionen mit `crate::backend::auth::session::current_user()` bzw. `require_user()` holen.
+- Funktionen des Portals, die angemeldet, aber **ohne Mandant** gehen müssen, bekommen `#[server(prefix = "/api/portal")]`.
+- Den angemeldeten Zugang in Server-Funktionen mit `crate::backend::auth::session::current_user()` bzw. `require_user()`
+  holen. `CurrentUser::benutzer_id` ist der Benutzer in der Mandanten-Datenbank (z. B. für „meine Aufgaben“).
 
 ### Datenbank
 - Schemaänderungen nur über neue Migrationsdateien, bestehende Migrationen nie ändern.

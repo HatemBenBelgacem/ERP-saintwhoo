@@ -301,3 +301,31 @@ mod tests {
         assert_eq!(order_by("; DROP TABLE benutzer"), "b.benutzername");
     }
 }
+
+// ---------------------------------------------------------------------------------------------
+// Sitzungen der ERP-Datenbank (ANF-007 AK-15). Seit ANF-026 läuft die Anmeldung über die
+// Portal-Datenbank; diese Tabelle wird mit dem Entfernen der Passwörter aus der
+// Mandanten-Datenbank (ANF-026 Schritt 3) aufgelöst.
+
+/// Alle Sitzungen eines Benutzers beenden (gesperrt, ANF-007 AK-15).
+pub async fn end_all_sessions(pool: &PgPool, user_id: i64) -> Result<(), sqlx::Error> {
+    sqlx::query("DELETE FROM sitzung WHERE benutzer_id = $1")
+        .bind(user_id)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
+/// Alle Sitzungen eines Benutzers beenden ausser der mit `keep_hash` (Passwort neu gesetzt, ANF-007 AK-15).
+pub async fn end_sessions_except(
+    pool: &PgPool,
+    user_id: i64,
+    keep_hash: Option<&str>,
+) -> Result<(), sqlx::Error> {
+    sqlx::query("DELETE FROM sitzung WHERE benutzer_id = $1 AND merkmal_hash IS DISTINCT FROM $2")
+        .bind(user_id)
+        .bind(keep_hash)
+        .execute(pool)
+        .await?;
+    Ok(())
+}

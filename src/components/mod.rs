@@ -5,6 +5,7 @@
 pub mod addresses;
 pub mod auth;
 pub mod home;
+pub mod portal;
 pub mod projects;
 pub mod purchase_orders;
 pub mod settings;

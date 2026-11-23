@@ -30,7 +30,8 @@ Schlägt ein Szenario fehl, trage es in [task.md](task.md) als offene Aufgabe ei
 | ANF-004 | Einkauf | 29 | |
 | ANF-005 | Benutzer | 35 | Bedienung im Browser noch nicht von Hand geprüft |
 | ANF-006 | Aufgaben | 21 | Bedienung im Browser noch nicht von Hand geprüft |
-| ANF-007 | Anmeldung | 29 | Bedienung im Browser noch nicht von Hand geprüft |
+| ANF-007 | Anmeldung | 29 | Seit ANF-026 mit E-Mail statt Benutzername; TS-007-26/27 entfallen |
+| ANF-026 | Registrierung, Datenbank, Mandant | 14 | Schritte 1 und 2 (Portal-Datenbank, Registrierung, Anmeldung) |
 
 Die Anforderungen ANF-005 bis ANF-007 haben bisher keine Prüfung im Browser. Mit diesen Szenarien starten.
 
@@ -54,7 +55,14 @@ Die Anforderungen ANF-005 bis ANF-007 haben bisher keine Prüfung im Browser. Mi
        - Vorgang 2.3 (verantwortlich **Carla**) mit Aufgabe 2.3.1 (offen).
    - Projekt **P-2026-002** ohne Kunde und ohne Verantwortliche.
    - Ein Einkaufsauftrag im Status Entwurf und einer im Status Bestellt, beide dem Projekt P-2026-001 zugeordnet. Die Lieferanten sind Adressen aus der Liste.
-5. Für die Ersteinrichtung (TS-007-26) brauchst du eine zweite, leere Datenbank.
+5. Die Ersteinrichtung gibt es seit ANF-026 nicht mehr; der erste Zugang entsteht über `/registrieren`.
+
+> **Hinweis ANF-026:** Seit der Anmeldung über das Portal öffnet sich das ERP nur mit einem bereiten und definierten
+> Mandanten. Bis „Datenbank erstellen“ und „Mandant definieren“ umgesetzt sind (ANF-026 Schritte 3 und 4), lässt sich
+> ein Mandant für Tests von Hand anlegen: in `uniqwork_portal`
+> `INSERT INTO mandant (besitzer_id, status, firmenname) VALUES (<Kennung des Zugangs>, 'bereit', 'Musterfirma AG');`
+> und danach neu anmelden. Das ERP arbeitet bis Schritt 3 noch mit der Datenbank aus `DATABASE_URL`.
+> In den Szenarien von ANF-007 steht „Benutzername“ für die **E-Mail** des Portal-Zugangs.
 
 ## ANF-001 Grundgerüst
 
@@ -258,10 +266,31 @@ Hinweis: AK-5 (Navigation an einer zentralen Stelle definiert) wird im Code gepr
 | TS-007-23 | 17 | Mit Anna angemeldet die Kopfzeile ansehen. Dann auf dem Mobiltelefon. | Die Kopfzeile zeigt den Namen und „Abmelden“. Auf dem Mobiltelefon ist der Name gekürzt oder steht nur als Symbol da. |
 | TS-007-24 | 18 | „Abmelden“ klicken. Dann die Zurück-Taste drücken. | Die Anmeldeseite erscheint mit „Sie wurden abgemeldet.“. Die Zurück-Taste führt nicht in geschützte Seiten. DB: Die Sitzungszeile ist weg. |
 | TS-007-25 | 20 | Als Ben die eigene Zeile in der Benutzerverwaltung sperren, dann löschen. | Beide Male wird es verhindert. Die Meldungen lauten „Sie können sich nicht selbst sperren.“ und „Sie können sich nicht selbst löschen.“. |
-| TS-007-26 | 21 | Mit einer leeren Datenbank `/anmelden` öffnen. Die Ersteinrichtung mit einem Passwort aus 5 Zeichen absenden. Dann mit gültigen Daten absenden. | Die Ersteinrichtung erscheint. Das kurze Passwort wird abgelehnt. Mit gültigen Daten werden Person und Benutzer angelegt und du bist direkt angemeldet. |
-| TS-007-27 | 22 | Nach der Ersteinrichtung `/anmelden` öffnen. Dann die Server-Funktion für die Ersteinrichtung erneut aufrufen. | Die Anmeldung erscheint statt der Ersteinrichtung. Der Aufruf meldet „Die Ersteinrichtung ist bereits abgeschlossen. Bitte anmelden.“. |
+| ~~TS-007-26~~ | 21 | *Entfällt (ANF-026).* | – |
+| ~~TS-007-27~~ | 22 | *Entfällt (ANF-026).* | – |
 | TS-007-28 | 23 | DB: `INSERT INTO anmeldeversuch (benutzername, zeitpunkt) VALUES ('alt', now() - interval '1 day');` ausführen. Dann anmelden. | Der alte Eintrag ist danach gelöscht. Die Tabellen `sitzung` und `anmeldeversuch` sind vorhanden. |
 | TS-007-29 | 24 | Anmelden mit den Entwicklerwerkzeugen beobachten: Anfrage, Webadresse und Serverprotokoll. | Das Formular wird per POST gesendet. Die Webadresse enthält kein Passwort. Im Serverprotokoll stehen weder Passwort noch Cookie-Wert. |
+
+## ANF-026 Registrierung, eigene Datenbank und Mandant
+
+Vorbereitung: leere PostgreSQL-Instanz bzw. Datenbanken `uniqwork` und `uniqwork_portal` löschen; `PORTAL_DATABASE_URL` leer lassen.
+
+| Nr | AK | Schritte | Erwartet |
+|----|----|----------|----------|
+| TS-026-01 | 7, 9 | Server starten. Danach `\l` in `psql`. | Beide Datenbanken `uniqwork` und `uniqwork_portal` sind angelegt. Ein zweiter Start legt nichts neu an. |
+| TS-026-02 | 8 | In `uniqwork_portal` und in `uniqwork` die Tabellen auflisten (`\dt`). | Portal: `portal_benutzer`, `mandant`, `portal_sitzung`, `portal_anmeldeversuch`. Keine dieser Tabellen in `uniqwork`, keine ERP-Tabelle im Portal. |
+| TS-026-03 | 12 | DB: `INSERT INTO mandant (besitzer_id, datenbankname) VALUES (1, 'x');` | Wird abgelehnt: `datenbankname` wird nur von der Datenbank erzeugt (`uq_m_000001` …). |
+| TS-026-04 | 1 | Ohne Anmeldung `/anmelden` öffnen, auf „Registrieren“ klicken. | `/registrieren` öffnet sich ohne Anmeldung und ohne Seitenleiste. |
+| TS-026-05 | 2 | Leer absenden. Dann E-Mail „falsch“, Passwort mit 5 Zeichen und abweichender Wiederholung. | Meldungen bei Vorname, Nachname, E-Mail und Passwort; nichts wird angelegt. |
+| TS-026-06 | 4, 6 | „Anna“, „Muster“, „ Anna@Firma.CH “ und gültiges Passwort absenden. | Weiterleitung auf `/portal` mit „Willkommen, Anna Muster“ und „Sie haben noch keine Datenbank.“. In `portal_benutzer` steht `anna@firma.ch` mit `ist_administrator = true`. In `uniqwork` ändert sich nichts. |
+| TS-026-07 | 3 | Abmelden, mit „ANNA@firma.ch“ erneut registrieren. | „Für diese E-Mail-Adresse gibt es bereits einen Zugang.“ |
+| TS-026-08 | 5 | DB: `SELECT passwort_hash FROM portal_benutzer;` | Ein Argon2id-Hash (`$argon2id$…`), nie das Passwort. |
+| TS-026-09 | 5 | Fünfmal mit falschem Passwort anmelden, dann mit dem richtigen. | Ab dem sechsten Versuch: „Zu viele Fehlversuche. Bitte später erneut versuchen.“ |
+| TS-026-10 | 19 | Angemeldet ohne Datenbank `/`, `/adressen` und `/einstellungen/benutzer` aufrufen. | Jedes Mal Weiterleitung auf `/portal`. |
+| TS-026-11 | 19 | Angemeldet ohne Datenbank eine ERP-Server-Funktion unter `/api/…` aufrufen (z. B. mit `curl` und dem Cookie). | HTTP 403 „Kein Mandant gewählt.“, keine Daten. |
+| TS-026-12 | 19 | DB: Mandant für Anna mit Status `bereit`, aber ohne Firmennamen anlegen, neu anmelden. Dann den Firmennamen setzen und neu anmelden. | Zuerst weiter nur `/portal`. Mit Firmennamen öffnet die Anmeldung das ERP bzw. das Ziel aus `zurueck`. |
+| TS-026-13 | 23 | Zweiten Zugang „Ben“ registrieren. DB: Bens Sitzung `mandant_id` auf Annas Mandanten setzen. Dann `/` aufrufen. | Ben bleibt auf `/portal`; Annas Mandant wird nicht verwendet. |
+| TS-026-14 | 25 | Mit leerer Portal-Datenbank `/anmelden` öffnen. | Keine Ersteinrichtung mehr, nur Anmeldung mit Verweis auf „Registrieren“. |
 
 ## ANF-011 Kontenplan
 

@@ -51,9 +51,10 @@ async fn main() {
             }),
         )
         .fallback(leptos_axum::file_and_error_handler(shell))
-        // ANF-007: Zugangsschutz für alle Seiten und Server-Funktionen (auch die Rückfallroute)
+        // ANF-007/ANF-026: Zugangsschutz für alle Seiten und Server-Funktionen (auch die Rückfallroute);
+        // Sitzungen liegen in der Portal-Datenbank
         .layer(axum::middleware::from_fn_with_state(
-            pool.clone(),
+            portal.clone(),
             uniqwork::backend::auth::middleware::require_login,
         ))
         .with_state(leptos_options);

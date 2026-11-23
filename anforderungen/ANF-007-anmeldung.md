@@ -9,7 +9,12 @@
 | **Modul**     | Benutzer                                          |
 | **Autor**     | Hatem Ben Belgacem                                |
 | **Erstellt**  | 2026-11-12                                        |
-| **Geändert**  | 2026-11-12                                        |
+| **Geändert**  | 2026-11-23                                        |
+
+> **Geändert durch ANF-026 (2026-11-23):** Anmeldung und Sitzungen laufen über die **Portal-Datenbank**.
+> Angemeldet wird mit **E-Mail und Passwort** des Portal-Zugangs statt mit dem Benutzernamen; neue Zugänge
+> entstehen über die Registrierung (`/registrieren`). Die **Ersteinrichtung (AK-21, AK-22) entfällt**.
+> Die übrigen Regeln (Sitzungsdauer, Sperre nach Fehlversuchen, Cookie, Zugangsschutz) gelten unverändert.
 
 ## 1. Beschreibung
 
@@ -112,13 +117,13 @@ zentrierte Karte mit dem Anmeldeformular.
   **löschen**, dann wird das verhindert („Sie können sich nicht selbst sperren bzw. löschen.“), damit man
   sich nicht versehentlich aussperrt.
 
-**Erster Benutzer**
-- [x] **AK-21:** Gegeben es gibt noch **keinen** Benutzer in der Datenbank, wenn `/anmelden` geöffnet wird,
+**Erster Benutzer** *(entfällt, ersetzt durch die Registrierung aus ANF-026)*
+- [x] ~~**AK-21:**~~ Gegeben es gibt noch **keinen** Benutzer in der Datenbank, wenn `/anmelden` geöffnet wird,
   dann erscheint statt der Anmeldung die **Ersteinrichtung**: Vorname, Nachname, E-Mail (optional),
   Benutzername und Passwort mit Wiederholung. Beim Speichern werden eine Adresse vom Typ „Person“
   (ANF-002) und ein aktiver Benutzer (ANF-005) angelegt und der Benutzer direkt angemeldet.
   Es gelten die Prüfregeln aus ANF-002 und ANF-005.
-- [x] **AK-22:** Sobald mindestens ein Benutzer existiert, ist die Ersteinrichtung nicht mehr erreichbar
+- [x] ~~**AK-22:**~~ Sobald mindestens ein Benutzer existiert, ist die Ersteinrichtung nicht mehr erreichbar
   (auch nicht über die Server-Funktion).
 
 **Allgemein**
@@ -233,3 +238,4 @@ Aufgaben des angemeldeten Benutzers; 66 Modultests. Bedienung im Browser noch ni
 |------------|--------------------|-----------------|
 | 2026-11-12 | Hatem Ben Belgacem | Erstellt        |
 | 2026-11-12 | Hatem Ben Belgacem | Umgesetzt |
+| 2026-11-23 | Hatem Ben Belgacem | ANF-026: Anmeldung über die Portal-Datenbank mit E-Mail; Ersteinrichtung (AK-21, AK-22) entfällt |
