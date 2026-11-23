@@ -3,7 +3,7 @@
 | Feld          | Wert                                              |
 |---------------|---------------------------------------------------|
 | **Nummer**    | ANF-026                                           |
-| **Status**    | Entwurf                                           |
+| **Status**    | Freigegeben                                       |
 | **Priorität** | Muss                                              |
 | **Typ**       | Funktional                                        |
 | **Modul**     | Portal / Mandanten                                |
@@ -98,7 +98,7 @@ Jede **Mandanten-Datenbank** enthält das bisherige ERP (alle Migrationen aus `m
 - [ ] **AK-13:** Gegeben ein Fehler beim Erstellen oder bei den Migrationen, dann wird eine halb angelegte
   Datenbank wieder entfernt, der Mandant erhält Status **„Fehler“**, und der Benutzer sieht eine verständliche
   Meldung mit der Möglichkeit, es erneut zu versuchen.
-- [ ] **AK-14:** Gegeben die vorläufige Regel **„eine Datenbank pro Administrator“** (siehe Offene Fragen),
+- [ ] **AK-14:** Gegeben die Regel **„eine Datenbank pro Administrator“**,
   wenn bereits eine Datenbank besteht, dann wird „Datenbank erstellen“ nicht angezeigt, und ein direkter
   Aufruf der Server-Funktion wird abgelehnt – auch bei zwei gleichzeitigen Anfragen (Doppelklick) entsteht
   höchstens eine Datenbank. Die Grenze steht als Prüfregel im Modell und ist an einer Stelle änderbar.
@@ -190,19 +190,21 @@ Passwort und Sitzungen stehen nur in der Portal-Datenbank (AK-8).
 
 ## 7. Offene Fragen
 
-- [ ] **Darf ein Administrator mehrere Datenbanken erstellen?** *(vorläufig: genau eine; das Datenmodell
-  erlaubt mehrere, die Grenze ist eine Prüfregel, AK-14. Bei mehreren braucht es nach der Anmeldung eine
-  Auswahl der Datenbank und einen Wechsel in der Kopfzeile.)*
-- [ ] Muss die E-Mail-Adresse bei der Registrierung bestätigt werden (Bestätigungsmail)? *(vorläufig: nein)*
-- [ ] Ist die Registrierung für alle offen oder nur mit Einladungscode? Schutz gegen massenhafte
-  Registrierungen (z. B. Begrenzung pro IP-Adresse, Prüfaufgabe)? *(vorläufig: offen, mit Begrenzung wie ANF-007)*
-- [ ] Wie wird die heute bestehende Datenbank (mit echten Daten) zum ersten Mandanten?
-- [ ] Liegen Portal- und Mandanten-Datenbanken im selben PostgreSQL-Dienst auf Railway?
-  *(vorläufig: ja; Grenze der Verbindungen und des Speichers beachten, AK-27)*
+- [x] **Darf ein Administrator mehrere Datenbanken erstellen?** **Entschieden: nein, genau eine Datenbank
+  pro Administrator** (AK-14). Das Datenmodell erlaubt mehrere, die Grenze ist eine Prüfregel; eine spätere
+  Öffnung bräuchte eine Auswahl der Datenbank nach der Anmeldung und einen Wechsel in der Kopfzeile.
+- [x] Muss die E-Mail-Adresse bei der Registrierung bestätigt werden (Bestätigungsmail)? **Entschieden: nein.**
+- [x] Ist die Registrierung für alle offen oder nur mit Einladungscode? Schutz gegen massenhafte
+  Registrierungen? **Entschieden: offen für alle, mit Begrenzung der Versuche wie ANF-007.**
+- [ ] Wie wird die heute bestehende Datenbank (mit echten Daten) zum ersten Mandanten? *(blockiert die
+  Umsetzung nicht; vor der Inbetriebnahme auf Railway klären)*
+- [x] Liegen Portal- und Mandanten-Datenbanken im selben PostgreSQL-Dienst auf Railway?
+  **Entschieden: ja**; Grenze der Verbindungen und des Speichers beachten (AK-27).
 - [x] Was geschieht mit Passwort und Sitzungen der Benutzerverwaltung in der Mandanten-Datenbank
   (ANF-005, ANF-007)? **Entschieden: Anmeldung nur über das Portal.** Passwort und Sitzungen entfallen in der
   Mandanten-Datenbank (AK-8).
-- [ ] Ab welcher Anzahl Mandanten ist eine andere Aufteilung (Schema pro Mandant) zu prüfen?
+- [ ] Ab welcher Anzahl Mandanten ist eine andere Aufteilung (Schema pro Mandant) zu prüfen? *(blockiert die
+  Umsetzung nicht; im Betrieb beobachten)*
 
 ## 8. Änderungshistorie
 
@@ -211,3 +213,4 @@ Passwort und Sitzungen stehen nur in der Portal-Datenbank (AK-8).
 | 2026-11-23 | Hatem Ben Belgacem | Erstellt        |
 | 2026-11-23 | Hatem Ben Belgacem | Registrierung in eigener Portal-Datenbank (AK-6 bis AK-9), folgende AK neu nummeriert |
 | 2026-11-23 | Hatem Ben Belgacem | Entschieden: Anmeldung nur über das Portal |
+| 2026-11-23 | Hatem Ben Belgacem | Entschieden: eine Datenbank pro Administrator, vorläufige Annahmen übernommen; Status Freigegeben |

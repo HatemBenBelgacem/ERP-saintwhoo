@@ -8,7 +8,8 @@ Stand: 2026-11-23
 
 ## Offen
 
-- [ ] ANF-026: offene Fragen klären (vor allem: mehrere Datenbanken pro Administrator?) und Anforderung freigeben
+- [ ] ANF-026 umsetzen: Portal-Datenbank, Registrierung, Datenbank erstellen, Mandant definieren
+- [ ] ANF-026: vor Inbetriebnahme klären, wie die bestehende Datenbank zum ersten Mandanten wird
 - [ ] ANF-025 Rest: Bankkonten als Verweis (mit ANF-015), MWST-Nummer nur bei MWST-Pflicht (mit ANF-012), Absender in Druckansichten und Buchungssperre ohne Firma (mit ANF-018)
 - [ ] ANF-011 Rest: Sperre von Nummer/Kontoart nach Buchungen (mit ANF-017), Vorgabe-MWST-Code (mit ANF-012)
 - [ ] ANF-010 bis ANF-025 (Finanzen, Firma): restliche offene Fragen klären und Anforderungen freigeben (Reihenfolge siehe ANF-010)
@@ -31,7 +32,7 @@ Stand: 2026-11-23
 
 ## Erledigt
 
-- [x] ANF-026 Registrierung, eigene Datenbank und Mandant erfasst (Entwurf)
+- [x] ANF-026 Registrierung, eigene Datenbank und Mandant erfasst, offene Fragen geklärt und freigegeben
 - [x] Projekt umbenannt: ERP-saintwhoo → uniqwork (Paket, Programm, CSS/WASM-Dateien, Docker-Image, Seitentitel, Dokumentation)
 - [x] Rust-Projekt angelegt (`cargo new`)
 - [x] Projektstruktur für Anforderungen, Übersicht und Aufgaben erstellt
