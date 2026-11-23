@@ -8,8 +8,9 @@ use leptos_router::{
 use crate::backend::projects::model::Level;
 use crate::components::{
     addresses::{AddressDetailPage, AddressListPage},
-    auth::LoginPage,
+    auth::{LoginPage, RegisterPage},
     home::HomePage,
+    portal::PortalPage,
     projects::{ElementDetailPage, ProjectDetailPage, ProjectListPage},
     purchase_orders::{OrderDetailPage, OrderListPage},
     settings::{AccountsPage, CompanyPage, GeneralSettingsPage},
@@ -49,6 +50,9 @@ pub fn App() -> impl IntoView {
             <Routes fallback=|| view! { <p class="p-8">"Seite nicht gefunden."</p> }>
                 // ANF-007: Anmeldeseite ohne Grundgerüst (öffentlich, siehe auth::middleware)
                 <Route path=StaticSegment("anmelden") view=LoginPage/>
+                // ANF-026: Registrierung (öffentlich) und Portal-Übersicht (ohne Mandant erreichbar)
+                <Route path=StaticSegment("registrieren") view=RegisterPage/>
+                <Route path=StaticSegment("portal") view=PortalPage/>
                 <ParentRoute path=StaticSegment("") view=AppLayout>
                     <Route path=StaticSegment("") view=HomePage/>
                     // ANF-002 Adressen – Eingabe im Modal-Fenster (?neu=1, ?bearbeiten=1)

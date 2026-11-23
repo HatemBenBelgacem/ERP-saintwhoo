@@ -1,12 +1,16 @@
-//! Zugangsschutz für jede Anfrage (ANF-007 AK-1 bis AK-3, AK-9, AK-14; nur Server).
+//! Zugangsschutz für jede Anfrage (ANF-007 AK-1 bis AK-3, AK-9, AK-14; ANF-026 AK-19; nur Server).
 //!
-//! Ermittelt aus dem Sitzungs-Cookie den angemeldeten Benutzer und legt ihn in die Anfrage
-//! (`CurrentUser` in den Erweiterungen; Server-Funktionen lesen ihn über `session::current_user`).
+//! Ermittelt aus dem Sitzungs-Cookie den angemeldeten Zugang in der Portal-Datenbank und legt ihn in die
+//! Anfrage (`CurrentUser` in den Erweiterungen; Server-Funktionen lesen ihn über `session::current_user`).
 //! Ohne gültige Sitzung:
 //! - Seiten → Umleitung auf `/anmelden?zurueck=…` (bei abgelaufener Sitzung mit `abgelaufen=1`),
 //! - Server-Funktionen unter `/api/…` → 401 „Nicht angemeldet.“
 //!
-//! Öffentlich: die Anmeldeseite, Server-Funktionen unter `/oeffentlich/…`, `/pkg/…` und feste Dateien.
+//! Mit Sitzung, aber ohne bereiten und definierten Mandanten (ANF-026 AK-19) ist nur das Portal erreichbar:
+//! - Seiten → Umleitung auf `/portal`,
+//! - Server-Funktionen des ERP unter `/api/…` → 403 „Kein Mandant gewählt.“ (nur `/api/portal/…` geht).
+//!
+//! Öffentlich: Anmeldung, Registrierung, Server-Funktionen unter `/oeffentlich/…`, `/pkg/…` und feste Dateien.
 
 use axum::{
     extract::{Request, State},
@@ -14,12 +18,13 @@ use axum::{
     middleware::Next,
     response::{IntoResponse, Redirect, Response},
 };
-use sqlx::PgPool;
 
 use super::model::{
-    LOGIN_PATH, MSG_NOT_LOGGED_IN, PUBLIC_API_PREFIX, login_url, query_param, target_after_login,
+    LOGIN_PATH, MSG_NO_TENANT, MSG_NOT_LOGGED_IN, PORTAL_API_PREFIX, PORTAL_PATH,
+    PUBLIC_API_PREFIX, REGISTER_PATH, login_url, query_param, target_after_login,
 };
 use super::{repository, session};
+use crate::db::PortalPool;
 
 /// Dateiendungen fester Dateien aus `public/` (Bilder, Seitensymbol, Schriften …).
 const STATIC_EXTENSIONS: &[&str] = &[
@@ -48,12 +53,24 @@ fn is_static(path: &str) -> bool {
             .is_some_and(|(rest, ext)| !rest.ends_with('/') && STATIC_EXTENSIONS.contains(&ext))
 }
 
-/// Pfade, die ohne Anmeldung erreichbar sind (AK-3).
+/// Pfade, die ohne Anmeldung erreichbar sind (ANF-007 AK-3, ANF-026 AK-1).
 pub fn is_public(path: &str) -> bool {
-    path == LOGIN_PATH || path.starts_with(&format!("{PUBLIC_API_PREFIX}/")) || is_static(path)
+    path == LOGIN_PATH
+        || path == REGISTER_PATH
+        || path.starts_with(&format!("{PUBLIC_API_PREFIX}/"))
+        || is_static(path)
 }
 
-pub async fn require_login(State(pool): State<PgPool>, mut req: Request, next: Next) -> Response {
+/// Pfade, die angemeldet, aber ohne Zugang zum ERP erreichbar sind (ANF-026 AK-19).
+pub fn is_portal(path: &str) -> bool {
+    path == PORTAL_PATH || path.starts_with(&format!("{PORTAL_API_PREFIX}/")) || is_public(path)
+}
+
+pub async fn require_login(
+    State(PortalPool(pool)): State<PortalPool>,
+    mut req: Request,
+    next: Next,
+) -> Response {
     let path = req.uri().path().to_string();
     if is_static(&path) {
         return next.run(req).await;
@@ -72,15 +89,28 @@ pub async fn require_login(State(pool): State<PgPool>, mut req: Request, next: N
     };
 
     if let Some(user) = user {
-        // AK-9: Bereits angemeldet → Anmeldeseite überspringen
-        if path == LOGIN_PATH {
-            let target = target_after_login(
-                req.uri()
-                    .query()
-                    .and_then(|q| query_param(q, "zurueck"))
-                    .as_deref(),
-            );
+        let erp_access = user.erp_access();
+        // ANF-007 AK-9: Bereits angemeldet → Anmeldung und Registrierung überspringen
+        if path == LOGIN_PATH || path == REGISTER_PATH {
+            let target = if erp_access {
+                target_after_login(
+                    req.uri()
+                        .query()
+                        .and_then(|q| query_param(q, "zurueck"))
+                        .as_deref(),
+                )
+            } else {
+                PORTAL_PATH.to_string()
+            };
             return Redirect::to(&target).into_response();
+        }
+        // ANF-026 AK-19: ohne bereiten und definierten Mandanten nur das Portal
+        if !erp_access && !is_portal(&path) {
+            return if path.starts_with("/api/") {
+                (StatusCode::FORBIDDEN, MSG_NO_TENANT).into_response()
+            } else {
+                Redirect::to(PORTAL_PATH).into_response()
+            };
         }
         req.extensions_mut().insert(user);
         return next.run(req).await;
@@ -125,5 +155,22 @@ mod tests {
         assert!(!is_public("/oeffentlichkeit"));
         assert!(!is_public("/projekte/4.json"));
         assert!(!is_public("/aufgaben/1.x"));
+        assert!(is_public("/registrieren"));
+        assert!(!is_public("/registrieren/x"));
+        assert!(!is_public("/portal"));
+        assert!(!is_public("/api/portal/logout123"));
+    }
+
+    #[test]
+    fn portal_paths() {
+        assert!(is_portal("/portal"));
+        assert!(is_portal("/api/portal/logout123"));
+        assert!(is_portal("/oeffentlich/get_current_user123"));
+        assert!(is_portal("/pkg/uniqwork.css"));
+        assert!(!is_portal("/"));
+        assert!(!is_portal("/adressen"));
+        assert!(!is_portal("/portalx"));
+        assert!(!is_portal("/api/portalx"));
+        assert!(!is_portal("/api/list_addresses123"));
     }
 }

@@ -1,46 +1,93 @@
-//! Datenmodell und Regeln für die Anmeldung (ANF-007). Wird auf Server und im Browser verwendet.
+//! Datenmodell und Regeln für Registrierung und Anmeldung über das Portal (ANF-007, ANF-026).
+//! Wird auf Server und im Browser verwendet.
 
 use serde::{Deserialize, Serialize};
 
-use crate::backend::addresses::model::AddressInput;
-use crate::backend::users::model::{PasswordInput, username_error};
+use crate::backend::addresses::model::is_valid_email;
+use crate::backend::users::model::PasswordInput;
 pub use crate::forms::{FieldErrors, SaveOutcome};
 
 /// Name des Sitzungs-Cookies.
 pub const COOKIE_NAME: &str = "erp_sitzung";
-/// Sitzung endet nach so vielen Stunden ohne Aktivität (AK-14).
+/// Sitzung endet nach so vielen Stunden ohne Aktivität (ANF-007 AK-14).
 pub const SESSION_IDLE_HOURS: i32 = 12;
-/// Sitzung endet spätestens nach so vielen Tagen (AK-14).
+/// Sitzung endet spätestens nach so vielen Tagen (ANF-007 AK-14).
 pub const SESSION_MAX_DAYS: i32 = 7;
-/// Fehlversuche je Benutzername innerhalb von `LOCK_MINUTES`, bevor gesperrt wird (AK-11).
+/// Fehlversuche je E-Mail innerhalb von `LOCK_MINUTES`, bevor gesperrt wird (ANF-007 AK-11, ANF-026 AK-5).
 pub const MAX_FAILED_ATTEMPTS: i64 = 5;
 pub const LOCK_MINUTES: i32 = 15;
+/// Höchstens so viele Registrierungen insgesamt innerhalb von `REGISTRATION_WINDOW_MINUTES`
+/// (Schutz gegen massenhafte Registrierungen, ANF-026 offene Fragen).
+pub const MAX_REGISTRATIONS: i64 = 10;
+pub const REGISTRATION_WINDOW_MINUTES: i32 = 10;
 
 /// Pfad der Anmeldeseite.
 pub const LOGIN_PATH: &str = "/anmelden";
-/// Präfix der Server-Funktionen, die ohne Anmeldung erreichbar sind (AK-3).
+/// Pfad der Registrierung (ANF-026 AK-1).
+pub const REGISTER_PATH: &str = "/registrieren";
+/// Portal-Übersicht: eigene Datenbank und Mandant (ANF-026 AK-4).
+pub const PORTAL_PATH: &str = "/portal";
+/// Präfix der Server-Funktionen, die ohne Anmeldung erreichbar sind (ANF-007 AK-3).
 pub const PUBLIC_API_PREFIX: &str = "/oeffentlich";
+/// Präfix der Server-Funktionen des Portals: angemeldet, aber ohne Zugang zum ERP erreichbar (ANF-026).
+pub const PORTAL_API_PREFIX: &str = "/api/portal";
 
 /// Feldname für Meldungen, die das ganze Anmeldeformular betreffen.
 pub const FORM_ERROR: &str = "anmeldung";
-pub const MSG_WRONG: &str = "Benutzername oder Passwort ist falsch.";
-pub const MSG_EMPTY: &str = "Bitte Benutzername und Passwort eingeben.";
+pub const MSG_WRONG: &str = "E-Mail oder Passwort ist falsch.";
+pub const MSG_EMPTY: &str = "Bitte E-Mail und Passwort eingeben.";
 pub const MSG_LOCKED: &str = "Zu viele Fehlversuche. Bitte später erneut versuchen.";
 pub const MSG_NOT_LOGGED_IN: &str = "Nicht angemeldet.";
+pub const MSG_NO_TENANT: &str = "Kein Mandant gewählt.";
+pub const MSG_EMAIL_TAKEN: &str = "Für diese E-Mail-Adresse gibt es bereits einen Zugang.";
+pub const MSG_TOO_MANY_REGISTRATIONS: &str =
+    "Zurzeit gibt es zu viele Registrierungen. Bitte später erneut versuchen.";
 
-/// Der angemeldete Benutzer.
+/// Status einer Mandanten-Datenbank (Spalte `mandant.status`).
+pub const TENANT_READY: &str = "bereit";
+
+/// Mandant der Sitzung (ANF-026).
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
-pub struct CurrentUser {
+pub struct SessionTenant {
     pub id: i64,
-    pub benutzername: String,
-    /// Anzeigename der Adresse
-    pub name: String,
+    /// Leer, bis der Mandant im Modal-Fenster definiert ist (ANF-026 AK-18)
+    pub firmenname: Option<String>,
+    /// `wird_erstellt`, `bereit` oder `fehler`
+    pub status: String,
 }
 
-/// Benutzername für die Anmeldung: ohne Leerzeichen am Rand, klein geschrieben (AK-6).
-pub fn normalize_username(name: &str) -> String {
-    name.trim().to_lowercase()
+impl SessionTenant {
+    /// Datenbank bereit und Mandant definiert (ANF-026 AK-19).
+    pub fn is_usable(&self) -> bool {
+        self.status == TENANT_READY && self.firmenname.is_some()
+    }
+}
+
+/// Der angemeldete Zugang aus der Portal-Datenbank (ANF-026).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CurrentUser {
+    /// Kennung in `portal_benutzer`
+    pub portal_id: i64,
+    pub email: String,
+    /// „Vorname Nachname“
+    pub name: String,
+    pub ist_administrator: bool,
+    /// Gewählter Mandant; leer, solange es keine Datenbank gibt
+    pub mandant: Option<SessionTenant>,
+    /// Benutzer in der Mandanten-Datenbank (ANF-026 AK-15); kommt mit dem Erstellen der Datenbank
+    pub benutzer_id: Option<i64>,
+}
+
+impl CurrentUser {
+    /// Darf das ERP verwenden: Datenbank bereit und Mandant definiert (ANF-026 AK-19).
+    pub fn erp_access(&self) -> bool {
+        self.mandant.as_ref().is_some_and(SessionTenant::is_usable)
+    }
+}
+
+/// E-Mail als Anmeldename: ohne Leerzeichen am Rand, klein geschrieben (ANF-026 AK-2, AK-3).
+pub fn normalize_email(email: &str) -> String {
+    email.trim().to_lowercase()
 }
 
 /// Webadresse der Anmeldeseite mit Rücksprungziel (AK-1). Für die Startseite ohne `zurueck`.
@@ -59,49 +106,59 @@ pub fn login_url(target: &str, expired: bool) -> String {
     }
 }
 
-/// Ziel nach der Anmeldung: nur Adressen innerhalb der Anwendung, sonst die Startseite (AK-5).
+/// Ziel nach der Anmeldung: nur Adressen innerhalb der Anwendung, sonst die Startseite (ANF-007 AK-5).
 pub fn target_after_login(zurueck: Option<&str>) -> String {
     zurueck
         .and_then(crate::forms::safe_return_url)
-        .filter(|t| !t.starts_with(LOGIN_PATH))
+        .filter(|t| !t.starts_with(LOGIN_PATH) && !t.starts_with(REGISTER_PATH))
         .unwrap_or("/")
         .to_string()
 }
 
-/// Eingabe der Ersteinrichtung (AK-21): Person und Benutzername.
+/// Eingabe der Registrierung (ANF-026 AK-2). Das Passwort kommt getrennt als `PasswordInput`.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
-pub struct FirstSetupInput {
+pub struct RegistrationInput {
     pub vorname: String,
     pub nachname: String,
     pub email: String,
-    pub benutzername: String,
 }
 
-impl FirstSetupInput {
-    /// Adresse vom Typ „Person“ (Prüfregeln aus ANF-002).
-    pub fn address(&self) -> AddressInput {
-        AddressInput {
-            typ: "person".into(),
-            vorname: self.vorname.clone(),
-            nachname: self.nachname.clone(),
-            email: self.email.clone(),
-            ..AddressInput::new_default()
+impl RegistrationInput {
+    /// Leerzeichen am Rand entfernen, E-Mail klein schreiben.
+    pub fn normalized(&self) -> Self {
+        Self {
+            vorname: self.vorname.trim().into(),
+            nachname: self.nachname.trim().into(),
+            email: normalize_email(&self.email),
         }
-        .normalized()
     }
 
-    pub fn username(&self) -> String {
-        normalize_username(&self.benutzername)
-    }
-
-    /// Prüft alle Felder (ANF-002, ANF-005). Leere Map = gültig.
+    /// Prüft die (normalisierte) Eingabe und das Passwort (ANF-005-Regeln). Leere Map = gültig.
     pub fn validate(&self, password: &PasswordInput) -> FieldErrors {
-        let mut errors = self.address().validate();
-        // Nur die Felder dieses Formulars melden
-        errors.retain(|k, _| matches!(k.as_str(), "vorname" | "nachname" | "email"));
-        if let Some(m) = username_error(&self.username()) {
-            errors.insert("benutzername".into(), m);
+        let mut errors = FieldErrors::new();
+        if self.vorname.is_empty() {
+            errors.insert("vorname".into(), "Bitte einen Vornamen eingeben.".into());
+        }
+        if self.nachname.is_empty() {
+            errors.insert("nachname".into(), "Bitte einen Nachnamen eingeben.".into());
+        }
+        if self.email.is_empty() {
+            errors.insert("email".into(), "Bitte eine E-Mail-Adresse eingeben.".into());
+        } else if !is_valid_email(&self.email) {
+            errors.insert(
+                "email".into(),
+                "Die E-Mail-Adresse hat kein gültiges Format (z. B. name@firma.ch).".into(),
+            );
+        }
+        for (field, value, max) in [
+            ("vorname", &self.vorname, 100),
+            ("nachname", &self.nachname, 100),
+            ("email", &self.email, 254),
+        ] {
+            if value.chars().count() > max {
+                errors.insert(field.into(), format!("Höchstens {max} Zeichen."));
+            }
         }
         errors.extend(password.validate());
         errors
@@ -166,6 +223,7 @@ mod tests {
         assert_eq!(target_after_login(Some("https://boese.example.com")), "/");
         assert_eq!(target_after_login(Some("//boese.example.com")), "/");
         assert_eq!(target_after_login(Some("/anmelden")), "/");
+        assert_eq!(target_after_login(Some("/registrieren")), "/");
         assert_eq!(target_after_login(None), "/");
     }
 
@@ -191,28 +249,73 @@ mod tests {
     }
 
     #[test]
-    fn username_is_normalized() {
-        assert_eq!(normalize_username("  Anna.Muster "), "anna.muster");
+    fn email_is_normalized() {
+        assert_eq!(
+            normalize_email("  Anna.Muster@Firma.CH "),
+            "anna.muster@firma.ch"
+        );
     }
 
     #[test]
-    fn first_setup_validation() {
+    fn registration_validation() {
         let pw = PasswordInput {
             passwort: "geheim-1234".into(),
             wiederholung: "geheim-1234".into(),
         };
-        let ok = FirstSetupInput {
-            vorname: "Anna".into(),
+        let ok = RegistrationInput {
+            vorname: " Anna ".into(),
             nachname: "Muster".into(),
-            email: String::new(),
-            benutzername: "Anna".into(),
-        };
+            email: " Anna@Firma.CH ".into(),
+        }
+        .normalized();
+        assert_eq!(ok.vorname, "Anna");
+        assert_eq!(ok.email, "anna@firma.ch");
         assert!(ok.validate(&pw).is_empty(), "{:?}", ok.validate(&pw));
-        assert_eq!(ok.username(), "anna");
-        let e = FirstSetupInput::default().validate(&PasswordInput::default());
-        for f in ["vorname", "nachname", "benutzername", "passwort"] {
+
+        let e = RegistrationInput::default().validate(&PasswordInput::default());
+        for f in ["vorname", "nachname", "email", "passwort"] {
             assert!(e.contains_key(f), "{f}");
         }
-        assert!(!e.contains_key("firmenname"));
+        let bad = RegistrationInput {
+            email: "keine-adresse".into(),
+            ..ok.clone()
+        };
+        assert!(bad.validate(&pw).contains_key("email"));
+        let long = RegistrationInput {
+            vorname: "x".repeat(101),
+            ..ok
+        };
+        assert_eq!(long.validate(&pw)["vorname"], "Höchstens 100 Zeichen.");
+    }
+
+    #[test]
+    fn erp_access_needs_ready_and_defined_tenant() {
+        let mut user = CurrentUser {
+            portal_id: 1,
+            email: "anna@firma.ch".into(),
+            name: "Anna Muster".into(),
+            ist_administrator: true,
+            mandant: None,
+            benutzer_id: None,
+        };
+        assert!(!user.erp_access());
+        user.mandant = Some(SessionTenant {
+            id: 1,
+            firmenname: None,
+            status: TENANT_READY.into(),
+        });
+        assert!(!user.erp_access(), "Mandant noch nicht definiert");
+        user.mandant = Some(SessionTenant {
+            id: 1,
+            firmenname: Some("Firma AG".into()),
+            status: "wird_erstellt".into(),
+        });
+        assert!(!user.erp_access(), "Datenbank noch nicht bereit");
+        user.mandant = Some(SessionTenant {
+            id: 1,
+            firmenname: Some("Firma AG".into()),
+            status: TENANT_READY.into(),
+        });
+        assert!(user.erp_access());
     }
 }

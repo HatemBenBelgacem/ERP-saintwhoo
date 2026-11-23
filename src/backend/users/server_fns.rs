@@ -145,7 +145,7 @@ pub async fn update_user(id: i64, input: UserInput) -> Result<SaveOutcome, Serve
         Ok(_) => {
             // ANF-007 AK-15: Gesperrte Benutzer verlieren sofort alle Sitzungen
             if !input.is_active() {
-                crate::backend::auth::repository::end_all_sessions(&pool, id).await?;
+                repository::end_all_sessions(&pool, id).await?;
             }
             leptos_axum::redirect(&format!("{}?gespeichert=1", user_url(id)));
             Ok(SaveOutcome::Saved(id))
@@ -174,7 +174,7 @@ pub async fn set_user_password(
         .then(crate::backend::auth::session::current_token)
         .flatten()
         .map(|t| crate::backend::auth::session::token_hash(&t));
-    crate::backend::auth::repository::end_sessions_except(&pool, id, keep.as_deref()).await?;
+    repository::end_sessions_except(&pool, id, keep.as_deref()).await?;
     leptos_axum::redirect(&format!("{}?gespeichert=passwort", user_url(id)));
     Ok(SaveOutcome::Saved(id))
 }
@@ -269,7 +269,7 @@ fn unique_violation(e: sqlx::Error) -> Result<SaveOutcome, ServerFnError> {
 /// `true`, wenn `id` der angemeldete Benutzer ist (ANF-007 AK-20).
 #[cfg(feature = "ssr")]
 fn is_self(id: i64) -> bool {
-    crate::backend::auth::session::current_user().is_some_and(|u| u.id == id)
+    crate::backend::auth::session::current_user().is_some_and(|u| u.benutzer_id == Some(id))
 }
 
 /// Hash rechnen, ohne den Server zu blockieren (Argon2 ist absichtlich langsam).

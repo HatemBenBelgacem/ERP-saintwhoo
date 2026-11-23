@@ -61,7 +61,8 @@ src/
 | `addresses`        | ANF-002     | model, server_fns, repository                | list, detail, form                          |
 | `projects`         | ANF-003     | model, server_fns, repository                | list, detail, form                          |
 | `purchase_orders`  | ANF-004     | model, server_fns, repository                | list, detail, form                          |
-| `auth`             | ANF-007     | model, server_fns, repository, session, middleware | login                                 |
+| `auth`             | ANF-007, ANF-026 | model, server_fns, repository, session, middleware (Portal-Datenbank) | login, register              |
+| `portal`           | ANF-026     | – (nutzt `auth`)                             | page (`/portal`)                            |
 | `tasks`            | ANF-006     | model, server_fns, repository                | list, detail, form                          |
 | `users`            | ANF-005     | model, server_fns, repository, password      | list, detail, form                          |
 | `system`           | ANF-001     | server_fns, repository (Datenbank-Status)    | –                                           |
@@ -129,20 +130,27 @@ Ein Modul braucht nicht jede Datei: ohne eigene Datentypen entfällt `model.rs`,
 - Gemeinsame Bausteine (Modal, Formularfelder, Symbole, Grundgerüst) liegen in `src/forms.rs`,
   `src/icons.rs`, `src/layout.rs` und werden nicht pro Modul nachgebaut.
 
-## Zugangsschutz (ANF-007)
+## Zugangsschutz (ANF-007, ANF-026)
 
 ```
-Anfrage ──► auth::middleware (Axum-Schicht in main.rs)
-              │  Cookie „erp_sitzung“ → SHA-256 → Tabelle sitzung → CurrentUser in die Anfrage
+Anfrage ──► auth::middleware (Axum-Schicht in main.rs, Zustand: PortalPool)
+              │  Cookie „erp_sitzung“ → SHA-256 → portal_sitzung (Portal-Datenbank) → CurrentUser in die Anfrage
               ├─ feste Dateien (/pkg/…, *.css, *.ico …) ............ immer durchlassen
-              ├─ /anmelden, /oeffentlich/… ........................ ohne Anmeldung erlaubt
+              ├─ /anmelden, /registrieren, /oeffentlich/… ........ ohne Anmeldung erlaubt
               ├─ /api/… ohne Sitzung .............................. 401 „Nicht angemeldet.“
-              └─ Seite ohne Sitzung ............................... 303 → /anmelden?zurueck=…
+              ├─ Seite ohne Sitzung ............................... 303 → /anmelden?zurueck=…
+              └─ mit Sitzung, Mandant nicht bereit/definiert:
+                   /portal, /api/portal/… ......................... erlaubt
+                   übrige /api/… .................................. 403 „Kein Mandant gewählt.“
+                   übrige Seiten .................................. 303 → /portal
 ```
 
-- Server-Funktionen lesen den Benutzer mit `auth::session::current_user()` (aus `http::request::Parts`).
+- Server-Funktionen lesen den Zugang mit `auth::session::current_user()` (aus `http::request::Parts`).
+  `CurrentUser` enthält Zugang (`portal_id`, E-Mail, Name), den Mandanten der Sitzung und – ab dem Erstellen der
+  Datenbank – den Benutzer in der Mandanten-Datenbank (`benutzer_id`).
+- Ein Mandant zählt nur, wenn er dem Zugang gehört (`mandant.besitzer_id`); ein untergeschobener Mandant wird ignoriert.
 - Seitenwechsel im Browser laufen nicht über den Server; deshalb prüft das Grundgerüst (`layout.rs`) bei jedem
-  Wechsel `get_current_user()` und leitet bei abgelaufener Sitzung zur Anmeldeseite.
+  Wechsel `get_current_user()` und leitet bei abgelaufener Sitzung zur Anmeldeseite, ohne Mandant zu `/portal`.
 
 ## Auslieferung mit Docker auf Railway (ANF-008)
 

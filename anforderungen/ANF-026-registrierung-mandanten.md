@@ -62,19 +62,19 @@ Jede **Mandanten-Datenbank** enthält das bisherige ERP (alle Migrationen aus `m
 ## 3. Akzeptanzkriterien
 
 **Registrierung**
-- [ ] **AK-1:** Gegeben die Anmeldeseite, dann gibt es einen Verweis **„Registrieren“** auf `/registrieren`.
+- [x] **AK-1:** Gegeben die Anmeldeseite, dann gibt es einen Verweis **„Registrieren“** auf `/registrieren`.
   Die Seite ist ohne Anmeldung erreichbar (wie `/anmelden`, ohne Grundgerüst).
-- [ ] **AK-2:** Gegeben `/registrieren`, dann enthält das Formular Vorname, Nachname, E-Mail (= Anmeldename),
+- [x] **AK-2:** Gegeben `/registrieren`, dann enthält das Formular Vorname, Nachname, E-Mail (= Anmeldename),
   Passwort und Passwort-Wiederholung. Es gelten die Passwortregeln aus ANF-005/ANF-007.
-- [ ] **AK-3:** Gegeben eine bereits registrierte E-Mail (Gross-/Kleinschreibung egal), wenn sich jemand
+- [x] **AK-3:** Gegeben eine bereits registrierte E-Mail (Gross-/Kleinschreibung egal), wenn sich jemand
   damit registriert, dann erscheint eine Fehlermeldung und es wird kein Zugang angelegt.
-- [ ] **AK-4:** Gegeben eine gültige Registrierung, dann wird ein Zugang mit Kennzeichen **Administrator**
+- [x] **AK-4:** Gegeben eine gültige Registrierung, dann wird ein Zugang mit Kennzeichen **Administrator**
   angelegt, der Benutzer ist sofort angemeldet und landet auf der Portal-Übersicht `/portal`.
-- [ ] **AK-5:** Das Passwort wird nur als Hash gespeichert (Verfahren wie ANF-007); Schutz gegen
+- [x] **AK-5:** Das Passwort wird nur als Hash gespeichert (Verfahren wie ANF-007); Schutz gegen
   wiederholte Fehlversuche wie ANF-007.
 
 **Eigene Datenbank für die Registrierung (Portal-Datenbank)**
-- [ ] **AK-6:** Registrierung, Anmeldung und Sitzungen laufen in einer **eigenen Datenbank**
+- [x] **AK-6:** Registrierung, Anmeldung und Sitzungen laufen in einer **eigenen Datenbank**
   `uniqwork_portal`, getrennt von allen Mandanten-Datenbanken. Die Registrierung schreibt ausschliesslich in
   diese Datenbank; es wird dabei **keine** Mandanten-Datenbank angelegt oder verändert.
 - [x] **AK-7:** Die Portal-Datenbank wird über eine eigene Variable `PORTAL_DATABASE_URL` angesprochen und hat
@@ -84,7 +84,7 @@ Jede **Mandanten-Datenbank** enthält das bisherige ERP (alle Migrationen aus `m
 - [ ] **AK-8:** Die Portal-Datenbank enthält keine ERP-Tabellen (Adressen, Projekte, Konten …). Die
   Mandanten-Datenbanken enthalten keine Zugangsdaten des Portals (E-Mail als Anmeldename, Passwort-Hash,
   Sitzungen), sondern nur den Verweis `portal_benutzer_id`.
-- [ ] **AK-9:** Die Portal-Datenbank ist die einzige Datenbank, die der Server beim Start selbst anlegt, falls
+- [x] **AK-9:** Die Portal-Datenbank ist die einzige Datenbank, die der Server beim Start selbst anlegt, falls
   sie fehlt (wie heute `src/db.rs`). Die erste Registrierung funktioniert damit auf einem leeren
   PostgreSQL-Dienst, ohne dass es schon eine Mandanten-Datenbank gibt.
 
@@ -216,3 +216,4 @@ Passwort und Sitzungen stehen nur in der Portal-Datenbank (AK-8).
 | 2026-11-23 | Hatem Ben Belgacem | Entschieden: Anmeldung nur über das Portal |
 | 2026-11-23 | Hatem Ben Belgacem | Entschieden: eine Datenbank pro Administrator, vorläufige Annahmen übernommen; Status Freigegeben |
 | 2026-11-23 | Hatem Ben Belgacem | Schritt 1 umgesetzt: Portal-Datenbank mit eigener Verbindung und Migrationen (AK-7); Status In Umsetzung |
+| 2026-11-23 | Hatem Ben Belgacem | Schritt 2 umgesetzt: Registrierung, Anmeldung über das Portal, Portal-Übersicht, Zugang zum ERP nur mit Mandant (AK-1 bis AK-6, AK-9) |

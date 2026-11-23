@@ -63,7 +63,11 @@ impl ListState {
 async fn effective_user(selected: Option<i64>) -> Option<i64> {
     match selected {
         Some(id) => Some(id),
-        None => get_current_user().await.ok().flatten().map(|u| u.id),
+        None => get_current_user()
+            .await
+            .ok()
+            .flatten()
+            .and_then(|u| u.benutzer_id),
     }
 }
 

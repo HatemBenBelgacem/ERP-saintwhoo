@@ -6,7 +6,7 @@ use leptos_router::{
     hooks::{use_location, use_navigate},
 };
 
-use crate::backend::auth::model::{CurrentUser, login_url};
+use crate::backend::auth::model::{CurrentUser, PORTAL_PATH, login_url};
 use crate::backend::auth::server_fns::{Logout, get_current_user};
 
 use crate::icons::{Icon, IconView};
@@ -30,8 +30,8 @@ pub fn AppLayout() -> impl IntoView {
     // Browser laufen nicht über den Server, deshalb hier zusätzlich zur Middleware).
     let me = Resource::new(move || pathname.get(), |_| get_current_user());
     let navigate = use_navigate();
-    Effect::new(move |_| {
-        if let Some(Ok(None)) = me.get() {
+    Effect::new(move |_| match me.get() {
+        Some(Ok(None)) => {
             let target = format!(
                 "{}{}",
                 location.pathname.get_untracked(),
@@ -39,6 +39,9 @@ pub fn AppLayout() -> impl IntoView {
             );
             navigate(&login_url(&target, true), Default::default());
         }
+        // ANF-026 AK-19: ohne bereiten und definierten Mandanten nur das Portal
+        Some(Ok(Some(user))) if !user.erp_access() => navigate(PORTAL_PATH, Default::default()),
+        _ => {}
     });
 
     // AK-11: Nach jedem Seitenwechsel die (mobile) Seitenleiste schliessen.
@@ -94,13 +97,13 @@ fn Header(me: Resource<Result<Option<CurrentUser>, ServerFnError>>) -> impl Into
     }
 }
 
-/// Name des angemeldeten Benutzers und „Abmelden“ (ANF-007 AK-17, AK-18).
+/// Name des angemeldeten Benutzers und „Abmelden“ (ANF-007 AK-17, AK-18). Auch auf der Portal-Übersicht.
 #[component]
-fn UserMenu(user: CurrentUser) -> impl IntoView {
+pub fn UserMenu(user: CurrentUser) -> impl IntoView {
     let logout = ServerAction::<Logout>::new();
     view! {
         <div class="ml-auto flex items-center gap-1 sm:gap-3">
-            <span class="flex items-center gap-2" title=format!("Angemeldet als {}", user.benutzername)>
+            <span class="flex items-center gap-2" title=format!("Angemeldet als {}", user.email)>
                 <IconView icon=Icon::User/>
                 // Auf dem Mobiltelefon nur das Symbol
                 <span class="hidden max-w-48 truncate sm:inline">{user.name.clone()}</span>
