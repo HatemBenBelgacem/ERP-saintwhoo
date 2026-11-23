@@ -143,7 +143,10 @@ export class SitePlanMap {
             }
         };
 
-        map.on('style.load', () => map.addLayer(layer));
+        map.on('style.load', () => {
+            map.addLayer(layer);
+            this.#addMeasureLayers();
+        });
 
         // Klick auf die Karte in Meter relativ zum Ursprung umrechnen und an Rust melden
         map.on('click', (e) => {
@@ -169,8 +172,77 @@ export class SitePlanMap {
         };
     }
 
+    // Meter relativ zum Ursprung → [Längengrad, Breitengrad] (Umkehrung von #toLocal)
+    #toLngLat(x, z) {
+        const [oLng, oLat] = this.origin;
+        const lng = oLng + (x / (EARTH_RADIUS_M * Math.cos(oLat * Math.PI / 180))) * 180 / Math.PI;
+        const lat = oLat - (z / EARTH_RADIUS_M) * 180 / Math.PI;
+        return [lng, lat];
+    }
+
+    // Messung als Ebenen von MapLibre: Linien und Punkte in Bildschirmpixeln, damit sie in jeder
+    // Zoomstufe gut sichtbar sind; sie liegen über den 3D-Modellen.
+    #addMeasureLayers() {
+        const color = getComputedStyle(document.documentElement).getPropertyValue('--gelaende-messung').trim() || '#facc15';
+        this.map.addSource('messung', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        this.map.addLayer({
+            id: 'messung-flaeche', type: 'fill', source: 'messung',
+            filter: ['==', '$type', 'Polygon'],
+            paint: { 'fill-color': color, 'fill-opacity': 0.2 }
+        });
+        this.map.addLayer({
+            id: 'messung-linie', type: 'line', source: 'messung',
+            filter: ['==', '$type', 'LineString'],
+            paint: { 'line-color': color, 'line-width': 3, 'line-dasharray': [2, 1] }
+        });
+        this.map.addLayer({
+            id: 'messung-punkt', type: 'circle', source: 'messung',
+            filter: ['==', '$type', 'Point'],
+            paint: { 'circle-color': color, 'circle-radius': 5, 'circle-stroke-color': '#000', 'circle-stroke-width': 1 }
+        });
+        this.#updateMeasure();
+    }
+
+    // Messung aus dem zuletzt gemeldeten Inhalt zeichnen und beschriften.
+    #updateMeasure() {
+        for (const m of this.labels ?? []) m.remove();
+        this.labels = [];
+        const source = this.map?.getSource('messung');
+        if (!source) return;
+        const measure = this.scene?.measure;
+        const features = [];
+        if (measure) {
+            const coords = measure.points.map(([x, z]) => this.#toLngLat(x, z));
+            for (const c of coords) {
+                features.push({ type: 'Feature', geometry: { type: 'Point', coordinates: c }, properties: {} });
+            }
+            // Umriss immer als Linie (auch wenn er sich überschneidet), die Fläche zusätzlich gefüllt
+            if (coords.length >= 2) {
+                const line = measure.closed ? [...coords, coords[0]] : coords;
+                features.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: line }, properties: {} });
+            }
+            if (measure.closed) {
+                features.push({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[...coords, coords[0]]] }, properties: {} });
+            }
+            // Beschriftungen als HTML-Marken; Klicks gehen an die Karte durch
+            for (const label of measure.labels) {
+                const el = document.createElement('div');
+                el.className = label.main
+                    ? 'badge badge-neutral pointer-events-none font-semibold shadow'
+                    : 'badge badge-sm pointer-events-none border-base-300 bg-base-100/90 text-base-content shadow-sm';
+                el.textContent = label.text;
+                const marker = new this.maplibregl.Marker({ element: el, anchor: label.main ? 'bottom' : 'center' })
+                    .setLngLat(this.#toLngLat(label.x, label.z))
+                    .addTo(this.map);
+                this.labels.push(marker);
+            }
+        }
+        source.setData({ type: 'FeatureCollection', features });
+    }
+
     // Inhalt aus Rust: { elements: [{ kind, x, z, rotation_deg, width_m, depth_m, height_m, outside }],
-    //                    corners: [[x, z], …] }
+    //                    corners: [[x, z], …],
+    //                    measure: null | { points: [[x, z], …], closed, labels: [{ x, z, text, main }] } }
     sync(scene) {
         this.scene = scene;
         this.#rebuild();
@@ -181,6 +253,7 @@ export class SitePlanMap {
         this.origin = [lng, lat];
         if (!this.map) return;
         this.#computeTransform();
+        this.#updateMeasure(); // Messung bleibt relativ zum Plan
         this.map.flyTo({ center: this.origin, zoom: Math.max(this.map.getZoom(), 16) });
         this.map.triggerRepaint();
     }
@@ -260,8 +333,43 @@ export class SitePlanMap {
             }
         }
 
+        if (this.map) this.#updateMeasure();
         this.map?.triggerRepaint();
     }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Adresssuche mit Nominatim (OpenStreetMap). Nutzungsregeln: höchstens eine Anfrage pro Sekunde,
+// keine Suche während des Tippens – deshalb sucht die Seite nur auf Knopfdruck bzw. mit Enter.
+// Liefert [{ label, lng, lat }] (höchstens fünf Treffer).
+
+const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
+let lastSearch = 0;
+
+export async function searchAddress(query) {
+    const wait = lastSearch + 1100 - Date.now();
+    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+    lastSearch = Date.now();
+
+    const params = new URLSearchParams({
+        q: query,
+        format: 'jsonv2',
+        limit: '5',
+        'accept-language': 'de'
+    });
+    let response;
+    try {
+        response = await fetch(`${NOMINATIM_URL}?${params}`, { headers: { Accept: 'application/json' } });
+    } catch (_) {
+        throw new Error('Die Adresssuche ist nicht erreichbar. Bitte Internetverbindung prüfen.');
+    }
+    if (!response.ok) {
+        throw new Error(`Die Adresssuche hat mit Fehler ${response.status} geantwortet. Bitte später erneut versuchen.`);
+    }
+    const results = await response.json();
+    return results
+        .map((r) => ({ label: r.display_name, lng: parseFloat(r.lon), lat: parseFloat(r.lat) }))
+        .filter((r) => Number.isFinite(r.lng) && Number.isFinite(r.lat));
 }
 
 // ---------------------------------------------------------------------------------------------

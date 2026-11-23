@@ -2,17 +2,18 @@
 //! Bühnen, Verpflegungsständen und Festzelten sowie zum Abstecken der Rasenfläche.
 //!
 //! Der Plan wird im Browser bearbeitet und mit „Speichern“ als Ganzes an den Server geschickt.
-//! Den Standort ändert man im Modal-Fenster `?standort=1`.
+//! Den Standort ändert man im Modal-Fenster `?standort=1` (mit Adresssuche). Die Messwerkzeuge
+//! (Strecke, Fläche) zeichnen nur auf der Karte und werden nicht gespeichert.
 
 use leptos::html::Div;
 use leptos::prelude::*;
 use leptos_meta::Title;
 use leptos_router::hooks::{use_navigate, use_params_map, use_query_map};
 
-use super::bridge::MapView;
+use super::bridge::{MapView, search_address};
 use crate::backend::site_plans::model::{
-    Corner, ElementKind, OriginInput, ROTATION_STEP_DEG, SiteElement, SitePlan, SitePlanPage,
-    format_area, format_m,
+    AddressHit, Corner, ElementKind, MeasureKind, OriginInput, ROTATION_STEP_DEG, SiteElement,
+    SitePlan, SitePlanPage, format_area, format_distance, format_m, measure,
 };
 use crate::backend::site_plans::server_fns::{DeleteSitePlan, SaveSitePlan, get_site_plan};
 use crate::forms::{
@@ -20,11 +21,12 @@ use crate::forms::{
 };
 use crate::icons::{Icon, IconView};
 
-/// Gewähltes Werkzeug: Element platzieren oder Rasenfläche abstecken.
+/// Gewähltes Werkzeug: Element platzieren, Rasenfläche abstecken oder messen.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Tool {
     Place(ElementKind),
     Area,
+    Measure(MeasureKind),
 }
 
 /// Zustand des Editors, für die Teil-Komponenten bereitgestellt.
@@ -39,11 +41,31 @@ struct Editor {
     /// Hinweis zur letzten Aktion (z. B. Element passt nicht auf die Fläche).
     notice: RwSignal<Option<String>>,
     map: StoredValue<Option<MapView>, LocalStorage>,
+    /// Punkte der laufenden Messung (nicht Teil des Plans).
+    measure_points: RwSignal<Vec<Corner>>,
+    /// Art der laufenden Messung (bleibt beim Wechsel zu einem anderen Werkzeug sichtbar).
+    measure_kind: RwSignal<MeasureKind>,
+    /// Postanschrift des Kunden – Vorschlag für die Adresssuche.
+    customer_address: StoredValue<Option<String>>,
 }
 
 impl Editor {
     fn dirty(self) -> bool {
         self.plan.with(|p| self.saved.with(|s| p != s))
+    }
+
+    /// Plan und Messung an die Karte geben (liest die Signale beobachtend).
+    fn sync_map(self) {
+        let kind = self.measure_kind.get();
+        self.plan.with(|p| {
+            self.measure_points.with(|pts| {
+                self.map.with_value(|m| {
+                    if let Some(m) = m {
+                        m.sync(p, Some((kind, pts.as_slice())));
+                    }
+                })
+            })
+        });
     }
 }
 
@@ -81,6 +103,9 @@ fn SitePlanEditor(page: SitePlanPage) -> impl IntoView {
         tool: RwSignal::new(Tool::Place(ElementKind::FoodStall)),
         notice: RwSignal::new(None),
         map: StoredValue::new_local(None),
+        measure_points: RwSignal::new(Vec::new()),
+        measure_kind: RwSignal::new(MeasureKind::Distance),
+        customer_address: StoredValue::new(page.kunde_adresse.clone()),
     };
     provide_context(ed);
     let map_error = RwSignal::new(None::<String>);
@@ -100,19 +125,11 @@ fn SitePlanEditor(page: SitePlanPage) -> impl IntoView {
             move |x, z| place(ed, x, z),
             move |msg| map_error.set(Some(msg)),
         );
-        ed.plan.with_untracked(|p| view.sync(p));
         ed.map.set_value(Some(view));
+        untrack(|| ed.sync_map());
     });
-    // Jede Änderung am Plan sofort in 3D zeigen
-    Effect::new(move |_| {
-        ed.plan.with(|p| {
-            ed.map.with_value(|m| {
-                if let Some(m) = m {
-                    m.sync(p);
-                }
-            })
-        });
-    });
+    // Jede Änderung am Plan oder an der Messung sofort in 3D zeigen
+    Effect::new(move |_| ed.sync_map());
     on_cleanup(move || {
         // Karte entfernen (Drop von MapView ruft destroy() auf)
         let _ = ed.map.try_update_value(|m| *m = None);
@@ -146,6 +163,7 @@ fn SitePlanEditor(page: SitePlanPage) -> impl IntoView {
             <div class="grid gap-4 lg:grid-cols-[22rem_minmax(0,1fr)]">
                 <div class="order-2 space-y-4 lg:order-1">
                     <ToolCard/>
+                    <MeasureCard/>
                     <AreaCard/>
                     <ElementList/>
                 </div>
@@ -169,13 +187,14 @@ fn SitePlanEditor(page: SitePlanPage) -> impl IntoView {
     }
 }
 
-/// Klick auf die Karte: Eckpunkt setzen oder Element platzieren (nur auf der Rasenfläche).
+/// Klick auf die Karte: Eckpunkt setzen, Messpunkt setzen oder Element platzieren (nur auf der Rasenfläche).
 fn place(ed: Editor, x: f64, z: f64) {
     match ed.tool.get_untracked() {
         Tool::Area => {
             ed.plan.update(|p| p.corners.push(Corner { x, z }));
             ed.notice.set(None);
         }
+        Tool::Measure(_) => ed.measure_points.update(|pts| pts.push(Corner { x, z })),
         Tool::Place(kind) => {
             let element = SiteElement::new(kind, x, z);
             if ed.plan.with_untracked(|p| p.fits(&element)) {
@@ -233,6 +252,10 @@ fn Header(
                     {move || ed.dirty().then(|| view! { <span class="badge badge-warning">"Ungespeicherte Änderungen"</span> })}
                     {move || (!ed.stored.get()).then(|| view! { <span class="badge badge-ghost">"Noch nicht gespeichert"</span> })}
                     {move || changed.get().map(|c| view! { <span class="text-sm">"Geändert am " {c}</span> })}
+                </p>
+                <p class="mt-1 flex items-center gap-1 text-sm text-base-content/70">
+                    <IconView icon=Icon::Map/>
+                    {move || ed.plan.with(|p| p.address.clone()).unwrap_or_else(|| "Keine Standort-Adresse hinterlegt".into())}
                 </p>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -335,12 +358,111 @@ fn ToolCard() -> impl IntoView {
     }
 }
 
+/// Messwerkzeuge: Strecke und Fläche. Jeder Klick auf die Karte setzt einen Messpunkt; die
+/// Längen erscheinen auf der Karte und hier. Messungen werden nicht gespeichert.
+#[component]
+fn MeasureCard() -> impl IntoView {
+    let ed = expect_context::<Editor>();
+    let result = move || {
+        let kind = ed.measure_kind.get();
+        ed.measure_points
+            .with(|pts| (kind, pts.len(), measure(kind, pts)))
+    };
+    let tool_button = move |kind: MeasureKind, label: &'static str| {
+        let tool = Tool::Measure(kind);
+        view! {
+            <button
+                type="button"
+                class="btn btn-sm flex-1"
+                class:btn-primary=move || ed.tool.get() == tool
+                class:btn-outline=move || ed.tool.get() != tool
+                aria-pressed=move || (ed.tool.get() == tool).to_string()
+                on:click=move |_| {
+                    ed.tool.set(tool);
+                    ed.measure_kind.set(kind);
+                }
+            >
+                {label}
+            </button>
+        }
+    };
+    view! {
+        <div class="card bg-base-100 shadow">
+            <div class="card-body gap-3">
+                <h2 class="card-title text-base">"Messen"</h2>
+                <div class="flex gap-2">
+                    {tool_button(MeasureKind::Distance, "Strecke messen")}
+                    {tool_button(MeasureKind::Area, "Fläche messen")}
+                </div>
+                {move || {
+                    let (kind, count, m) = result();
+                    if count == 0 {
+                        return view! {
+                            <p class="text-sm text-base-content/70">
+                                "Werkzeug wählen und auf die Karte klicken: jeder Klick setzt einen Messpunkt. "
+                                "Messungen werden nicht gespeichert."
+                            </p>
+                        }.into_any();
+                    }
+                    let total_label = if kind == MeasureKind::Area { "Umfang" } else { "Strecke" };
+                    view! {
+                        <dl class="grid grid-cols-2 gap-1 text-sm">
+                            <dt class="text-base-content/70">{total_label}</dt>
+                            <dd class="text-right font-semibold">{format_distance(m.length_m)}</dd>
+                            {(kind == MeasureKind::Area).then(|| view! {
+                                <dt class="text-base-content/70">"Fläche"</dt>
+                                <dd class="text-right font-semibold">
+                                    {m.area_m2.map_or_else(|| "–".to_string(), format_area)}
+                                </dd>
+                            })}
+                            <dt class="text-base-content/70">"Punkte"</dt>
+                            <dd class="text-right">{count}</dd>
+                        </dl>
+                        {(m.segments.len() > 1).then(|| view! {
+                            <ol class="list-inside list-decimal text-xs text-base-content/70">
+                                {m.segments.iter().map(|s| view! { <li>{format_distance(*s)}</li> }).collect_view()}
+                            </ol>
+                        })}
+                        {m.self_intersecting.then(|| view! {
+                            <div role="alert" class="alert alert-warning text-sm">
+                                "Der Umriss überschneidet sich – die Fläche stimmt so nicht. Punkte rund um die Fläche setzen."
+                            </div>
+                        })}
+                        {(kind == MeasureKind::Area && count < 3).then(|| view! {
+                            <p class="text-sm text-base-content/70">"Für eine Fläche mindestens drei Punkte setzen."</p>
+                        })}
+                    }.into_any()
+                }}
+                <div class="flex flex-wrap gap-2">
+                    <button
+                        type="button"
+                        class="btn btn-sm"
+                        disabled=move || ed.measure_points.with(Vec::is_empty)
+                        on:click=move |_| ed.measure_points.update(|pts| { pts.pop(); })
+                    >
+                        "Letzten Punkt entfernen"
+                    </button>
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-ghost"
+                        disabled=move || ed.measure_points.with(Vec::is_empty)
+                        on:click=move |_| ed.measure_points.update(Vec::clear)
+                    >
+                        "Messung löschen"
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
 /// Rasenfläche: Eckpunkte, Fläche in m² und Hinweis auf Elemente ausserhalb.
 #[component]
 fn AreaCard() -> impl IntoView {
     let ed = expect_context::<Editor>();
     let corners = move || ed.plan.with(|p| p.corners.len());
     let area = move || ed.plan.with(|p| p.area_m2());
+    let crossed = move || ed.plan.with(SitePlan::area_crossed);
     let outside = move || {
         ed.plan
             .with(|p| p.elements.iter().filter(|e| !p.fits(e)).count())
@@ -369,6 +491,12 @@ fn AreaCard() -> impl IntoView {
                     }.into_any()),
                     _ => None,
                 }}
+                {move || crossed().then(|| view! {
+                    <div role="alert" class="alert alert-warning text-sm">
+                        "Der Umriss überschneidet sich – Fläche und Lageprüfung stimmen so nicht, und der Plan "
+                        "lässt sich nicht speichern. Eckpunkte rund um die Fläche setzen."
+                    </div>
+                })}
                 {move || (outside() > 0).then(|| view! {
                     <div role="alert" class="alert alert-warning text-sm">
                         {match outside() {
@@ -519,27 +647,65 @@ fn OriginForm() -> impl IntoView {
     let ed = expect_context::<Editor>();
     let base = use_base_href();
     let navigate = use_navigate();
-    let (lng, lat) = ed.plan.with_untracked(|p| (p.origin_lng, p.origin_lat));
+    let (lng, lat, address) = ed
+        .plan
+        .with_untracked(|p| (p.origin_lng, p.origin_lat, p.address.clone()));
     let input = RwSignal::new(OriginInput {
         laenge: format!("{lng:.6}"),
         breite: format!("{lat:.6}"),
+        adresse: address.clone().unwrap_or_default(),
     });
     let errors = RwSignal::new(FieldErrors::new());
     let take_center = move |_| {
         if let Some((lng, lat)) = ed.map.with_value(|m| m.as_ref().and_then(MapView::center)) {
-            input.set(OriginInput {
-                laenge: format!("{lng:.6}"),
-                breite: format!("{lat:.6}"),
+            input.update(|i| {
+                i.laenge = format!("{lng:.6}");
+                i.breite = format!("{lat:.6}");
             });
         }
     };
+
+    // Adresssuche: Vorschlag ist die hinterlegte Adresse, sonst die des Kunden
+    let query = RwSignal::new(
+        address
+            .or_else(|| ed.customer_address.get_value())
+            .unwrap_or_default(),
+    );
+    let hits = RwSignal::new(None::<Result<Vec<AddressHit>, String>>);
+    let searching = RwSignal::new(false);
+    let picked = RwSignal::new(None::<usize>);
+    let search = move || {
+        let q = query.get_untracked().trim().to_string();
+        if q.len() < 3 || searching.get_untracked() {
+            hits.set(Some(Err("Bitte mindestens drei Zeichen eingeben.".into())));
+            return;
+        }
+        searching.set(true);
+        picked.set(None);
+        leptos::task::spawn_local(async move {
+            let result = search_address(q).await;
+            searching.set(false);
+            hits.set(Some(result));
+        });
+    };
+    let pick = move |i: usize, hit: AddressHit| {
+        picked.set(Some(i));
+        input.set(OriginInput {
+            laenge: format!("{:.6}", hit.lng),
+            breite: format!("{:.6}", hit.lat),
+            adresse: hit.label,
+        });
+        errors.set(FieldErrors::new());
+    };
+
     let apply = move |ev: leptos::ev::SubmitEvent| {
         ev.prevent_default();
         match input.get_untracked().parse() {
-            Ok((lng, lat)) => {
+            Ok((lng, lat, address)) => {
                 ed.plan.update(|p| {
                     p.origin_lng = lng;
                     p.origin_lat = lat;
+                    p.address = address;
                 });
                 ed.map.with_value(|m| {
                     if let Some(m) = m {
@@ -578,8 +744,77 @@ fn OriginForm() -> impl IntoView {
             <form on:submit=apply class="space-y-4">
                 <p class="text-sm text-base-content/70">
                     "Der Standort ist der Bezugspunkt des Plans. Elemente und Rasenfläche wandern mit, "
-                    "wenn er geändert wird. Tipp: Karte zum Gelände ziehen und „Kartenmitte übernehmen“ wählen."
+                    "wenn er geändert wird. Adresse suchen und einen Treffer wählen – oder die Karte zum "
+                    "Gelände ziehen und „Kartenmitte übernehmen“ wählen."
                 </p>
+                <fieldset class="fieldset">
+                    <legend class="fieldset-legend">"Adresse suchen"</legend>
+                    <div class="join w-full">
+                        <label class="input join-item w-full">
+                            <IconView icon=Icon::Search/>
+                            <input
+                                type="search"
+                                placeholder="z. B. Kreuzbleiche, St. Gallen"
+                                aria-label="Adresse suchen"
+                                maxlength=200
+                                prop:value=move || query.get()
+                                on:input=move |ev| query.set(event_target_value(&ev))
+                                // Enter sucht, statt das Formular abzuschicken
+                                on:keydown=move |ev| if ev.key() == "Enter" {
+                                    ev.prevent_default();
+                                    search();
+                                }
+                            />
+                        </label>
+                        <button type="button" class="btn join-item" disabled=move || searching.get() on:click=move |_| search()>
+                            {move || searching.get().then(|| view! { <span class="loading loading-spinner loading-sm"></span> })}
+                            "Suchen"
+                        </button>
+                    </div>
+                </fieldset>
+                {move || hits.get().map(|r| match r {
+                    Err(e) => view! { <div role="alert" class="alert alert-error text-sm">{e}</div> }.into_any(),
+                    Ok(list) if list.is_empty() => view! {
+                        <p class="text-sm text-base-content/70">"Nichts gefunden. Andere Schreibweise versuchen oder Ort ergänzen."</p>
+                    }.into_any(),
+                    Ok(list) => view! {
+                        <div>
+                            <ul class="menu w-full rounded-box border border-base-300 bg-base-100 p-1" aria-label="Treffer der Adresssuche">
+                                {list.into_iter().enumerate().map(|(i, hit)| {
+                                    let label = hit.label.clone();
+                                    view! {
+                                        <li>
+                                            <button
+                                                type="button"
+                                                class:menu-active=move || picked.get() == Some(i)
+                                                on:click=move |_| pick(i, hit.clone())
+                                            >
+                                                {label}
+                                            </button>
+                                        </li>
+                                    }
+                                }).collect_view()}
+                            </ul>
+                            <p class="mt-1 text-xs text-base-content/60">"Suche: Nominatim, Daten © OpenStreetMap-Mitwirkende"</p>
+                        </div>
+                    }.into_any(),
+                })}
+                <fieldset class="fieldset">
+                    <legend class="fieldset-legend">"Adresse / Bezeichnung des Standorts"</legend>
+                    <input
+                        type="text"
+                        class="input w-full"
+                        class:input-error=move || errors.read().contains_key("adresse")
+                        maxlength=300
+                        placeholder="z. B. Festwiese Kreuzbleiche"
+                        prop:value=move || input.with(|i| i.adresse.clone())
+                        on:input=move |ev| {
+                            let v = event_target_value(&ev);
+                            input.update(|i| i.adresse = v);
+                        }
+                    />
+                    {move || errors.read().get("adresse").cloned().map(|e| view! { <p class="label text-error">{e}</p> })}
+                </fieldset>
                 <div class="grid gap-4 sm:grid-cols-2">
                     {field("breite", "Breitengrad (Nord)")}
                     {field("laenge", "Längengrad (Ost)")}

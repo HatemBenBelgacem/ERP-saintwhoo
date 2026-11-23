@@ -31,6 +31,8 @@ wasm-bindgen = { version = "0.2", optional = true }
 # ANF-027: Daten an die Kartenbrücke (map_bridge.js) übergeben
 serde-wasm-bindgen = { version = "0.6", optional = true }
 js-sys = { version = "0.3", optional = true }
+# ANF-027: auf die Adresssuche (Promise aus map_bridge.js) warten
+wasm-bindgen-futures = { version = "0.4", optional = true }
 
 [dev-dependencies]
 # Modultests: prüfen, was an den Browser gesendet wird (ANF-026)
@@ -43,6 +45,7 @@ hydrate = [
     "dep:wasm-bindgen",
     "dep:serde-wasm-bindgen",
     "dep:js-sys",
+    "dep:wasm-bindgen-futures",
 ]
 ssr = [
     "dep:axum",

@@ -4,7 +4,7 @@
 //! (wie in der 3D-Szene von Three.js). Wird der Standort (Ursprung) geändert, wandert der ganze Plan mit.
 //! Flächen und Lage werden mit dem Paket `geo` berechnet.
 
-use geo::{Area, Contains, Coord, LineString, Point, Polygon, Rotate};
+use geo::{Area, Contains, Coord, LineString, Point, Polygon, Rotate, Validation};
 use serde::{Deserialize, Serialize};
 
 use crate::forms::FieldErrors;
@@ -18,6 +18,8 @@ pub const MAX_CORNERS: usize = 100;
 pub const MAX_SIZE_M: f64 = 200.0;
 /// Grösster erlaubter Abstand vom Ursprung in Metern (Plan bleibt ein Gelände, kein Land).
 pub const MAX_DISTANCE_M: f64 = 5_000.0;
+/// Höchstlänge der Standort-Adresse bzw. -Bezeichnung.
+pub const MAX_ADDRESS_LEN: usize = 300;
 /// Drehschritt der Schaltfläche „Drehen“.
 pub const ROTATION_STEP_DEG: f64 = 45.0;
 
@@ -163,6 +165,9 @@ pub struct SitePlan {
     pub elements: Vec<SiteElement>,
     /// Eckpunkte der Rasenfläche; leer = keine Fläche abgesteckt.
     pub corners: Vec<Corner>,
+    /// Adresse oder Bezeichnung des Standorts (z. B. aus der Adresssuche); `None` = keine hinterlegt.
+    #[serde(default)]
+    pub address: Option<String>,
 }
 
 impl Default for SitePlan {
@@ -172,6 +177,7 @@ impl Default for SitePlan {
             origin_lat: DEFAULT_ORIGIN.1,
             elements: Vec::new(),
             corners: Vec::new(),
+            address: None,
         }
     }
 }
@@ -184,6 +190,8 @@ pub struct SitePlanPage {
     pub projekt_name: String,
     /// `None`, solange für das Projekt noch kein Plan gespeichert ist.
     pub plan: Option<SitePlan>,
+    /// Postanschrift des Kunden des Projekts – Vorschlag für die Adresssuche.
+    pub kunde_adresse: Option<String>,
     pub geaendert_am: Option<String>,
 }
 
@@ -198,6 +206,11 @@ impl SitePlan {
         self.area_polygon().map_or(0.0, |p| p.unsigned_area())
     }
 
+    /// `true`, wenn sich die Umrisslinie der Rasenfläche selbst überschneidet.
+    pub fn area_crossed(&self) -> bool {
+        self.area_polygon().is_some_and(|p| !p.is_valid())
+    }
+
     /// `true`, wenn das Element ganz auf der Rasenfläche steht – oder keine Fläche abgesteckt ist.
     pub fn fits(&self, element: &SiteElement) -> bool {
         self.area_polygon()
@@ -208,6 +221,18 @@ impl SitePlan {
     /// `ursprung`, `elemente`, `flaeche`.
     pub fn validate(&self) -> FieldErrors {
         let mut errors = FieldErrors::new();
+        if self
+            .address
+            .as_ref()
+            .is_some_and(|a| a.chars().count() > MAX_ADDRESS_LEN)
+        {
+            errors.insert(
+                "adresse".into(),
+                format!(
+                    "Die Adresse des Standorts darf höchstens {MAX_ADDRESS_LEN} Zeichen lang sein."
+                ),
+            );
+        }
         if !(self.origin_lng.is_finite()
             && self.origin_lat.is_finite()
             && (-180.0..=180.0).contains(&self.origin_lng)
@@ -243,6 +268,13 @@ impl SitePlan {
                     errors.insert(
                         "flaeche".into(),
                         "Die Rasenfläche braucht mindestens drei Eckpunkte.".into(),
+                    );
+                }
+                Some(p) if !p.is_valid() => {
+                    errors.insert(
+                        "flaeche".into(),
+                        "Die Umrisslinie der Rasenfläche überschneidet sich. Eckpunkte in der Reihenfolge rund um die Fläche setzen."
+                            .into(),
                     );
                 }
                 Some(p) if p.unsigned_area() < 1.0 => {
@@ -336,11 +368,13 @@ pub fn format_area(m2: f64) -> String {
 pub struct OriginInput {
     pub laenge: String,
     pub breite: String,
+    /// Adresse oder Bezeichnung; leer = keine.
+    pub adresse: String,
 }
 
 impl OriginInput {
-    /// Prüft die Eingabe und liefert (Längengrad, Breitengrad) oder Fehler je Feld.
-    pub fn parse(&self) -> Result<(f64, f64), FieldErrors> {
+    /// Prüft die Eingabe und liefert (Längengrad, Breitengrad, Adresse) oder Fehler je Feld.
+    pub fn parse(&self) -> Result<(f64, f64, Option<String>), FieldErrors> {
         let mut errors = FieldErrors::new();
         let num = |s: &str| s.trim().replace(',', ".").parse::<f64>().ok();
         let lng = num(&self.laenge).filter(|v| (-180.0..=180.0).contains(v));
@@ -357,10 +391,86 @@ impl OriginInput {
                 "Bitte einen Breitengrad zwischen -85 und 85 eingeben.".into(),
             );
         }
+        let address = self.adresse.trim();
+        if address.chars().count() > MAX_ADDRESS_LEN {
+            errors.insert(
+                "adresse".into(),
+                format!("Höchstens {MAX_ADDRESS_LEN} Zeichen."),
+            );
+        }
         match (lng, lat) {
-            (Some(lng), Some(lat)) => Ok((lng, lat)),
+            (Some(lng), Some(lat)) if errors.is_empty() => {
+                Ok((lng, lat, (!address.is_empty()).then(|| address.to_string())))
+            }
             _ => Err(errors),
         }
+    }
+}
+
+/// Treffer der Adresssuche (Ortssuche im Browser, siehe `map_bridge.js`).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AddressHit {
+    pub label: String,
+    pub lng: f64,
+    pub lat: f64,
+}
+
+/// Messwerkzeug: Strecke (Linienzug) oder Fläche (Vieleck). Messungen werden nicht gespeichert.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MeasureKind {
+    Distance,
+    Area,
+}
+
+/// Längen der einzelnen Abschnitte eines Linienzugs in Metern.
+pub fn segment_lengths(points: &[Corner]) -> Vec<f64> {
+    points
+        .windows(2)
+        .map(|w| (w[1].x - w[0].x).hypot(w[1].z - w[0].z))
+        .collect()
+}
+
+/// Ergebnis einer Messung: Gesamtlänge (Strecke) bzw. Umfang und Fläche (Fläche).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Measurement {
+    /// Abschnitte (bei der Fläche einschliesslich des schliessenden Abschnitts).
+    pub segments: Vec<f64>,
+    /// Gesamtlänge bzw. Umfang in Metern.
+    pub length_m: f64,
+    /// Fläche in m², nur beim Flächenmass ab drei Punkten und ohne Überschneidung.
+    pub area_m2: Option<f64>,
+    /// Die Umrisslinie überschneidet sich selbst – die Fläche ist dann nicht aussagekräftig.
+    pub self_intersecting: bool,
+}
+
+/// Misst die Punkte als Strecke oder als geschlossene Fläche (mit `geo`).
+pub fn measure(kind: MeasureKind, points: &[Corner]) -> Measurement {
+    let mut segments = segment_lengths(points);
+    let mut area_m2 = None;
+    let mut self_intersecting = false;
+    if kind == MeasureKind::Area && points.len() >= 3 {
+        let (first, last) = (points[0], points[points.len() - 1]);
+        segments.push((first.x - last.x).hypot(first.z - last.z));
+        if let Some(p) = area_polygon(points) {
+            self_intersecting = !p.is_valid();
+            // Bei überschneidendem Umriss ist die Fläche nicht aussagekräftig
+            area_m2 = (!self_intersecting).then(|| p.unsigned_area());
+        }
+    }
+    Measurement {
+        length_m: segments.iter().sum(),
+        segments,
+        area_m2,
+        self_intersecting,
+    }
+}
+
+/// Strecke lesbar: bis 1 km in Metern mit einer Nachkommastelle, darüber in Kilometern.
+pub fn format_distance(m: f64) -> String {
+    if m < 1000.0 {
+        format!("{} m", format!("{m:.1}").replace('.', ","))
+    } else {
+        format!("{} km", format!("{:.2}", m / 1000.0).replace('.', ","))
     }
 }
 
@@ -473,14 +583,77 @@ mod tests {
         let ok = OriginInput {
             laenge: " 9,3767 ".into(),
             breite: "47.4245".into(),
+            adresse: " Marktgasse 1, 9000 St. Gallen ".into(),
         };
-        assert_eq!(ok.parse(), Ok((9.3767, 47.4245)));
+        assert_eq!(
+            ok.parse(),
+            Ok((
+                9.3767,
+                47.4245,
+                Some("Marktgasse 1, 9000 St. Gallen".into())
+            ))
+        );
+        let empty_address = OriginInput {
+            adresse: "  ".into(),
+            ..ok.clone()
+        };
+        assert_eq!(empty_address.parse(), Ok((9.3767, 47.4245, None)));
         let bad = OriginInput {
             laenge: "abc".into(),
             breite: "91".into(),
+            adresse: "x".repeat(MAX_ADDRESS_LEN + 1),
         };
         let errors = bad.parse().unwrap_err();
         assert!(errors.contains_key("laenge") && errors.contains_key("breite"));
+        assert!(errors.contains_key("adresse"));
+    }
+
+    #[test]
+    fn address_too_long_is_rejected() {
+        let plan = SitePlan {
+            address: Some("x".repeat(MAX_ADDRESS_LEN + 1)),
+            ..SitePlan::default()
+        };
+        assert!(plan.validate().contains_key("adresse"));
+    }
+
+    #[test]
+    fn measure_distance_and_area() {
+        let pts = square(10.0);
+        let d = measure(MeasureKind::Distance, &pts);
+        assert_eq!(d.segments, vec![10.0, 10.0, 10.0]);
+        assert_eq!(d.length_m, 30.0);
+        assert_eq!(d.area_m2, None);
+
+        let a = measure(MeasureKind::Area, &pts);
+        assert_eq!(a.segments.len(), 4);
+        assert_eq!(a.length_m, 40.0);
+        assert_eq!(a.area_m2, Some(100.0));
+        assert!(!a.self_intersecting);
+
+        // „Fliege“: Reihenfolge über Kreuz → Umriss schneidet sich
+        let bowtie = [
+            Corner { x: 0.0, z: 0.0 },
+            Corner { x: 10.0, z: 10.0 },
+            Corner { x: 10.0, z: 0.0 },
+            Corner { x: 0.0, z: 10.0 },
+        ];
+        let crossed = measure(MeasureKind::Area, &bowtie);
+        assert!(crossed.self_intersecting);
+        assert_eq!(crossed.area_m2, None);
+        let plan = SitePlan {
+            corners: bowtie.to_vec(),
+            ..SitePlan::default()
+        };
+        assert!(plan.validate()["flaeche"].contains("überschneidet"));
+
+        // Diagonale 3-4-5
+        let diag = [Corner { x: 0.0, z: 0.0 }, Corner { x: 3.0, z: 4.0 }];
+        assert_eq!(measure(MeasureKind::Area, &diag).length_m, 5.0);
+        assert!(measure(MeasureKind::Distance, &[]).segments.is_empty());
+
+        assert_eq!(format_distance(12.34), "12,3 m");
+        assert_eq!(format_distance(1250.0), "1,25 km");
     }
 
     #[test]
