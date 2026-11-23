@@ -20,6 +20,7 @@ pub async fn get_site_plan(projekt_id: i64) -> Result<Option<SitePlanPage>, Serv
         return Ok(None);
     };
     let found = repository::find(&pool, projekt_id).await?;
+    let kunde_adresse = repository::customer_address(&pool, projekt_id).await?;
     let (plan, geaendert_am) = match found {
         Some((plan, changed)) => (Some(plan), Some(changed)),
         None => (None, None),
@@ -29,6 +30,7 @@ pub async fn get_site_plan(projekt_id: i64) -> Result<Option<SitePlanPage>, Serv
         projekt_nummer,
         projekt_name,
         plan,
+        kunde_adresse,
         geaendert_am,
     }))
 }

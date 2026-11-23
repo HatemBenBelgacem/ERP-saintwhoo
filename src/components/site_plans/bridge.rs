@@ -5,7 +5,9 @@
 
 use serde::Serialize;
 
-use crate::backend::site_plans::model::SitePlan;
+use crate::backend::site_plans::model::{
+    AddressHit, Corner, MeasureKind, SitePlan, format_area, format_distance, measure,
+};
 
 /// Ein Element, wie es die 3D-Szene braucht.
 #[derive(Serialize)]
@@ -22,16 +24,85 @@ struct SceneElement {
     outside: bool,
 }
 
+/// Beschriftung auf der Karte (z. B. Länge eines Messabschnitts).
+#[derive(Serialize)]
+struct SceneLabel {
+    x: f64,
+    z: f64,
+    text: String,
+    /// Hervorgehoben (Gesamtwert) oder normal (Abschnitt).
+    main: bool,
+}
+
+/// Laufende Messung (wird nicht gespeichert).
+#[derive(Serialize)]
+struct SceneMeasure {
+    points: Vec<[f64; 2]>,
+    /// Fläche: Linienzug geschlossen und gefüllt.
+    closed: bool,
+    labels: Vec<SceneLabel>,
+}
+
+impl SceneMeasure {
+    fn new(kind: MeasureKind, points: &[Corner]) -> Option<Self> {
+        if points.is_empty() {
+            return None;
+        }
+        let result = measure(kind, points);
+        let closed = kind == MeasureKind::Area && points.len() >= 3;
+        // Abschnittslängen in der Mitte jedes Abschnitts
+        let mut labels: Vec<SceneLabel> = result
+            .segments
+            .iter()
+            .enumerate()
+            .map(|(i, len)| {
+                let (a, b) = (points[i], points[(i + 1) % points.len()]);
+                SceneLabel {
+                    x: (a.x + b.x) / 2.0,
+                    z: (a.z + b.z) / 2.0,
+                    text: format_distance(*len),
+                    main: false,
+                }
+            })
+            .collect();
+        // Gesamtwert: Fläche im Schwerpunkt der Punkte, Strecke am letzten Punkt
+        if let Some(area) = result.area_m2 {
+            let n = points.len() as f64;
+            labels.push(SceneLabel {
+                x: points.iter().map(|p| p.x).sum::<f64>() / n,
+                z: points.iter().map(|p| p.z).sum::<f64>() / n,
+                text: format_area(area),
+                main: true,
+            });
+        } else if kind == MeasureKind::Distance && points.len() >= 3 {
+            let last = points[points.len() - 1];
+            labels.push(SceneLabel {
+                x: last.x,
+                z: last.z,
+                text: format!("Total {}", format_distance(result.length_m)),
+                main: true,
+            });
+        }
+        Some(Self {
+            points: points.iter().map(|c| [c.x, c.z]).collect(),
+            closed,
+            labels,
+        })
+    }
+}
+
 /// Inhalt der 3D-Szene.
 #[derive(Serialize)]
 struct Scene {
     elements: Vec<SceneElement>,
     corners: Vec<[f64; 2]>,
+    measure: Option<SceneMeasure>,
 }
 
 impl Scene {
-    fn from_plan(plan: &SitePlan) -> Self {
+    fn from_plan(plan: &SitePlan, measurement: Option<(MeasureKind, &[Corner])>) -> Self {
         Self {
+            measure: measurement.and_then(|(kind, points)| SceneMeasure::new(kind, points)),
             elements: plan
                 .elements
                 .iter()
@@ -82,6 +153,10 @@ mod js {
 
         #[wasm_bindgen(method)]
         pub fn destroy(this: &SitePlanMap);
+
+        /// Ortssuche (Promise mit `[{ label, lng, lat }]`); wirft bei Fehlern.
+        #[wasm_bindgen(js_name = searchAddress, catch)]
+        pub async fn search_address(query: &str) -> Result<JsValue, JsValue>;
     }
 
     /// Karte samt Rückruf-Funktionen; die Rückrufe leben so lange wie die Karte.
@@ -133,9 +208,9 @@ impl MapView {
         Self {}
     }
 
-    /// Zeichnet Elemente und Rasenfläche des Plans neu.
-    pub fn sync(&self, plan: &SitePlan) {
-        let scene = Scene::from_plan(plan);
+    /// Zeichnet Elemente, Rasenfläche und die laufende Messung neu.
+    pub fn sync(&self, plan: &SitePlan, measurement: Option<(MeasureKind, &[Corner])>) {
+        let scene = Scene::from_plan(plan, measurement);
         #[cfg(feature = "hydrate")]
         if let Ok(value) = serde_wasm_bindgen::to_value(&scene) {
             self.handle.map.sync(value);
@@ -167,4 +242,25 @@ impl Drop for MapView {
         #[cfg(feature = "hydrate")]
         self.handle.map.destroy();
     }
+}
+
+/// Sucht Orte bzw. Adressen (höchstens fünf Treffer). Nur im Browser; der Dienst wird in
+/// `map_bridge.js` aufgerufen.
+pub async fn search_address(_query: String) -> Result<Vec<AddressHit>, String> {
+    #[cfg(feature = "hydrate")]
+    {
+        let value = js::search_address(&_query).await.map_err(|e| {
+            e.as_string()
+                .or_else(|| {
+                    js_sys::Reflect::get(&e, &"message".into())
+                        .ok()
+                        .and_then(|m| m.as_string())
+                })
+                .unwrap_or_else(|| "Die Adresssuche ist fehlgeschlagen.".into())
+        })?;
+        serde_wasm_bindgen::from_value(value)
+            .map_err(|_| "Die Antwort der Adresssuche ist unverständlich.".to_string())
+    }
+    #[cfg(not(feature = "hydrate"))]
+    Err("Die Adresssuche geht nur im Browser.".into())
 }

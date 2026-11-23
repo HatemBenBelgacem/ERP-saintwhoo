@@ -17,20 +17,39 @@ pub async fn project_head(
         .await
 }
 
+/// Postanschrift des Kunden des Projekts als eine Zeile („Strasse, PLZ Ort“); `None` ohne Kunde
+/// oder ohne Ort. Dient als Vorschlag für die Adresssuche.
+pub async fn customer_address(
+    pool: &PgPool,
+    projekt_id: i64,
+) -> Result<Option<String>, sqlx::Error> {
+    let row: Option<(Option<String>,)> = sqlx::query_as(
+        "SELECT NULLIF(concat_ws(', ', NULLIF(btrim(a.strasse), ''), \
+                    NULLIF(btrim(concat_ws(' ', a.plz, a.ort)), ''), \
+                    CASE WHEN a.land <> 'CH' THEN a.land END), '') \
+         FROM projekt p JOIN adresse a ON a.id = p.adresse_id \
+         WHERE p.id = $1 AND NULLIF(btrim(a.ort), '') IS NOT NULL",
+    )
+    .bind(projekt_id)
+    .fetch_optional(pool)
+    .await?;
+    Ok(row.and_then(|(a,)| a))
+}
+
 /// Gespeicherter Plan des Projekts mit Änderungszeitpunkt; `None`, solange keiner gespeichert ist.
 pub async fn find(
     pool: &PgPool,
     projekt_id: i64,
 ) -> Result<Option<(SitePlan, String)>, sqlx::Error> {
-    let head: Option<(i64, f64, f64, String)> = sqlx::query_as(
-        "SELECT id, ursprung_laenge, ursprung_breite, \
+    let head: Option<(i64, f64, f64, Option<String>, String)> = sqlx::query_as(
+        "SELECT id, ursprung_laenge, ursprung_breite, standort_adresse, \
                 to_char(geaendert_am AT TIME ZONE 'Europe/Zurich', 'DD.MM.YYYY HH24:MI') \
          FROM gelaendeplan WHERE projekt_id = $1",
     )
     .bind(projekt_id)
     .fetch_optional(pool)
     .await?;
-    let Some((id, origin_lng, origin_lat, changed)) = head else {
+    let Some((id, origin_lng, origin_lat, address, changed)) = head else {
         return Ok(None);
     };
 
@@ -68,6 +87,7 @@ pub async fn find(
             origin_lat,
             elements,
             corners: corners.into_iter().map(|(x, z)| Corner { x, z }).collect(),
+            address,
         },
         changed,
     )))
@@ -81,15 +101,17 @@ pub async fn save(
     plan: &SitePlan,
 ) -> Result<(), sqlx::Error> {
     let (id,): (i64,) = sqlx::query_as(
-        "INSERT INTO gelaendeplan (projekt_id, ursprung_laenge, ursprung_breite) VALUES ($1, $2, $3) \
+        "INSERT INTO gelaendeplan (projekt_id, ursprung_laenge, ursprung_breite, standort_adresse) \
+         VALUES ($1, $2, $3, $4) \
          ON CONFLICT (projekt_id) DO UPDATE \
          SET ursprung_laenge = EXCLUDED.ursprung_laenge, ursprung_breite = EXCLUDED.ursprung_breite, \
-             geaendert_am = now() \
+             standort_adresse = EXCLUDED.standort_adresse, geaendert_am = now() \
          RETURNING id",
     )
     .bind(projekt_id)
     .bind(plan.origin_lng)
     .bind(plan.origin_lat)
+    .bind(plan.address.as_deref())
     .fetch_one(&mut *conn)
     .await?;
 

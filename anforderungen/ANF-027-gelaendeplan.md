@@ -9,7 +9,7 @@
 | **Modul**     | Projekte                                          |
 | **Autor**     | Hatem Ben Belgacem                                |
 | **Erstellt**  | 2026-11-23                                        |
-| **Geändert**  | 2026-11-23                                        |
+| **Geändert**  | 2026-11-24                                        |
 
 ## 1. Beschreibung
 
@@ -27,7 +27,9 @@ Technik (Vorgabe des Auftraggebers):
 | 3D-Elemente | **Three.js** 0.170, als eigene Ebene („custom layer“) im selben `<canvas>` wie die Karte; Modelle aus Grundformen (Quader, Zylinder, ausgezogenes Dreieck) |
 | Einbindung | Beide als ES-Module aus dem Netz (esm.sh), erst beim Öffnen des Geländeplans geladen – kein npm, kein Bündeln |
 | Brücke | `src/components/site_plans/map_bridge.js`, aus Rust über `wasm-bindgen` gesteuert (`bridge.rs`) |
-| Flächen und Lage | Rust-Paket **`geo`** (`unsigned_area`, `contains`) – im Browser und auf dem Server |
+| Flächen und Lage | Rust-Paket **`geo`** (`unsigned_area`, `contains`, `is_valid`) – im Browser und auf dem Server |
+| Adresssuche | **Nominatim** (OpenStreetMap), direkt aus dem Browser, nur auf Knopfdruck (höchstens 1 Anfrage pro Sekunde) |
+| Messwerkzeuge | Linien, Punkte und Flächen als Ebenen von MapLibre, Beschriftungen als Marken auf der Karte |
 
 Koordinaten: Ein Plan hat einen **Standort** (Ursprung, Längen- und Breitengrad). Elemente und Eckpunkte
 stehen in Metern relativ dazu (x nach Osten, z nach Süden). Wird der Standort geändert, wandert der ganze
@@ -71,16 +73,34 @@ Plan mit.
 - [x] **AK-10:** Gegeben Änderungen am Plan, dann erscheint „Ungespeicherte Änderungen“; mit „Speichern“ wird
   der Plan als Ganzes gespeichert, mit „Verwerfen“ kehrt er zum gespeicherten Stand zurück. Beim Neuladen
   oder Schliessen der Seite mit ungespeicherten Änderungen fragt der Browser nach.
-- [x] **AK-11:** Gegeben ein ungültiger Plan (Fläche mit weniger als drei Eckpunkten oder kleiner als 1 m²,
+- [x] **AK-11:** Gegeben ein ungültiger Plan (Fläche mit weniger als drei Eckpunkten, mit sich überschneidendem
+  Umriss oder kleiner als 1 m², Standort-Adresse länger als 300 Zeichen,
   Element ausserhalb der Fläche, Grösse nicht zwischen 0 und 200 m, Lage mehr als 5 km vom Standort,
   mehr als 500 Elemente oder 100 Eckpunkte), wenn ich speichere, dann prüft der Server den Plan, speichert
   nichts und zeigt die Meldungen.
 - [x] **AK-12:** Gegeben das Modal-Fenster „Standort“ (`?standort=1`), wenn ich Breiten- und Längengrad
   eingebe oder „Kartenmitte übernehmen“ wähle und „Übernehmen“ klicke, dann fliegt die Karte zum neuen
   Standort und der ganze Plan wandert mit. Ungültige Werte werden am Feld gemeldet; Dezimalkomma ist erlaubt.
+- [x] **AK-12a:** Gegeben das Modal-Fenster „Standort“, wenn ich eine Adresse oder einen Ort eingebe und
+  „Suchen“ (oder Enter) wähle, dann erscheinen bis zu fünf Treffer. Wähle ich einen Treffer, werden
+  Breiten- und Längengrad sowie die Adresse übernommen. Das Suchfeld ist mit der hinterlegten Adresse,
+  sonst mit der Postanschrift des Kunden des Projekts vorbelegt. Ist der Dienst nicht erreichbar, erscheint
+  eine Meldung; ohne Treffer der Hinweis „Nichts gefunden“.
+- [x] **AK-12b:** Gegeben ein Standort, dann lässt sich seine **Adresse bzw. Bezeichnung** (höchstens 300
+  Zeichen, z. B. „Festwiese Kreuzbleiche“) hinterlegen. Sie wird mit dem Plan gespeichert und im Kopf der
+  Seite angezeigt („Keine Standort-Adresse hinterlegt“, solange keine erfasst ist).
 - [x] **AK-13:** Gegeben ein gespeicherter Plan, wenn ich „Löschen“ wähle und bestätige, dann wird der Plan
   gelöscht und die Projektansicht zeigt „„Geländeplan“ wurde gelöscht.“ Wird das Projekt gelöscht, wird
   auch sein Plan gelöscht.
+- [x] **AK-15:** Gegeben das Messwerkzeug **„Strecke messen“**, wenn ich auf die Karte klicke, dann setzt
+  jeder Klick einen Messpunkt; die Länge jedes Abschnitts steht auf der Karte und in der Seitenleiste, dazu
+  die Gesamtstrecke (bis 1 km in m, darüber in km).
+- [x] **AK-16:** Gegeben das Messwerkzeug **„Fläche messen“**, dann wird der Linienzug geschlossen und ab
+  drei Punkten gefüllt; Umfang, Fläche in m² und die Abschnitte werden angezeigt. Überschneidet sich der
+  Umriss, steht statt der Fläche „–“ und ein Hinweis erscheint.
+- [x] **AK-17:** Gegeben eine Messung, dann bleibt sie beim Wechsel zu einem anderen Werkzeug sichtbar;
+  „Letzten Punkt entfernen“ und „Messung löschen“ machen sie rückgängig. Messungen gehören nicht zum Plan
+  und werden nicht gespeichert.
 - [x] **AK-14:** Gegeben die Karte kann nicht geladen werden (z. B. ohne Internet), dann erscheint eine
   Fehlermeldung; der Rest der Seite bleibt bedienbar.
 
@@ -93,6 +113,7 @@ Tabelle `gelaendeplan` (höchstens ein Plan je Projekt):
 | `projekt_id` | Verweis | ja | eindeutig; Löschen des Projekts löscht den Plan |
 | `ursprung_laenge` | Zahl | ja | Längengrad −180 … 180 |
 | `ursprung_breite` | Zahl | ja | Breitengrad −85 … 85 |
+| `standort_adresse` | Text | nein | Adresse oder Bezeichnung des Standorts, höchstens 300 Zeichen |
 
 Tabelle `gelaendeplan_element`:
 
@@ -109,11 +130,14 @@ Tabelle `gelaendeplan_eckpunkt`: `reihenfolge`, `x_m`, `z_m` (leer = keine Rasen
 ## 5. Abhängigkeiten
 
 - Hängt ab von: ANF-003 (Projekte)
-- Externe Dienste: esm.sh / unpkg.com (MapLibre, Three.js), server.arcgisonline.com (Satellitenbilder)
+- Externe Dienste: esm.sh / unpkg.com (MapLibre, Three.js), server.arcgisonline.com (Satellitenbilder),
+  nominatim.openstreetmap.org (Adresssuche)
+- Nutzt ANF-002 (Postanschrift des Kunden als Vorschlag für die Suche)
 
 ## 6. Nicht im Umfang
 
-- Ortssuche nach Adresse (Geocodierung); der Standort wird als Koordinate oder über die Kartenmitte gesetzt.
+- Suche während des Tippens (Vorschläge); die Nutzungsregeln von Nominatim verbieten das.
+- Messungen speichern, Höhen messen, an Elementen oder Eckpunkten einrasten.
 - Verschieben eines Elements per Ziehen, freie Grösse je Element, Auswahl eines Elements durch Klick in 3D.
 - Fertige 3D-Modelle aus Dateien (`.glb` über den `GLTFLoader`); die Modelle werden aus Grundformen gebaut.
 - Mehrere Pläne oder Versionen je Projekt, Druckansicht, Export.
@@ -131,7 +155,11 @@ Vorläufige Annahmen, bis sie geklärt sind:
   Für den Betrieb ggf. einen eigenen Anbieter (z. B. swisstopo SWISSIMAGE) wählen.
 - [ ] Bibliotheken aus dem Netz (esm.sh) oder selbst ausliefern (`public/`)? *Annahme: aus dem Netz*,
   feste Fassungen. Für Betrieb ohne fremde Dienste später selbst ausliefern.
-- [ ] Vorgabe-Standort: St. Gallen oder Adresse des Kunden? *Annahme: St. Gallen* (keine Geocodierung).
+- [ ] Vorgabe-Standort: St. Gallen oder Adresse des Kunden? *Annahme: St. Gallen*; die Kundenadresse wird
+  als Suchbegriff vorgeschlagen, aber nicht automatisch gesucht.
+- [ ] Adresssuche: Nominatim (weltweit, freiwilliger Dienst mit Nutzungsregeln) oder der Suchdienst von
+  swisstopo (nur Schweiz, genauer für Schweizer Adressen)? *Annahme: Nominatim.* Für viele Benutzer im
+  Betrieb einen eigenen bzw. kostenpflichtigen Dienst prüfen. Der Suchbegriff geht an den Dienst.
 
 ## 8. Änderungshistorie
 
@@ -139,3 +167,4 @@ Vorläufige Annahmen, bis sie geklärt sind:
 |------------|-------|-----------------|
 | 2026-11-23 | Hatem Ben Belgacem | Erstellt und umgesetzt (Vorgabe: Anleitung Leptos + MapLibre + Three.js) |
 | 2026-11-24 | Hatem Ben Belgacem | AK-4: gestaltete 3D-Modelle statt Quadern (Bühne, Verpflegungsstand, Festzelt) |
+| 2026-11-24 | Hatem Ben Belgacem | AK-12a/b: Adresssuche und Standort-Adresse; AK-15 bis AK-17: Messwerkzeuge Strecke und Fläche; AK-11: Umriss ohne Überschneidung |
