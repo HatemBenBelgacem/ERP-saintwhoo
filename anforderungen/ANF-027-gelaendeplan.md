@@ -24,7 +24,7 @@ Technik (Vorgabe des Auftraggebers):
 | Teil | Technik |
 |------|---------|
 | Karte und Satellitenbild | **MapLibre GL JS** 4.7.1, Bilder von Esri World Imagery |
-| 3D-Elemente | **Three.js** 0.170, als eigene Ebene („custom layer“) im selben `<canvas>` wie die Karte |
+| 3D-Elemente | **Three.js** 0.170, als eigene Ebene („custom layer“) im selben `<canvas>` wie die Karte; Modelle aus Grundformen (Quader, Zylinder, ausgezogenes Dreieck) |
 | Einbindung | Beide als ES-Module aus dem Netz (esm.sh), erst beim Öffnen des Geländeplans geladen – kein npm, kein Bündeln |
 | Brücke | `src/components/site_plans/map_bridge.js`, aus Rust über `wasm-bindgen` gesteuert (`bridge.rs`) |
 | Flächen und Lage | Rust-Paket **`geo`** (`unsigned_area`, `contains`) – im Browser und auf dem Server |
@@ -50,9 +50,13 @@ Plan mit.
 - [x] **AK-3:** Gegeben die Karte, wenn ich sie mit der rechten Maustaste bzw. Strg + Ziehen kippe und drehe,
   dann bleiben alle 3D-Elemente an ihrer Stelle auf dem Boden.
 - [x] **AK-4:** Gegeben ein gewähltes Werkzeug „Bühne (10 × 8 m)“, „Verpflegungsstand (4 × 2,5 m)“ oder
-  „Festzelt (6 × 6 m)“, wenn ich auf die Karte klicke, dann erscheint dort ein Quader in der Farbe der Art
-  (Bühne rot, 4,5 m hoch; Verpflegungsstand orange, 2,8 m; Festzelt blau, 3 m) und ein Eintrag in der Liste
-  „Platzierte Elemente“ mit Grösse, Lage und Drehung.
+  „Festzelt (6 × 6 m)“, wenn ich auf die Karte klicke, dann erscheint dort ein 3D-Modell der Art und ein
+  Eintrag in der Liste „Platzierte Elemente“ mit Grösse, Lage und Drehung. Die Modelle bestehen aus
+  Grundformen von Three.js und bleiben innerhalb ihrer Grundfläche:
+  - **Bühne** (4,5 m): rote Podestverkleidung, Bühnenboden, Rückwand, vier Stützen, rotes Dach, zwei Lautsprecher.
+  - **Verpflegungsstand** (2,8 m): orange Theke mit heller Platte, Rück- und Seitenwände, Dach, orange-hell
+    gestreiftes Vordach nach vorne.
+  - **Festzelt** (3 m): helle Zeltwände, blaues Giebeldach mit Firststange, dunkler Eingang vorne.
 - [x] **AK-5:** Gegeben ein Element in der Liste, wenn ich „↻“ wähle, dann dreht es sich um 45°; mit „✕“ wird
   es entfernt.
 - [x] **AK-6:** Gegeben das Werkzeug „Rasenfläche abstecken“, wenn ich auf die Karte klicke, dann setzt jeder
@@ -63,7 +67,7 @@ Plan mit.
 - [x] **AK-8:** Gegeben ein Element auf der Rasenfläche, wenn es durch Drehen hinausragen würde, dann wird es
   nicht gedreht und ein Hinweis erscheint.
 - [x] **AK-9:** Gegeben Elemente, die nach einer Änderung der Fläche nicht mehr ganz darauf stehen, dann sind
-  sie in der Liste als „ausserhalb“ markiert, in 3D halbdurchsichtig, und ein Hinweis nennt ihre Anzahl.
+  sie in der Liste als „ausserhalb“ markiert, ihr 3D-Modell ist halbdurchsichtig, und ein Hinweis nennt ihre Anzahl.
 - [x] **AK-10:** Gegeben Änderungen am Plan, dann erscheint „Ungespeicherte Änderungen“; mit „Speichern“ wird
   der Plan als Ganzes gespeichert, mit „Verwerfen“ kehrt er zum gespeicherten Stand zurück. Beim Neuladen
   oder Schliessen der Seite mit ungespeicherten Änderungen fragt der Browser nach.
@@ -111,7 +115,7 @@ Tabelle `gelaendeplan_eckpunkt`: `reihenfolge`, `x_m`, `z_m` (leer = keine Rasen
 
 - Ortssuche nach Adresse (Geocodierung); der Standort wird als Koordinate oder über die Kartenmitte gesetzt.
 - Verschieben eines Elements per Ziehen, freie Grösse je Element, Auswahl eines Elements durch Klick in 3D.
-- Echte 3D-Modelle (`.glb` über den `GLTFLoader`) statt Quadern.
+- Fertige 3D-Modelle aus Dateien (`.glb` über den `GLTFLoader`); die Modelle werden aus Grundformen gebaut.
 - Mehrere Pläne oder Versionen je Projekt, Druckansicht, Export.
 - Gleichzeitiges Bearbeiten durch mehrere Benutzer (wer zuletzt speichert, gewinnt).
 
@@ -134,3 +138,4 @@ Vorläufige Annahmen, bis sie geklärt sind:
 | Datum      | Autor | Änderung        |
 |------------|-------|-----------------|
 | 2026-11-23 | Hatem Ben Belgacem | Erstellt und umgesetzt (Vorgabe: Anleitung Leptos + MapLibre + Three.js) |
+| 2026-11-24 | Hatem Ben Belgacem | AK-4: gestaltete 3D-Modelle statt Quadern (Bühne, Verpflegungsstand, Festzelt) |

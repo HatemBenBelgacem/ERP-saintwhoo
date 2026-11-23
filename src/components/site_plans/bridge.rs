@@ -18,7 +18,7 @@ struct SceneElement {
     width_m: f64,
     depth_m: f64,
     height_m: f64,
-    /// Steht nicht ganz auf der Rasenfläche → halbdurchsichtig.
+    /// Steht nicht ganz auf der Rasenfläche → Modell halbdurchsichtig.
     outside: bool,
 }
 
