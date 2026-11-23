@@ -1,6 +1,6 @@
 //! Datenmodell und Prüfregeln für Benutzer (ANF-005).
-//! Wird auf dem Server und im Browser verwendet. Passwörter und Hashes kommen hier nur als
-//! Eingabe vor – kein Typ für die Anzeige enthält sie (AK-21).
+//! Wird auf dem Server und im Browser verwendet. Passwörter gibt es seit ANF-026 nur im Portal
+//! (`crate::backend::auth`).
 
 use serde::{Deserialize, Serialize};
 
@@ -9,8 +9,6 @@ use crate::backend::tasks::model::TaskItem;
 pub use crate::forms::{FieldErrors, PickOption, SaveOutcome};
 
 pub const USERNAME_MAX: usize = 50;
-pub const PASSWORD_MIN: usize = 10;
-pub const PASSWORD_MAX: usize = 200;
 
 /// Status im Formular (AK-11, AK-16).
 pub const STATUSES: &[(&str, &str)] = &[("aktiv", "Aktiv"), ("gesperrt", "Gesperrt")];
@@ -28,7 +26,6 @@ pub const SORT_COLUMNS: &[(&str, &str)] = &[
     ("name", "Name"),
     ("email", "E-Mail"),
     ("status", "Status"),
-    ("anmeldung", "Letzte Anmeldung"),
 ];
 
 /// Erlaubt: Kleinbuchstaben a–z, Ziffern, `.`, `-`, `_` (AK-13).
@@ -131,49 +128,6 @@ impl UserInput {
     }
 }
 
-/// Passwort mit Wiederholung (AK-11, AK-15). Wird nie gekürzt oder verändert.
-#[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
-#[serde(default)]
-pub struct PasswordInput {
-    pub passwort: String,
-    pub wiederholung: String,
-}
-
-/// Passwörter erscheinen nie in Protokollen.
-impl std::fmt::Debug for PasswordInput {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("PasswordInput { … }")
-    }
-}
-
-impl PasswordInput {
-    /// Mindestens 10 Zeichen, Wiederholung gleich (AK-13). Leere Map = gültig.
-    pub fn validate(&self) -> FieldErrors {
-        let mut errors = FieldErrors::new();
-        let len = self.passwort.chars().count();
-        if self.passwort.is_empty() {
-            errors.insert("passwort".into(), "Bitte ein Passwort eingeben.".into());
-        } else if len < PASSWORD_MIN {
-            errors.insert(
-                "passwort".into(),
-                format!("Mindestens {PASSWORD_MIN} Zeichen."),
-            );
-        } else if len > PASSWORD_MAX {
-            errors.insert(
-                "passwort".into(),
-                format!("Höchstens {PASSWORD_MAX} Zeichen."),
-            );
-        }
-        if self.wiederholung != self.passwort {
-            errors.insert(
-                "wiederholung".into(),
-                "Die Wiederholung stimmt nicht mit dem Passwort überein.".into(),
-            );
-        }
-        errors
-    }
-}
-
 /// Benutzer mit den Angaben seiner Adresse (Detailansicht, AK-6).
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
@@ -181,8 +135,9 @@ pub struct User {
     pub id: i64,
     pub benutzername: String,
     pub aktiv: bool,
+    /// Mit einem Zugang im Portal verknüpft – nur dann kann sich der Benutzer anmelden (ANF-026)
+    pub portal_zugang: bool,
     /// Bereits formatiert (TT.MM.JJJJ HH:MM, Zeitzone Europe/Zurich)
-    pub letzte_anmeldung: Option<String>,
     pub erstellt_am: String,
     pub geaendert_am: String,
     pub adresse_id: i64,
@@ -226,7 +181,6 @@ pub struct UserRow {
     pub name: String,
     pub email: Option<String>,
     pub aktiv: bool,
-    pub letzte_anmeldung: Option<String>,
 }
 
 /// Projekt, Teilprojekt oder Vorgang, bei dem der Benutzer hinterlegt ist (AK-31).
@@ -338,27 +292,6 @@ mod tests {
             ..input()
         };
         assert!(i.validate().contains_key("adresse_id"));
-    }
-
-    #[test]
-    fn password_rules() {
-        let p = |a: &str, b: &str| PasswordInput {
-            passwort: a.into(),
-            wiederholung: b.into(),
-        };
-        assert!(p("geheim-1234", "geheim-1234").validate().is_empty());
-        assert!(p("", "").validate().contains_key("passwort"));
-        assert!(
-            p("kurz12345", "kurz12345")
-                .validate()
-                .contains_key("passwort")
-        );
-        let e = p("geheim-1234", "geheim-1235").validate();
-        assert!(!e.contains_key("passwort"));
-        assert!(e.contains_key("wiederholung"));
-        // Umlaute zählen als ein Zeichen
-        assert!(p("ääääääääää", "ääääääääää").validate().is_empty());
-        assert!(!format!("{:?}", p("geheim-1234", "x")).contains("geheim"));
     }
 
     #[test]

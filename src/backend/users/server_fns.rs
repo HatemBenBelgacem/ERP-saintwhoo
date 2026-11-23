@@ -5,12 +5,12 @@
 
 use leptos::prelude::*;
 
-use super::model::{PasswordInput, PickOption, SaveOutcome, UserDetail, UserInput, UserRow};
+use super::model::{PickOption, SaveOutcome, UserDetail, UserInput, UserRow};
 
 #[cfg(feature = "ssr")]
 use super::{
     model::{FieldErrors, Responsibility},
-    password, repository,
+    repository,
 };
 
 /// Webadresse der Detailansicht.
@@ -98,23 +98,19 @@ pub async fn search_person_addresses(
     Ok(repository::search_free_persons(&pool, &suche, &pattern, benutzer_id).await?)
 }
 
-/// Neuen Benutzer anlegen (AK-9 bis AK-13, AK-21). Bei Erfolg Weiterleitung zur Detailansicht.
+/// Neuen Benutzer anlegen (AK-9 bis AK-13). Bei Erfolg Weiterleitung zur Detailansicht.
+/// Ohne Passwort: angemeldet wird nur über das Portal (ANF-026).
 #[server]
-pub async fn create_user(
-    input: UserInput,
-    passwort: PasswordInput,
-) -> Result<SaveOutcome, ServerFnError> {
+pub async fn create_user(input: UserInput) -> Result<SaveOutcome, ServerFnError> {
     let input = input.normalized();
     let mut errors = input.validate();
-    errors.extend(passwort.validate());
     let pool = crate::db::pool()?;
     check_unique(&pool, &input, None, &mut errors).await?;
     if !errors.is_empty() {
         return Ok(SaveOutcome::Invalid(errors));
     }
 
-    let hash = hash_password(passwort.passwort).await?;
-    let id = match repository::insert(&pool, &input, &hash).await {
+    let id = match repository::insert(&pool, &input).await {
         Ok(id) => id,
         Err(e) => return unique_violation(e),
     };
@@ -143,40 +139,11 @@ pub async fn update_user(id: i64, input: UserInput) -> Result<SaveOutcome, Serve
     match repository::update(&pool, id, &input).await {
         Ok(0) => Err(ServerFnError::new("Benutzer nicht gefunden.")),
         Ok(_) => {
-            // ANF-007 AK-15: Gesperrte Benutzer verlieren sofort alle Sitzungen
-            if !input.is_active() {
-                repository::end_all_sessions(&pool, id).await?;
-            }
             leptos_axum::redirect(&format!("{}?gespeichert=1", user_url(id)));
             Ok(SaveOutcome::Saved(id))
         }
         Err(e) => unique_violation(e),
     }
-}
-
-/// Neues Passwort setzen (AK-15, AK-21).
-#[server]
-pub async fn set_user_password(
-    id: i64,
-    passwort: PasswordInput,
-) -> Result<SaveOutcome, ServerFnError> {
-    let errors = passwort.validate();
-    if !errors.is_empty() {
-        return Ok(SaveOutcome::Invalid(errors));
-    }
-    let pool = crate::db::pool()?;
-    let hash = hash_password(passwort.passwort).await?;
-    if repository::set_password(&pool, id, &hash).await? == 0 {
-        return Err(ServerFnError::new("Benutzer nicht gefunden."));
-    }
-    // ANF-007 AK-15: alle Sitzungen beenden – beim eigenen Passwort bleibt nur die laufende bestehen
-    let keep = is_self(id)
-        .then(crate::backend::auth::session::current_token)
-        .flatten()
-        .map(|t| crate::backend::auth::session::token_hash(&t));
-    repository::end_sessions_except(&pool, id, keep.as_deref()).await?;
-    leptos_axum::redirect(&format!("{}?gespeichert=passwort", user_url(id)));
-    Ok(SaveOutcome::Saved(id))
 }
 
 /// Benutzer löschen (AK-18, AK-32). Ist er noch in Projekten hinterlegt, wird das Löschen verhindert.
@@ -270,13 +237,4 @@ fn unique_violation(e: sqlx::Error) -> Result<SaveOutcome, ServerFnError> {
 #[cfg(feature = "ssr")]
 fn is_self(id: i64) -> bool {
     crate::backend::auth::session::current_user().is_some_and(|u| u.benutzer_id == Some(id))
-}
-
-/// Hash rechnen, ohne den Server zu blockieren (Argon2 ist absichtlich langsam).
-#[cfg(feature = "ssr")]
-async fn hash_password(passwort: String) -> Result<String, ServerFnError> {
-    tokio::task::spawn_blocking(move || password::hash(&passwort))
-        .await
-        .map_err(|e| ServerFnError::new(e.to_string()))?
-        .map_err(|e| ServerFnError::new(format!("Passwort konnte nicht gespeichert werden: {e}")))
 }

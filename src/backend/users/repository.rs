@@ -2,7 +2,7 @@
 //!
 //! Hier steht ausschliesslich Datenbankzugriff: keine Prüfregeln, keine Weiterleitungen.
 //! Fehler werden als `sqlx::Error` zurückgegeben; die Server-Funktionen übersetzen sie.
-//! Der Passwort-Hash wird nur geschrieben, nie gelesen (AK-21).
+//! Passwörter und Sitzungen gibt es hier nicht: Anmeldung nur über das Portal (ANF-026).
 
 use sqlx::{AssertSqlSafe, PgPool};
 
@@ -11,8 +11,7 @@ use crate::backend::projects::model::Level;
 use crate::forms::PickOption;
 
 const SELECT_USER: &str = "\
-    SELECT b.id, b.benutzername, b.aktiv, \
-           to_char(b.letzte_anmeldung AT TIME ZONE 'Europe/Zurich', 'DD.MM.YYYY HH24:MI') AS letzte_anmeldung, \
+    SELECT b.id, b.benutzername, b.aktiv, b.portal_benutzer_id IS NOT NULL AS portal_zugang, \
            to_char(b.erstellt_am AT TIME ZONE 'Europe/Zurich', 'DD.MM.YYYY HH24:MI') AS erstellt_am, \
            to_char(b.geaendert_am AT TIME ZONE 'Europe/Zurich', 'DD.MM.YYYY HH24:MI') AS geaendert_am, \
            a.id AS adresse_id, a.nummer AS adresse_nummer, a.anzeigename AS name, \
@@ -31,7 +30,6 @@ fn order_by(sort: &str) -> &'static str {
         "name" => "lower(a.anzeigename)",
         "email" => "lower(a.email)",
         "status" => "NOT b.aktiv", // aufsteigend: aktive zuerst
-        "anmeldung" => "b.letzte_anmeldung",
         _ => "b.benutzername",
     }
 }
@@ -69,8 +67,7 @@ pub async fn list(
     let direction = if descending { "DESC" } else { "ASC" };
     // Geprüft: Sortierung aus fester Liste (order_by), Richtung ist ASC/DESC.
     sqlx::query_as(AssertSqlSafe(format!(
-        "SELECT b.id, b.benutzername, a.anzeigename AS name, a.email, b.aktiv, \
-                to_char(b.letzte_anmeldung AT TIME ZONE 'Europe/Zurich', 'DD.MM.YYYY HH24:MI') AS letzte_anmeldung \
+        "SELECT b.id, b.benutzername, a.anzeigename AS name, a.email, b.aktiv \
          FROM benutzer b JOIN adresse a ON a.id = b.adresse_id \
          WHERE {LIST_WHERE} ORDER BY {} {direction} NULLS LAST, b.benutzername",
         order_by(sortierung)
@@ -170,19 +167,13 @@ pub async fn username_taken(
 }
 
 /// Neuen Benutzer speichern; liefert die Kennung.
-pub async fn insert(
-    pool: &PgPool,
-    input: &UserInput,
-    password_hash: &str,
-) -> Result<i64, sqlx::Error> {
+pub async fn insert(pool: &PgPool, input: &UserInput) -> Result<i64, sqlx::Error> {
     sqlx::query_scalar(
-        "INSERT INTO benutzer (benutzername, adresse_id, aktiv, passwort_hash) \
-         VALUES ($1, $2, $3, $4) RETURNING id",
+        "INSERT INTO benutzer (benutzername, adresse_id, aktiv) VALUES ($1, $2, $3) RETURNING id",
     )
     .bind(&input.benutzername)
     .bind(input.address_id())
     .bind(input.is_active())
-    .bind(password_hash)
     .fetch_one(pool)
     .await
 }
@@ -199,17 +190,6 @@ pub async fn update(pool: &PgPool, id: i64, input: &UserInput) -> Result<u64, sq
     .bind(id)
     .execute(pool)
     .await?;
-    Ok(result.rows_affected())
-}
-
-/// Neuen Passwort-Hash setzen; liefert die Anzahl geänderter Zeilen (0 = nicht gefunden).
-pub async fn set_password(pool: &PgPool, id: i64, password_hash: &str) -> Result<u64, sqlx::Error> {
-    let result =
-        sqlx::query("UPDATE benutzer SET passwort_hash = $1, geaendert_am = now() WHERE id = $2")
-            .bind(password_hash)
-            .bind(id)
-            .execute(pool)
-            .await?;
     Ok(result.rows_affected())
 }
 
@@ -300,34 +280,6 @@ mod tests {
     fn unknown_sort_falls_back_to_username() {
         assert_eq!(order_by("; DROP TABLE benutzer"), "b.benutzername");
     }
-}
-
-// ---------------------------------------------------------------------------------------------
-// Sitzungen der ERP-Datenbank (ANF-007 AK-15). Seit ANF-026 läuft die Anmeldung über die
-// Portal-Datenbank; diese Tabelle wird mit dem Entfernen der Passwörter aus der
-// Mandanten-Datenbank (ANF-026 Schritt 3) aufgelöst.
-
-/// Alle Sitzungen eines Benutzers beenden (gesperrt, ANF-007 AK-15).
-pub async fn end_all_sessions(pool: &PgPool, user_id: i64) -> Result<(), sqlx::Error> {
-    sqlx::query("DELETE FROM sitzung WHERE benutzer_id = $1")
-        .bind(user_id)
-        .execute(pool)
-        .await?;
-    Ok(())
-}
-
-/// Alle Sitzungen eines Benutzers beenden ausser der mit `keep_hash` (Passwort neu gesetzt, ANF-007 AK-15).
-pub async fn end_sessions_except(
-    pool: &PgPool,
-    user_id: i64,
-    keep_hash: Option<&str>,
-) -> Result<(), sqlx::Error> {
-    sqlx::query("DELETE FROM sitzung WHERE benutzer_id = $1 AND merkmal_hash IS DISTINCT FROM $2")
-        .bind(user_id)
-        .bind(keep_hash)
-        .execute(pool)
-        .await?;
-    Ok(())
 }
 
 // ---------------------------------------------------------------------------------------------

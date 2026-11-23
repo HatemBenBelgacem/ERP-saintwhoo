@@ -9,7 +9,12 @@
 | **Modul**     | Benutzer                                          |
 | **Autor**     | Hatem Ben Belgacem                                |
 | **Erstellt**  | 2026-11-12                                        |
-| **Geändert**  | 2026-11-12                                        |
+| **Geändert**  | 2026-11-24                                        |
+
+> **Geändert durch ANF-026 (2026-11-24):** Angemeldet wird nur noch über das **Portal** (E-Mail und Passwort des
+> Zugangs). Benutzer haben in der Mandanten-Datenbank **kein Passwort** und keine „Letzte Anmeldung“ mehr; Passwort
+> setzen (AK-15) entfällt, das eigene Passwort wird im Portal geändert (ANF-026 AK-28). Neu zeigt die Detailansicht,
+> ob der Benutzer mit einem Zugang im Portal verknüpft ist (`portal_benutzer_id`).
 
 ## 1. Beschreibung
 
@@ -83,7 +88,7 @@ Einstellungsnavigation (ANF-001) unter dem Pfad `/einstellungen/benutzer`.
 **Liste (Anzeigen)**
 - [x] **AK-1:** Gegeben der Eintrag „Benutzer“ in der Einstellungsnavigation, wenn der Benutzer ihn
   anklickt, dann erscheint eine Tabelle aller Benutzer mit den Spalten Benutzername, Name (Anzeigename
-  der Adresse), E-Mail (aus der Adresse), Status und Letzte Anmeldung.
+  der Adresse), E-Mail (aus der Adresse) und Status. *(„Letzte Anmeldung“ entfällt, ANF-026.)*
 - [x] **AK-2:** Gegeben die Benutzerliste, wenn ein Suchbegriff eingegeben wird, dann zeigt die Liste nur
   Benutzer, deren Benutzername, Name oder E-Mail den Begriff enthält (Gross-/Kleinschreibung egal).
 - [x] **AK-3:** Gegeben die Benutzerliste, dann kann nach Status gefiltert werden: alle, aktiv, gesperrt.
@@ -94,7 +99,7 @@ Einstellungsnavigation (ANF-001) unter dem Pfad `/einstellungen/benutzer`.
 
 **Detailansicht (Anzeigen)**
 - [x] **AK-6:** Gegeben die Benutzerliste, wenn eine Zeile angeklickt wird, dann öffnet sich die
-  Detailansicht unter `/einstellungen/benutzer/<kennung>` mit Benutzername, Status, Letzte Anmeldung,
+  Detailansicht unter `/einstellungen/benutzer/<kennung>` mit Benutzername, Status, Zugang im Portal (ANF-026),
   Erstellt am, Geändert am sowie den Angaben der verknüpften Adresse (Nummer, Name, E-Mail, Telefon,
   Mobiltelefon).
 - [x] **AK-7:** Gegeben die Detailansicht, dann führt ein Verweis auf die verknüpfte Adresse zu deren
@@ -107,8 +112,7 @@ Einstellungsnavigation (ANF-001) unter dem Pfad `/einstellungen/benutzer`.
   leeres Formular in einem Modal-Fenster (Webadresse `/einstellungen/benutzer?neu=1`).
 - [x] **AK-10:** Gegeben das Formular, dann wird die Adresse über ein Suchfeld (`SearchPicker`) gewählt.
   Angeboten werden nur Adressen vom Typ „Person“, die noch **keinem** Benutzer zugeordnet sind.
-- [x] **AK-11:** Gegeben das Formular, dann sind Benutzername, Adresse und Passwort (mit Wiederholung)
-  Pflicht. Der Status ist standardmässig „aktiv“.
+- [x] **AK-11:** Gegeben das Formular, dann sind Benutzername und Adresse Pflicht *(Passwort entfällt, ANF-026)*. Der Status ist standardmässig „aktiv“.
 - [x] **AK-12:** Gegeben ein gültig ausgefülltes Formular, wenn gespeichert wird, dann wird der Benutzer
   angelegt, eine Erfolgsmeldung erscheint und die Detailansicht des neuen Benutzers öffnet sich.
 - [x] **AK-13:** Gegeben ein ungültiges Formular, wenn gespeichert wird, dann wird nichts gespeichert und
@@ -116,7 +120,7 @@ Einstellungsnavigation (ANF-001) unter dem Pfad `/einstellungen/benutzer`.
   - Benutzername leer, zu lang oder mit unerlaubten Zeichen (erlaubt: Kleinbuchstaben, Ziffern, `.`, `-`, `_`)
   - Benutzername bereits vergeben (Gross-/Kleinschreibung egal)
   - Adresse fehlt, ist keine Person oder ist bereits einem anderen Benutzer zugeordnet
-  - Passwort kürzer als 10 Zeichen oder Wiederholung stimmt nicht überein
+  - ~~Passwort kürzer als 10 Zeichen oder Wiederholung stimmt nicht überein~~ *(entfällt, ANF-026)*
 
   Die Prüfung erfolgt auf dem Server (Prüfregeln in `model.rs`); die Datenbank sichert die
   Eindeutigkeit von Benutzername und Adresse zusätzlich ab.
@@ -126,7 +130,7 @@ Einstellungsnavigation (ANF-001) unter dem Pfad `/einstellungen/benutzer`.
   Formular mit den aktuellen Werten in einem Modal-Fenster
   (Webadresse `/einstellungen/benutzer/<kennung>?bearbeiten=1`). Benutzername, Adresse und Status sind
   änderbar; die Passwortfelder erscheinen hier nicht.
-- [x] **AK-15:** Gegeben die Detailansicht, wenn auf „Passwort setzen“ geklickt wird, dann öffnet sich ein
+- [x] ~~**AK-15:**~~ *(Entfällt, ANF-026: Passwort ändern im Portal, ANF-026 AK-28.)* Gegeben die Detailansicht, wenn auf „Passwort setzen“ geklickt wird, dann öffnet sich ein
   eigenes Modal-Fenster (Webadresse `…?passwort=1`) mit Passwort und Wiederholung. Es gelten dieselben
   Regeln wie beim Anlegen.
 - [x] **AK-16:** Gegeben ein aktiver Benutzer, wenn der Status auf „gesperrt“ gesetzt wird, dann bleibt
@@ -147,7 +151,7 @@ Einstellungsnavigation (ANF-001) unter dem Pfad `/einstellungen/benutzer`.
   auf „Firma“ geändert werden soll, dann wird das verhindert und eine Meldung nennt den Benutzer.
 
 **Sicherheit**
-- [x] **AK-21:** Passwörter werden nie im Klartext gespeichert, sondern nur als Hash mit einem
+- [x] **AK-21:** *(Gilt seit ANF-026 für die Zugänge der Portal-Datenbank.)* Passwörter werden nie im Klartext gespeichert, sondern nur als Hash mit einem
   anerkannten Verfahren (Argon2id) mit Salz. Hash und Passwort verlassen den Server nie
   (nicht in Liste, Detail oder Server-Antworten).
 
@@ -204,9 +208,8 @@ Tabelle `benutzer`:
 | Kennung (`id`) | Ganzzahl | Ja | Technischer Schlüssel, automatisch |
 | Benutzername (`benutzername`) | Text (50) | Ja | Eindeutig (ohne Beachtung der Gross-/Kleinschreibung), nur `a–z`, `0–9`, `.`, `-`, `_` |
 | Adresse (`adresse_id`) | Fremdschlüssel → `adresse` | Ja | **Eindeutig** (`UNIQUE`) → 1:1; nur Typ „Person“; ohne `ON DELETE CASCADE` |
-| Passwort-Hash (`passwort_hash`) | Text | Ja | Argon2id, nie im Klartext |
+| Zugang im Portal (`portal_benutzer_id`) | Ganzzahl | Nein | Verknüpfung zum Zugang der Portal-Datenbank (ANF-026), eindeutig |
 | Aktiv (`aktiv`) | Wahrheitswert | Ja | Standard `true`; `false` = gesperrt |
-| Letzte Anmeldung (`letzte_anmeldung`) | Zeitstempel | Nein | Wird von der Anmeldung gesetzt (spätere Anforderung) |
 | Erstellt am | Zeitstempel | Ja | automatisch |
 | Geändert am | Zeitstempel | Ja | automatisch |
 
@@ -311,3 +314,4 @@ nicht von Hand geprüft.
 | 2026-11-12 | Hatem Ben Belgacem | Umgesetzt |
 | 2026-11-12 | Hatem Ben Belgacem | ANF-006: offene Aufgaben inkl. Aufgaben ohne Projekt, Löschschutz erweitert |
 | 2026-11-12 | Hatem Ben Belgacem | ANF-007: Sitzungen beim Sperren/Passwort setzen beenden, sich nicht selbst sperren/löschen, „Letzte Anmeldung“ |
+| 2026-11-24 | Hatem Ben Belgacem | ANF-026: kein Passwort und keine „Letzte Anmeldung“ mehr (AK-1, AK-6, AK-11, AK-13, AK-15), Zugang im Portal |

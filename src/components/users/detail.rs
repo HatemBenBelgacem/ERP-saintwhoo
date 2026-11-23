@@ -4,7 +4,7 @@ use leptos::prelude::*;
 use leptos_meta::Title;
 use leptos_router::hooks::{use_params_map, use_query_map};
 
-use super::form::{PasswordModal, UserEditModal};
+use super::form::UserEditModal;
 use crate::backend::projects::model::Level;
 use crate::backend::tasks::model::{TaskItem, user_tasks_url};
 use crate::backend::users::model::{
@@ -71,13 +71,16 @@ fn UserView(detail: UserDetail) -> impl IntoView {
     let base = use_base_href();
     let confirm_open = RwSignal::new(false);
     let edit_open = move || query.read().get("bearbeiten").is_some();
-    let password_open = move || query.read().get("passwort").is_some();
     let saved = move || query.read().get("gespeichert");
     let edit_user = user.clone();
-    let password_user = user.clone();
     let u = user.clone();
     let address_user = user.clone();
-    let last_login = user.letzte_anmeldung.clone();
+    // ANF-026: Anmelden kann sich nur ein Benutzer mit Zugang im Portal
+    let portal_access = if user.portal_zugang {
+        "Ja – meldet sich über das Portal an"
+    } else {
+        "Nein"
+    };
 
     view! {
         <Title text=format!("{} – Benutzer – uniqwork", user.benutzername)/>
@@ -88,10 +91,8 @@ fn UserView(detail: UserDetail) -> impl IntoView {
                 (user.benutzername.clone(), None),
             ]/>
 
-            {move || saved().map(|what| view! {
-                <div role="alert" class="alert alert-success">
-                    {if what == "passwort" { "Passwort gesetzt." } else { "Benutzer gespeichert." }}
-                </div>
+            {move || saved().map(|_| view! {
+                <div role="alert" class="alert alert-success">"Benutzer gespeichert."</div>
             })}
 
             <div class="flex flex-wrap items-start justify-between gap-2">
@@ -107,9 +108,6 @@ fn UserView(detail: UserDetail) -> impl IntoView {
                         <IconView icon=Icon::Pencil/>
                         "Bearbeiten"
                     </a>
-                    <a href=move || with_params(&base.get(), &[("passwort", "1".into())]) class="btn btn-outline">
-                        "Passwort setzen"
-                    </a>
                     <button type="button" class="btn btn-outline btn-error" on:click=move |_| confirm_open.set(true)>
                         <IconView icon=Icon::Trash/>
                         "Löschen"
@@ -121,7 +119,7 @@ fn UserView(detail: UserDetail) -> impl IntoView {
                 <Section title="Zugang">
                     <Field label="Benutzername" value=Some(u.benutzername.clone())/>
                     <Field label="Status" value=Some(status_label(u.aktiv).to_string())/>
-                    <Field label="Letzte Anmeldung" value=last_login/>
+                    <Field label="Zugang im Portal" value=Some(portal_access.to_string())/>
                 </Section>
                 <AddressSection user=address_user/>
             </div>
@@ -133,9 +131,8 @@ fn UserView(detail: UserDetail) -> impl IntoView {
             </p>
         </div>
 
-        // AK-14, AK-15: Bearbeiten und Passwort im Modal-Fenster
+        // AK-14: Bearbeiten im Modal-Fenster
         {move || edit_open().then(|| view! { <UserEditModal user=edit_user.clone()/> })}
-        {move || password_open().then(|| view! { <PasswordModal user=password_user.clone()/> })}
 
         <DeleteDialog user open=confirm_open/>
     }

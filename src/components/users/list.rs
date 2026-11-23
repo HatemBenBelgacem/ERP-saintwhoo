@@ -210,7 +210,6 @@ fn UserTable(rows: Vec<UserRow>, state: ListState) -> impl IntoView {
                     <td><a href=href class="link link-hover">{row.name}</a></td>
                     <td>{row.email}</td>
                     <td><span class=status_badge(row.aktiv)>{status_label(row.aktiv)}</span></td>
-                    <td class="whitespace-nowrap">{row.letzte_anmeldung.unwrap_or_else(|| "–".into())}</td>
                 </tr>
             }
         })

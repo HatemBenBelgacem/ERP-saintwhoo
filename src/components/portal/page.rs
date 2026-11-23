@@ -1,16 +1,19 @@
-//! Portal-Übersicht `/portal` (ANF-026 AK-4, AK-10, AK-19).
+//! Portal-Übersicht `/portal` (ANF-026 AK-4, AK-10, AK-19, AK-28): Datenbank, Mandant und eigener Zugang.
 
 use leptos::prelude::*;
 use leptos_meta::Title;
 use leptos_router::hooks::use_query_map;
 
+use crate::backend::auth::model::PASSWORD_MIN;
 use crate::backend::auth::model::{CurrentUser, SessionTenant, TENANT_PARAM, TENANT_READY};
-use crate::backend::auth::server_fns::get_current_user;
+use crate::backend::auth::server_fns::{ChangePassword, get_current_user};
 use crate::backend::company::model::FieldErrors;
 use crate::backend::portal::model::STATUS_FAILED;
 use crate::backend::portal::server_fns::{CreateDatabase, DefineTenant};
 use crate::components::settings::NewAddressFields;
-use crate::forms::{Modal, TextField, field_errors, server_error, use_base_href, with_params};
+use crate::forms::{
+    ErrorText, Modal, TextField, field_errors, server_error, use_base_href, with_params,
+};
 use crate::icons::{Icon, IconView};
 use crate::layout::UserMenu;
 
@@ -55,8 +58,14 @@ pub fn PortalPage() -> impl IntoView {
 
 #[component]
 fn PortalContent(user: CurrentUser, create: ServerAction<CreateDatabase>) -> impl IntoView {
+    let query = use_query_map();
+    let base = use_base_href();
+    let email = user.email.clone();
     view! {
         <h1 class="text-2xl font-semibold">"Willkommen, " {user.name.clone()}</h1>
+        {move || (query.read().get("gespeichert").as_deref() == Some("passwort")).then(|| view! {
+            <div role="status" class="alert alert-success">"Passwort geändert. Ihre anderen Sitzungen wurden beendet."</div>
+        })}
         <div class="card bg-base-100 shadow">
             <div class="card-body">
                 <h2 class="card-title">
@@ -72,6 +81,79 @@ fn PortalContent(user: CurrentUser, create: ServerAction<CreateDatabase>) -> imp
                 })}
             </div>
         </div>
+        // AK-28: eigener Zugang, Passwort ändern
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <h2 class="card-title">
+                    <IconView icon=Icon::User/>
+                    "Ihr Zugang"
+                </h2>
+                <p>"Anmeldung mit " <span class="font-medium">{email}</span></p>
+                <div class="card-actions">
+                    <a href=move || with_params(&base.get(), &[("passwort", "1".into())]) class="btn btn-outline">
+                        "Passwort ändern"
+                    </a>
+                </div>
+            </div>
+        </div>
+        {move || query.read().get("passwort").is_some().then(|| view! { <ChangePasswordModal/> })}
+    }
+}
+
+/// Modal-Fenster „Passwort ändern“ (ANF-026 AK-28, Webadresse `?passwort=1`).
+#[component]
+fn ChangePasswordModal() -> impl IntoView {
+    let action = ServerAction::<ChangePassword>::new();
+    let close = use_base_href();
+    let errors: Signal<FieldErrors> = Signal::derive(move || field_errors(action.value().get()));
+    let field = move |name: &'static str,
+                      form_name: &'static str,
+                      label: &'static str,
+                      autocomplete: &'static str| {
+        let has_error = move || errors.read().contains_key(name);
+        view! {
+            <fieldset class="fieldset">
+                <legend class="fieldset-legend">{label} " *"</legend>
+                <input
+                    type="password"
+                    name=form_name
+                    autocomplete=autocomplete
+                    maxlength=200
+                    class="input w-full"
+                    class:input-error=has_error
+                    aria-invalid=move || has_error().then_some("true")
+                />
+                <ErrorText field=name errors/>
+            </fieldset>
+        }
+    };
+
+    view! {
+        <Modal title="Passwort ändern".to_string() close_href=close.into()>
+            // Per POST, Passwörter nie in der Webadresse
+            <ActionForm action=action>
+                <div class="flex flex-col gap-4">
+                    {move || server_error(action.value().get()).map(|e| view! { <div role="alert" class="alert alert-error">{e}</div> })}
+                    {move || errors.read().get(crate::backend::auth::model::FORM_ERROR).cloned().map(|e| view! {
+                        <div role="alert" class="alert alert-error">{e}</div>
+                    })}
+                    {field("aktuell", "aktuell", "Bisheriges Passwort", "current-password")}
+                    <div class="grid gap-x-4 md:grid-cols-2">
+                        {field("passwort", "passwort[passwort]", "Neues Passwort", "new-password")}
+                        {field("wiederholung", "passwort[wiederholung]", "Neues Passwort wiederholen", "new-password")}
+                    </div>
+                    <p class="text-sm text-base-content/60">
+                        {format!("Mindestens {PASSWORD_MIN} Zeichen. * Pflichtfeld. Ihre anderen Sitzungen werden danach beendet.")}
+                    </p>
+                    <div class="modal-action mt-0">
+                        <a href=move || close.get() class="btn btn-ghost">"Abbrechen"</a>
+                        <button type="submit" class="btn btn-primary" disabled=move || action.pending().get()>
+                            {move || if action.pending().get() { "Speichern …" } else { "Speichern" }}
+                        </button>
+                    </div>
+                </div>
+            </ActionForm>
+        </Modal>
     }
 }
 
