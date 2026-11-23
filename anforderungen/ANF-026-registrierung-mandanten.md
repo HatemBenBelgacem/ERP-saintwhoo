@@ -40,7 +40,9 @@ Ablauf:
         (adresse, projekt, konto, firma, benutzer …)
 ```
 
-Die **Portal-Datenbank** enthält nur Zugänge, Sitzungen und das Verzeichnis der Mandanten – keine ERP-Daten.
+Die **Registrierung läuft in einer eigenen Datenbank**, der **Portal-Datenbank**. Sie enthält nur Zugänge,
+Sitzungen und das Verzeichnis der Mandanten – keine ERP-Daten. Sie besteht schon vor der ersten Registrierung
+und ist unabhängig davon, ob und wie viele Mandanten-Datenbanken es gibt.
 Jede **Mandanten-Datenbank** enthält das bisherige ERP (alle Migrationen aus `migrations/`).
 
 ## 2. Benutzergeschichten
@@ -71,61 +73,75 @@ Jede **Mandanten-Datenbank** enthält das bisherige ERP (alle Migrationen aus `m
 - [ ] **AK-5:** Das Passwort wird nur als Hash gespeichert (Verfahren wie ANF-007); Schutz gegen
   wiederholte Fehlversuche wie ANF-007.
 
+**Eigene Datenbank für die Registrierung (Portal-Datenbank)**
+- [ ] **AK-6:** Registrierung, Anmeldung und Sitzungen laufen in einer **eigenen Datenbank**
+  `uniqwork_portal`, getrennt von allen Mandanten-Datenbanken. Die Registrierung schreibt ausschliesslich in
+  diese Datenbank; es wird dabei **keine** Mandanten-Datenbank angelegt oder verändert.
+- [ ] **AK-7:** Die Portal-Datenbank wird über eine eigene Variable `PORTAL_DATABASE_URL` angesprochen und hat
+  eigene Migrationen im Ordner `migrations_portal/`. Die Migrationen in `migrations/` gelten nur für
+  Mandanten-Datenbanken.
+- [ ] **AK-8:** Die Portal-Datenbank enthält keine ERP-Tabellen (Adressen, Projekte, Konten …). Die
+  Mandanten-Datenbanken enthalten keine Zugangsdaten des Portals (E-Mail als Anmeldename, Passwort-Hash,
+  Sitzungen), sondern nur den Verweis `portal_benutzer_id`.
+- [ ] **AK-9:** Die Portal-Datenbank ist die einzige Datenbank, die der Server beim Start selbst anlegt, falls
+  sie fehlt (wie heute `src/db.rs`). Die erste Registrierung funktioniert damit auf einem leeren
+  PostgreSQL-Dienst, ohne dass es schon eine Mandanten-Datenbank gibt.
+
 **Datenbank erstellen**
-- [ ] **AK-6:** Gegeben ein angemeldeter Administrator ohne Datenbank, dann zeigt `/portal` den Hinweis
+- [ ] **AK-10:** Gegeben ein angemeldeter Administrator ohne Datenbank, dann zeigt `/portal` den Hinweis
   „Noch keine Datenbank“ und die Hauptschaltfläche **„Datenbank erstellen“**.
-- [ ] **AK-7:** Wenn der Administrator „Datenbank erstellen“ wählt, dann legt der Server eine neue
+- [ ] **AK-11:** Wenn der Administrator „Datenbank erstellen“ wählt, dann legt der Server eine neue
   PostgreSQL-Datenbank an, führt alle Migrationen aus und trägt den Mandanten mit Status **„Bereit“** in der
   Portal-Datenbank ein. Während des Erstellens zeigt die Seite einen Ladezustand; die Schaltfläche ist gesperrt.
-- [ ] **AK-8:** Der Name der Datenbank wird **vom Server erzeugt** (Muster `uq_m_<laufende Nummer, 6-stellig>`)
+- [ ] **AK-12:** Der Name der Datenbank wird **vom Server erzeugt** (Muster `uq_m_<laufende Nummer, 6-stellig>`)
   und nie aus einer Eingabe übernommen.
-- [ ] **AK-9:** Gegeben ein Fehler beim Erstellen oder bei den Migrationen, dann wird eine halb angelegte
+- [ ] **AK-13:** Gegeben ein Fehler beim Erstellen oder bei den Migrationen, dann wird eine halb angelegte
   Datenbank wieder entfernt, der Mandant erhält Status **„Fehler“**, und der Benutzer sieht eine verständliche
   Meldung mit der Möglichkeit, es erneut zu versuchen.
-- [ ] **AK-10:** Gegeben die vorläufige Regel **„eine Datenbank pro Administrator“** (siehe Offene Fragen),
+- [ ] **AK-14:** Gegeben die vorläufige Regel **„eine Datenbank pro Administrator“** (siehe Offene Fragen),
   wenn bereits eine Datenbank besteht, dann wird „Datenbank erstellen“ nicht angezeigt, und ein direkter
   Aufruf der Server-Funktion wird abgelehnt – auch bei zwei gleichzeitigen Anfragen (Doppelklick) entsteht
   höchstens eine Datenbank. Die Grenze steht als Prüfregel im Modell und ist an einer Stelle änderbar.
-- [ ] **AK-11:** Beim Erstellen wird der Administrator in der neuen Datenbank als **erster aktiver Benutzer**
+- [ ] **AK-15:** Beim Erstellen wird der Administrator in der neuen Datenbank als **erster aktiver Benutzer**
   (ANF-005) mit Adresse vom Typ „Person“ (ANF-002) angelegt, mit den Angaben aus der Registrierung.
 
 **Mandant definieren (Modal-Fenster)**
-- [ ] **AK-12:** Direkt nach erfolgreichem Erstellen öffnet sich das Modal-Fenster **„Mandant definieren“**
+- [ ] **AK-16:** Direkt nach erfolgreichem Erstellen öffnet sich das Modal-Fenster **„Mandant definieren“**
   (`/portal?mandant=<kennung>`), damit Neuladen und Zurück-Taste funktionieren.
-- [ ] **AK-13:** Das Modal-Fenster enthält Firmenname (Pflicht, z. B. „Firma AG“), Zusatz, Strasse, PLZ, Ort,
+- [ ] **AK-17:** Das Modal-Fenster enthält Firmenname (Pflicht, z. B. „Firma AG“), Zusatz, Strasse, PLZ, Ort,
   Land (Vorgabe Schweiz), Telefon, E-Mail, Webseite und UID (optional, Prüfung wie ANF-025).
-- [ ] **AK-14:** Beim Speichern wird in der **Mandanten-Datenbank** eine Adresse vom Typ „Firma“ (ANF-002) und
+- [ ] **AK-18:** Beim Speichern wird in der **Mandanten-Datenbank** eine Adresse vom Typ „Firma“ (ANF-002) und
   die eigene Firma (ANF-025) mit dieser Adresse angelegt; in der Portal-Datenbank wird der Firmenname beim
   Mandanten gespeichert. Danach leitet das System auf die Startseite des ERP weiter.
-- [ ] **AK-15:** Gegeben ein Mandant ohne definierte Firma, dann sind die Seiten des ERP nicht erreichbar:
+- [ ] **AK-19:** Gegeben ein Mandant ohne definierte Firma, dann sind die Seiten des ERP nicht erreichbar:
   der Benutzer wird nach `/portal` geleitet, wo das Modal-Fenster erneut erscheint. Wird es geschlossen,
   zeigt `/portal` den Hinweis „Mandant noch nicht definiert“ mit der Schaltfläche **„Mandant definieren“**.
-- [ ] **AK-16:** Der Firmenname erscheint danach in der Kopfzeile des ERP (bzw. auf `/portal` in der Liste
+- [ ] **AK-20:** Der Firmenname erscheint danach in der Kopfzeile des ERP (bzw. auf `/portal` in der Liste
   der Datenbanken).
 
 **Zugriff und Sicherheit**
-- [ ] **AK-17:** Datenbanken werden nur von einer eigenen PostgreSQL-Rolle mit dem Recht `CREATEDB`
+- [ ] **AK-21:** Datenbanken werden nur von einer eigenen PostgreSQL-Rolle mit dem Recht `CREATEDB`
   angelegt, die nur der Portal-Teil des Servers verwendet. Die Rolle für den laufenden ERP-Betrieb hat
   dieses Recht **nicht**.
-- [ ] **AK-18:** Jede Anfrage an das ERP arbeitet mit der Datenbank des Mandanten aus der Sitzung.
+- [ ] **AK-22:** Jede Anfrage an das ERP arbeitet mit der Datenbank des Mandanten aus der Sitzung.
   Server-Funktionen holen den Verbindungspool weiterhin über `crate::db::pool()`; dieser liefert den Pool
   des Mandanten.
-- [ ] **AK-19:** Gegeben ein Benutzer, der eine fremde Mandanten-Kennung in der Webadresse oder in einer
+- [ ] **AK-23:** Gegeben ein Benutzer, der eine fremde Mandanten-Kennung in der Webadresse oder in einer
   Anfrage einsetzt, dann wird der Zugriff abgelehnt (Antwort wie „nicht gefunden“), ohne zu verraten, ob es
   den Mandanten gibt.
-- [ ] **AK-20:** Beim Serverstart werden ausstehende Migrationen für die Portal-Datenbank und für alle
+- [ ] **AK-24:** Beim Serverstart werden ausstehende Migrationen für die Portal-Datenbank und für alle
   Mandanten-Datenbanken mit Status „Bereit“ ausgeführt.
-- [ ] **AK-21:** Die bisherige **Ersteinrichtung** (ANF-007 AK-21/22) entfällt; ihre Aufgabe übernimmt
-  die Registrierung (AK-4) mit dem Anlegen des ersten Benutzers (AK-11).
+- [ ] **AK-25:** Die bisherige **Ersteinrichtung** (ANF-007 AK-21/22) entfällt; ihre Aufgabe übernimmt
+  die Registrierung (AK-4) mit dem Anlegen des ersten Benutzers (AK-15).
 
 **Nicht-funktional**
-- [ ] **AK-22:** Das Erstellen einer Datenbank inklusive Migrationen dauert auf Railway höchstens 30 Sekunden.
-- [ ] **AK-23:** Pro Mandant werden höchstens 3 Datenbankverbindungen gleichzeitig gehalten; unbenutzte
+- [ ] **AK-26:** Das Erstellen einer Datenbank inklusive Migrationen dauert auf Railway höchstens 30 Sekunden.
+- [ ] **AK-27:** Pro Mandant werden höchstens 3 Datenbankverbindungen gleichzeitig gehalten; unbenutzte
   Pools werden nach einer Wartezeit geschlossen, damit die Verbindungsgrenze von PostgreSQL eingehalten wird.
 
 ## 4. Daten / Felder
 
-**Portal-Datenbank `uniqwork_portal`** (Variable `PORTAL_DATABASE_URL`)
+**Portal-Datenbank `uniqwork_portal`** (Variable `PORTAL_DATABASE_URL`, Migrationen in `migrations_portal/`)
 
 `portal_benutzer`
 
@@ -145,7 +161,7 @@ Jede **Mandanten-Datenbank** enthält das bisherige ERP (alle Migrationen aus `m
 | `id` | Zahl | Ja | Technischer Schlüssel, Grundlage für den Datenbanknamen |
 | `besitzer_id` | Verweis auf `portal_benutzer` | Ja | Administrator, der die Datenbank erstellt hat |
 | `datenbankname` | Text | Ja | vom Server erzeugt, eindeutig, z. B. `uq_m_000001` |
-| `firmenname` | Text | Nein | leer, bis der Mandant definiert ist (AK-14) |
+| `firmenname` | Text | Nein | leer, bis der Mandant definiert ist (AK-18) |
 | `status` | Auswahl | Ja | `wird_erstellt`, `bereit`, `fehler` |
 | `erstellt_am` | Zeitpunkt | Ja | |
 
@@ -153,6 +169,7 @@ Jede **Mandanten-Datenbank** enthält das bisherige ERP (alle Migrationen aus `m
 
 **Mandanten-Datenbank:** unverändert die Tabellen aus `migrations/`. Die Tabelle `benutzer` erhält einen
 Verweis `portal_benutzer_id`, damit der angemeldete Zugang dem Benutzer im ERP zugeordnet werden kann.
+Passwort und Sitzungen stehen nur in der Portal-Datenbank (AK-8).
 
 ## 5. Abhängigkeiten
 
@@ -173,14 +190,16 @@ Verweis `portal_benutzer_id`, damit der angemeldete Zugang dem Benutzer im ERP z
 ## 7. Offene Fragen
 
 - [ ] **Darf ein Administrator mehrere Datenbanken erstellen?** *(vorläufig: genau eine; das Datenmodell
-  erlaubt mehrere, die Grenze ist eine Prüfregel, AK-10. Bei mehreren braucht es nach der Anmeldung eine
+  erlaubt mehrere, die Grenze ist eine Prüfregel, AK-14. Bei mehreren braucht es nach der Anmeldung eine
   Auswahl der Datenbank und einen Wechsel in der Kopfzeile.)*
 - [ ] Muss die E-Mail-Adresse bei der Registrierung bestätigt werden (Bestätigungsmail)? *(vorläufig: nein)*
 - [ ] Ist die Registrierung für alle offen oder nur mit Einladungscode? Schutz gegen massenhafte
   Registrierungen (z. B. Begrenzung pro IP-Adresse, Prüfaufgabe)? *(vorläufig: offen, mit Begrenzung wie ANF-007)*
 - [ ] Wie wird die heute bestehende Datenbank (mit echten Daten) zum ersten Mandanten?
 - [ ] Liegen Portal- und Mandanten-Datenbanken im selben PostgreSQL-Dienst auf Railway?
-  *(vorläufig: ja; Grenze der Verbindungen und des Speichers beachten, AK-23)*
+  *(vorläufig: ja; Grenze der Verbindungen und des Speichers beachten, AK-27)*
+- [ ] Was geschieht mit Passwort und Sitzungen der Benutzerverwaltung in der Mandanten-Datenbank
+  (ANF-005, ANF-007)? *(vorläufig: entfallen dort, Anmeldung nur über die Portal-Datenbank)*
 - [ ] Ab welcher Anzahl Mandanten ist eine andere Aufteilung (Schema pro Mandant) zu prüfen?
 
 ## 8. Änderungshistorie
@@ -188,3 +207,4 @@ Verweis `portal_benutzer_id`, damit der angemeldete Zugang dem Benutzer im ERP z
 | Datum      | Autor              | Änderung        |
 |------------|--------------------|-----------------|
 | 2026-11-23 | Hatem Ben Belgacem | Erstellt        |
+| 2026-11-23 | Hatem Ben Belgacem | Registrierung in eigener Portal-Datenbank (AK-6 bis AK-9), folgende AK neu nummeriert |
