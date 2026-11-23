@@ -9,5 +9,6 @@ pub mod portal;
 pub mod projects;
 pub mod purchase_orders;
 pub mod settings;
+pub mod site_plans;
 pub mod tasks;
 pub mod users;

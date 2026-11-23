@@ -8,6 +8,7 @@ Stand: 2026-11-24
 
 ## Offen
 
+- [ ] ANF-027: offene Fragen klären (eigene Seite, Speichern, „Verpflegungsstand“, Nutzung der Esri-Bilder, Bibliotheken aus dem Netz, Vorgabe-Standort) und im Browser mit Satellitenbild prüfen
 - [ ] ANF-026: vor Inbetriebnahme klären, wie die bestehende Datenbank zum ersten Mandanten wird
 - [ ] ANF-025 Rest: Bankkonten als Verweis (mit ANF-015), MWST-Nummer nur bei MWST-Pflicht (mit ANF-012), Absender in Druckansichten und Buchungssperre ohne Firma (mit ANF-018)
 - [ ] ANF-011 Rest: Sperre von Nummer/Kontoart nach Buchungen (mit ANF-017), Vorgabe-MWST-Code (mit ANF-012)
@@ -31,6 +32,7 @@ Stand: 2026-11-24
 
 ## Erledigt
 
+- [x] ANF-027 Geländeplan eines Projekts erfasst und umgesetzt: 3D-Karte (MapLibre + Three.js) unter `/projekte/<Kennung>/gelaendeplan`, Bühnen/Verpflegungsstände/Festzelte platzieren, drehen, löschen, Rasenfläche abstecken (m², Lageprüfung mit `geo`), Standort im Modal-Fenster, Speichern in `gelaendeplan*`
 - [x] ANF-026 Schritt 3b: Mandanten-Datenbanken ohne Zugangsdaten (Passwort, letzte Anmeldung, Sitzungen), Benutzerverwaltung ohne Passwort, „Passwort ändern“ im Portal – ANF-026 erledigt
 - [x] ANF-026 Schritt 4: Modal-Fenster „Mandant definieren“ (`/portal?mandant=…`), Firma und Firmenadresse in der Mandanten-Datenbank, Firmenname in der Kopfzeile
 - [x] ANF-026 Schritt 3: Datenbank erstellen (`/portal`), Rolle `uniqwork_erp` ohne `CREATEDB`, Pool je Mandant, Migrationen und Aufräumen beim Serverstart, erster Benutzer mit `portal_benutzer_id`

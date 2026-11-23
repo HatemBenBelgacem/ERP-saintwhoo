@@ -304,7 +304,14 @@ fn Header(title: String, subtitle: String, status: String, level: Level, id: i64
                     <span class=status_badge(&status)>{status_label(&status).to_string()}</span>
                 </p>
             </div>
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-2">
+                // ANF-027: Geländeplan gibt es nur für Projekte
+                {(level == Level::Project).then(|| view! {
+                    <a href=format!("/projekte/{id}/gelaendeplan") class="btn">
+                        <IconView icon=Icon::Map/>
+                        "Geländeplan"
+                    </a>
+                })}
                 <a href=edit class="btn btn-primary">
                     <IconView icon=Icon::Pencil/>
                     "Bearbeiten"
