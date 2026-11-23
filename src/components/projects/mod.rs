@@ -5,5 +5,5 @@ mod detail;
 mod form;
 mod list;
 
-pub use detail::{ElementDetailPage, ProjectDetailPage};
+pub use detail::{ElementDetailPage, NotFound, ProjectDetailPage};
 pub use list::ProjectListPage;

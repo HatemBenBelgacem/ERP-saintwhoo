@@ -14,6 +14,7 @@ use crate::components::{
     projects::{ElementDetailPage, ProjectDetailPage, ProjectListPage},
     purchase_orders::{OrderDetailPage, OrderListPage},
     settings::{AccountsPage, CompanyPage, GeneralSettingsPage},
+    site_plans::SitePlanPage,
     tasks::{TaskDetailPage, TaskListPage},
     users::{UserDetailPage, UserListPage},
 };
@@ -105,6 +106,11 @@ pub fn App() -> impl IntoView {
                         view=|| view! { <ElementDetailPage level=Level::Task/> }
                     />
                     <Route path=(StaticSegment("projekte"), ParamSegment("id")) view=ProjectDetailPage/>
+                    // ANF-027 Geländeplan eines Projekts (3D-Karte), Standort im Modal-Fenster (?standort=1)
+                    <Route
+                        path=(StaticSegment("projekte"), ParamSegment("id"), StaticSegment("gelaendeplan"))
+                        view=SitePlanPage
+                    />
                     // ANF-006 Aufgaben eines Benutzers und Aufgaben ohne Projekt (?benutzer=…, ?neu=1, ?bearbeiten=1)
                     <Route path=StaticSegment("aufgaben") view=TaskListPage/>
                     <Route path=(StaticSegment("aufgaben"), ParamSegment("id")) view=TaskDetailPage/>

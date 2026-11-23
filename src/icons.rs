@@ -22,6 +22,7 @@ pub enum Icon {
     Logout,
     Ledger,
     Building,
+    Map,
 }
 
 impl Icon {
@@ -55,6 +56,7 @@ impl Icon {
             Icon::Building => {
                 "M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 9h4a1 1 0 0 1 1 1v11M3 21h18M8 8h3M8 12h3M8 16h3"
             }
+            Icon::Map => "M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2ZM9 4v14M15 6v14",
             Icon::Ledger => {
                 "M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5v-15ZM5 19.5A1.5 1.5 0 0 0 6.5 21H19M9 7h6M9 11h4"
             }

@@ -13,6 +13,8 @@ leptos_router = "0.8"
 serde = { version = "1", features = ["derive"] }
 # ANF-025: Datei hochladen (Logo) über Server-Funktionen mit MultipartFormData
 server_fn = { version = "0.8", features = ["multipart"] }
+# ANF-027: Flächen und Lage im Geländeplan (Server und Browser)
+geo = { version = "0.33", default-features = false }
 
 # nur Server (ssr)
 leptos_axum = { version = "0.8", optional = true }
@@ -26,13 +28,22 @@ sha2 = { version = "0.10", optional = true }
 # nur Browser (hydrate)
 console_error_panic_hook = { version = "0.1", optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
+# ANF-027: Daten an die Kartenbrücke (map_bridge.js) übergeben
+serde-wasm-bindgen = { version = "0.6", optional = true }
+js-sys = { version = "0.3", optional = true }
 
 [dev-dependencies]
 # Modultests: prüfen, was an den Browser gesendet wird (ANF-026)
 serde_json = "1"
 
 [features]
-hydrate = ["leptos/hydrate", "dep:console_error_panic_hook", "dep:wasm-bindgen"]
+hydrate = [
+    "leptos/hydrate",
+    "dep:console_error_panic_hook",
+    "dep:wasm-bindgen",
+    "dep:serde-wasm-bindgen",
+    "dep:js-sys",
+]
 ssr = [
     "dep:axum",
     "dep:tokio",

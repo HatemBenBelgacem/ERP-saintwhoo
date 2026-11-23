@@ -9,6 +9,7 @@ pub mod finance;
 pub mod portal;
 pub mod projects;
 pub mod purchase_orders;
+pub mod site_plans;
 pub mod system;
 pub mod tasks;
 pub mod users;
