@@ -3,11 +3,29 @@
 //! `MapView` gibt es in beiden Übersetzungen, damit die Ansicht ohne `cfg` auskommt; auf dem
 //! Server hat sie keine Wirkung (Effekte laufen dort ohnehin nicht).
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::backend::site_plans::model::{
     AddressHit, Corner, MeasureKind, SitePlan, format_area, format_distance, measure,
 };
+
+/// Bedienung auf der Karte, gemeldet von `map_bridge.js` (Meter relativ zum Ursprung).
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(tag = "type", rename_all = "lowercase")]
+pub enum MapEvent {
+    /// Klick auf eine freie Stelle (kein Element getroffen).
+    Click { x: f64, z: f64 },
+    /// Element angeklickt bzw. zum Ziehen angefasst.
+    Pick { index: usize },
+    /// Element wird gezogen: neuer Mittelpunkt.
+    Drag { index: usize, x: f64, z: f64 },
+    /// Ziehen beendet; `start_*` ist die Lage vor dem Ziehen.
+    Drop {
+        index: usize,
+        start_x: f64,
+        start_z: f64,
+    },
+}
 
 /// Ein Element, wie es die 3D-Szene braucht.
 #[derive(Serialize)]
@@ -22,6 +40,8 @@ struct SceneElement {
     height_m: f64,
     /// Steht nicht ganz auf der Rasenfläche → Modell halbdurchsichtig.
     outside: bool,
+    /// Ausgewählt → hervorgehoben.
+    selected: bool,
 }
 
 /// Beschriftung auf der Karte (z. B. Länge eines Messabschnitts).
@@ -94,19 +114,36 @@ impl SceneMeasure {
 /// Inhalt der 3D-Szene.
 #[derive(Serialize)]
 struct Scene {
+    /// Elemente lassen sich anfassen und ziehen (nicht beim Abstecken und Messen).
+    interactive: bool,
     elements: Vec<SceneElement>,
     corners: Vec<[f64; 2]>,
     measure: Option<SceneMeasure>,
 }
 
+/// Zustand der Bedienung, der nicht zum Plan gehört.
+pub struct ViewState<'a> {
+    /// Laufende Messung (Art und Punkte).
+    pub measurement: Option<(MeasureKind, &'a [Corner])>,
+    /// Ausgewähltes Element (Index in `plan.elements`).
+    pub selected: Option<usize>,
+    /// Elemente lassen sich anfassen und ziehen.
+    pub interactive: bool,
+}
+
 impl Scene {
-    fn from_plan(plan: &SitePlan, measurement: Option<(MeasureKind, &[Corner])>) -> Self {
+    fn from_plan(plan: &SitePlan, view: &ViewState) -> Self {
         Self {
-            measure: measurement.and_then(|(kind, points)| SceneMeasure::new(kind, points)),
+            interactive: view.interactive,
+            measure: view
+                .measurement
+                .and_then(|(kind, points)| SceneMeasure::new(kind, points)),
             elements: plan
                 .elements
                 .iter()
-                .map(|e| SceneElement {
+                .enumerate()
+                .map(|(i, e)| SceneElement {
+                    selected: view.selected == Some(i),
                     kind: e.kind.key(),
                     x: e.x,
                     z: e.z,
@@ -135,7 +172,7 @@ mod js {
             container: &JsValue,
             origin_lng: f64,
             origin_lat: f64,
-            on_click: &Closure<dyn FnMut(f64, f64)>,
+            on_event: &Closure<dyn FnMut(JsValue)>,
             on_error: &Closure<dyn FnMut(String)>,
         ) -> SitePlanMap;
 
@@ -162,7 +199,7 @@ mod js {
     /// Karte samt Rückruf-Funktionen; die Rückrufe leben so lange wie die Karte.
     pub struct Handle {
         pub map: SitePlanMap,
-        pub _on_click: Closure<dyn FnMut(f64, f64)>,
+        pub _on_event: Closure<dyn FnMut(JsValue)>,
         pub _on_error: Closure<dyn FnMut(String)>,
     }
 }
@@ -175,23 +212,27 @@ pub struct MapView {
 
 impl MapView {
     /// Erstellt die Karte im Element `container` mit dem Ursprung (Längengrad, Breitengrad).
-    /// `on_click(x, z)` meldet Klicks in Metern relativ zum Ursprung, `on_error` Ladefehler.
+    /// `on_event` meldet Klicks und das Ziehen von Elementen, `on_error` Ladefehler.
     #[cfg(feature = "hydrate")]
     pub fn mount(
         container: &leptos::web_sys::HtmlElement,
         origin: (f64, f64),
-        on_click: impl FnMut(f64, f64) + 'static,
+        mut on_event: impl FnMut(MapEvent) + 'static,
         on_error: impl FnMut(String) + 'static,
     ) -> Self {
         use wasm_bindgen::prelude::*;
-        let on_click = Closure::wrap(Box::new(on_click) as Box<dyn FnMut(f64, f64)>);
+        let on_event = Closure::wrap(Box::new(move |value: JsValue| {
+            if let Ok(event) = serde_wasm_bindgen::from_value::<MapEvent>(value) {
+                on_event(event);
+            }
+        }) as Box<dyn FnMut(JsValue)>);
         let on_error = Closure::wrap(Box::new(on_error) as Box<dyn FnMut(String)>);
         let map =
-            js::SitePlanMap::new(container.as_ref(), origin.0, origin.1, &on_click, &on_error);
+            js::SitePlanMap::new(container.as_ref(), origin.0, origin.1, &on_event, &on_error);
         Self {
             handle: js::Handle {
                 map,
-                _on_click: on_click,
+                _on_event: on_event,
                 _on_error: on_error,
             },
         }
@@ -202,15 +243,15 @@ impl MapView {
     pub fn mount(
         _container: &leptos::web_sys::HtmlElement,
         _origin: (f64, f64),
-        _on_click: impl FnMut(f64, f64) + 'static,
+        _on_event: impl FnMut(MapEvent) + 'static,
         _on_error: impl FnMut(String) + 'static,
     ) -> Self {
         Self {}
     }
 
-    /// Zeichnet Elemente, Rasenfläche und die laufende Messung neu.
-    pub fn sync(&self, plan: &SitePlan, measurement: Option<(MeasureKind, &[Corner])>) {
-        let scene = Scene::from_plan(plan, measurement);
+    /// Zeichnet Elemente, Rasenfläche, Auswahl und die laufende Messung neu.
+    pub fn sync(&self, plan: &SitePlan, view: &ViewState) {
+        let scene = Scene::from_plan(plan, view);
         #[cfg(feature = "hydrate")]
         if let Ok(value) = serde_wasm_bindgen::to_value(&scene) {
             self.handle.map.sync(value);
@@ -263,4 +304,30 @@ pub async fn search_address(_query: String) -> Result<Vec<AddressHit>, String> {
     }
     #[cfg(not(feature = "hydrate"))]
     Err("Die Adresssuche geht nur im Browser.".into())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn map_events_from_json() {
+        let parse = |s: &str| serde_json::from_str::<MapEvent>(s).unwrap();
+        assert_eq!(
+            parse(r#"{"type":"click","x":1.5,"z":-2}"#),
+            MapEvent::Click { x: 1.5, z: -2.0 }
+        );
+        assert_eq!(
+            parse(r#"{"type":"pick","index":3}"#),
+            MapEvent::Pick { index: 3 }
+        );
+        assert_eq!(
+            parse(r#"{"type":"drop","index":0,"start_x":4,"start_z":5}"#),
+            MapEvent::Drop {
+                index: 0,
+                start_x: 4.0,
+                start_z: 5.0
+            }
+        );
+    }
 }

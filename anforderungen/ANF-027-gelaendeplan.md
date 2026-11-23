@@ -101,6 +101,17 @@ Plan mit.
 - [x] **AK-17:** Gegeben eine Messung, dann bleibt sie beim Wechsel zu einem anderen Werkzeug sichtbar;
   „Letzten Punkt entfernen“ und „Messung löschen“ machen sie rückgängig. Messungen gehören nicht zum Plan
   und werden nicht gespeichert.
+- [x] **AK-18:** Gegeben das Werkzeug **„Auswählen und verschieben“** (Vorgabe) oder ein Platzier-Werkzeug,
+  wenn ich ein Element auf der Karte mit der Maus oder einem Finger anfasse und ziehe, dann folgt es dem
+  Zeiger, ohne dass sich die Karte bewegt. Über einem Element zeigt der Mauszeiger „verschieben“. Ein Klick
+  auf ein Element wählt es aus (Rahmen in 3D, markierter Eintrag in der Liste) und platziert kein neues;
+  ein Klick in der Liste wählt ebenfalls aus. Beim Abstecken und Messen lassen sich Elemente nicht ziehen.
+- [x] **AK-19:** Gegeben ein Element, das auf der Rasenfläche steht, wenn ich es so loslasse, dass es nicht
+  mehr ganz darauf steht, dann springt es an die Ausgangslage zurück und ein Hinweis erscheint. Während des
+  Ziehens ist es ausserhalb als „ausserhalb“ markiert und halbdurchsichtig.
+- [x] **AK-20:** Gegeben ein ausgewähltes Element, wenn ich die Pfeiltasten drücke, dann verschiebt es sich
+  um 0,5 m (mit Umschalt um 5 m) nach Osten, Westen, Norden bzw. Süden, nicht über den Rand der
+  Rasenfläche hinaus; Escape hebt die Auswahl auf. In Eingabefeldern und bei offenem Modal-Fenster nicht.
 - [x] **AK-14:** Gegeben die Karte kann nicht geladen werden (z. B. ohne Internet), dann erscheint eine
   Fehlermeldung; der Rest der Seite bleibt bedienbar.
 
@@ -138,7 +149,7 @@ Tabelle `gelaendeplan_eckpunkt`: `reihenfolge`, `x_m`, `z_m` (leer = keine Rasen
 
 - Suche während des Tippens (Vorschläge); die Nutzungsregeln von Nominatim verbieten das.
 - Messungen speichern, Höhen messen, an Elementen oder Eckpunkten einrasten.
-- Verschieben eines Elements per Ziehen, freie Grösse je Element, Auswahl eines Elements durch Klick in 3D.
+- Freie Grösse je Element, Drehen per Ziehen, mehrere Elemente gleichzeitig verschieben.
 - Fertige 3D-Modelle aus Dateien (`.glb` über den `GLTFLoader`); die Modelle werden aus Grundformen gebaut.
 - Mehrere Pläne oder Versionen je Projekt, Druckansicht, Export.
 - Gleichzeitiges Bearbeiten durch mehrere Benutzer (wer zuletzt speichert, gewinnt).
@@ -167,4 +178,5 @@ Vorläufige Annahmen, bis sie geklärt sind:
 |------------|-------|-----------------|
 | 2026-11-23 | Hatem Ben Belgacem | Erstellt und umgesetzt (Vorgabe: Anleitung Leptos + MapLibre + Three.js) |
 | 2026-11-24 | Hatem Ben Belgacem | AK-4: gestaltete 3D-Modelle statt Quadern (Bühne, Verpflegungsstand, Festzelt) |
+| 2026-11-24 | Hatem Ben Belgacem | AK-18 bis AK-20: Elemente auswählen und verschieben (Ziehen mit Maus/Finger, Pfeiltasten) |
 | 2026-11-24 | Hatem Ben Belgacem | AK-12a/b: Adresssuche und Standort-Adresse; AK-15 bis AK-17: Messwerkzeuge Strecke und Fläche; AK-11: Umriss ohne Überschneidung |

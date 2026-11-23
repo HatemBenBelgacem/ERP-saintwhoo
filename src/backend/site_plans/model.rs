@@ -95,6 +95,8 @@ impl ElementKind {
 
 /// Zahl in Metern ohne überflüssige Nachkommastellen, mit Dezimalkomma („2,5“, „10“).
 pub fn format_m(v: f64) -> String {
+    // -0,0 als 0 anzeigen
+    let v = if v.abs() < 0.05 { 0.0 } else { v };
     let s = format!("{v:.1}");
     s.trim_end_matches(".0").replace('.', ",")
 }

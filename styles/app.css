@@ -21,6 +21,7 @@
   --gelaende-flaeche: #22c55e; /* Grün */
   --gelaende-gestell: #374151; /* Anthrazit: Stützen, Bühnenboden, Lautsprecher, Eingang */
   --gelaende-plane: #f8fafc; /* Hell: Zeltwände, Thekenplatte, Streifen des Vordachs */
+  --gelaende-auswahl: #ffffff; /* Weiss: Rahmen um das ausgewählte Element */
   --gelaende-messung: #facc15; /* Gelb: Linien und Punkte der Messwerkzeuge (gut sichtbar auf Luftbildern) */
 }
 
