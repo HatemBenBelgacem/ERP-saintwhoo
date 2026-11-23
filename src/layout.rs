@@ -113,11 +113,12 @@ pub fn UserMenu(user: CurrentUser) -> impl IntoView {
     let logout = ServerAction::<Logout>::new();
     view! {
         <div class="ml-auto flex items-center gap-1 sm:gap-3">
-            <span class="flex items-center gap-2" title=format!("Angemeldet als {}", user.email)>
+            // ANF-026 AK-28: Name führt zum Portal (Datenbank, Zugang, Passwort ändern)
+            <a href="/portal" class="btn btn-ghost btn-sm text-neutral-content" title=format!("Angemeldet als {} – Portal öffnen", user.email)>
                 <IconView icon=Icon::User/>
                 // Auf dem Mobiltelefon nur das Symbol
                 <span class="hidden max-w-48 truncate sm:inline">{user.name.clone()}</span>
-            </span>
+            </a>
             <ActionForm action=logout>
                 <button type="submit" class="btn btn-ghost btn-sm text-neutral-content" aria-label="Abmelden" disabled=move || logout.pending().get()>
                     <IconView icon=Icon::Logout/>

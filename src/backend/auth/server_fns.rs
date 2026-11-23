@@ -6,14 +6,14 @@
 
 use leptos::prelude::*;
 
-use super::model::{CurrentUser, RegistrationInput, SaveOutcome};
-use crate::backend::users::model::PasswordInput;
+use super::model::{CurrentUser, PasswordInput, RegistrationInput, SaveOutcome};
 
 #[cfg(feature = "ssr")]
 use super::{
     model::{
         FORM_ERROR, FieldErrors, MAX_FAILED_ATTEMPTS, MAX_REGISTRATIONS, MSG_EMAIL_TAKEN,
-        MSG_EMPTY, MSG_LOCKED, MSG_TOO_MANY_REGISTRATIONS, MSG_WRONG, PORTAL_PATH,
+        MSG_EMPTY, MSG_LOCKED, MSG_SAME_PASSWORD, MSG_TOO_MANY_REGISTRATIONS, MSG_WRONG,
+        MSG_WRONG_CURRENT, PORTAL_PATH,
     },
     repository, session,
 };
@@ -41,7 +41,7 @@ pub async fn register(
         return Ok(form_error(MSG_TOO_MANY_REGISTRATIONS));
     }
     let pw = passwort.passwort;
-    let hash = tokio::task::spawn_blocking(move || crate::backend::users::password::hash(&pw))
+    let hash = tokio::task::spawn_blocking(move || super::password::hash(&pw))
         .await
         .map_err(|e| ServerFnError::new(e.to_string()))?
         .map_err(|e| {
@@ -95,11 +95,10 @@ pub async fn login(
     let stored = found
         .as_ref()
         .map_or_else(dummy_hash, |(_, hash, _)| hash.clone());
-    let password_ok = tokio::task::spawn_blocking(move || {
-        crate::backend::users::password::verify(&passwort, &stored)
-    })
-    .await
-    .map_err(|e| ServerFnError::new(e.to_string()))?;
+    let password_ok =
+        tokio::task::spawn_blocking(move || super::password::verify(&passwort, &stored))
+            .await
+            .map_err(|e| ServerFnError::new(e.to_string()))?;
 
     let user_id = match found {
         Some((id, _, true)) if password_ok => id,
@@ -139,6 +138,57 @@ pub async fn logout() -> Result<(), ServerFnError> {
     Ok(())
 }
 
+/// Eigenes Passwort ändern (ANF-026 AK-28): bisheriges Passwort bestätigen, neues mit Wiederholung
+/// (Regeln wie bei der Registrierung). Danach enden alle anderen Sitzungen des Zugangs; die laufende bleibt.
+/// Falsche bisherige Passwörter zählen als Fehlversuch (Sperre wie bei der Anmeldung).
+#[server(prefix = "/api/portal")]
+pub async fn change_password(
+    aktuell: String,
+    passwort: PasswordInput,
+) -> Result<SaveOutcome, ServerFnError> {
+    let user = session::require_user()?;
+    let mut errors = passwort.validate();
+    if aktuell.is_empty() {
+        errors.insert(
+            "aktuell".into(),
+            "Bitte das bisherige Passwort eingeben.".into(),
+        );
+    } else if aktuell == passwort.passwort {
+        errors.insert("passwort".into(), MSG_SAME_PASSWORD.into());
+    }
+    if !errors.is_empty() {
+        return Ok(SaveOutcome::Invalid(errors));
+    }
+    let pool = crate::db::portal_pool()?;
+    if repository::recent_failures(&pool, &user.email).await? >= MAX_FAILED_ATTEMPTS {
+        return Ok(form_error(MSG_LOCKED));
+    }
+    let stored = repository::password_hash(&pool, user.portal_id).await?;
+    let current_ok =
+        tokio::task::spawn_blocking(move || super::password::verify(&aktuell, &stored))
+            .await
+            .map_err(|e| ServerFnError::new(e.to_string()))?;
+    if !current_ok {
+        repository::record_failure(&pool, &user.email).await?;
+        let mut errors = FieldErrors::new();
+        errors.insert("aktuell".into(), MSG_WRONG_CURRENT.into());
+        return Ok(SaveOutcome::Invalid(errors));
+    }
+    let new_password = passwort.passwort;
+    let hash = tokio::task::spawn_blocking(move || super::password::hash(&new_password))
+        .await
+        .map_err(|e| ServerFnError::new(e.to_string()))?
+        .map_err(|e| {
+            ServerFnError::new(format!("Passwort konnte nicht gespeichert werden: {e}"))
+        })?;
+    let keep = session::current_token().map(|t| session::token_hash(&t));
+    let mut tx = pool.begin().await?;
+    repository::set_password(&mut tx, user.portal_id, &hash, keep.as_deref()).await?;
+    tx.commit().await?;
+    leptos_axum::redirect(&format!("{PORTAL_PATH}?gespeichert=passwort"));
+    Ok(SaveOutcome::Saved(user.portal_id))
+}
+
 #[cfg(feature = "ssr")]
 fn form_error(message: &str) -> SaveOutcome {
     let mut errors = FieldErrors::new();
@@ -150,10 +200,8 @@ fn form_error(message: &str) -> SaveOutcome {
 #[cfg(feature = "ssr")]
 fn dummy_hash() -> String {
     static HASH: std::sync::OnceLock<String> = std::sync::OnceLock::new();
-    HASH.get_or_init(|| {
-        crate::backend::users::password::hash(&session::new_token()).unwrap_or_default()
-    })
-    .clone()
+    HASH.get_or_init(|| super::password::hash(&session::new_token()).unwrap_or_default())
+        .clone()
 }
 
 #[cfg(test)]
@@ -167,6 +215,7 @@ mod tests {
     fn prefixes_match_middleware_rules() {
         // Abmelden muss ohne Mandant gehen (ANF-026), Registrieren und Anmelden ohne Sitzung.
         assert!(<Logout as ServerFn>::PATH.starts_with(&format!("{PORTAL_API_PREFIX}/")));
+        assert!(<ChangePassword as ServerFn>::PATH.starts_with(&format!("{PORTAL_API_PREFIX}/")));
         for path in [
             <Register as ServerFn>::PATH,
             <Login as ServerFn>::PATH,

@@ -31,7 +31,7 @@ Schlägt ein Szenario fehl, trage es in [task.md](task.md) als offene Aufgabe ei
 | ANF-005 | Benutzer | 35 | Bedienung im Browser noch nicht von Hand geprüft |
 | ANF-006 | Aufgaben | 21 | Bedienung im Browser noch nicht von Hand geprüft |
 | ANF-007 | Anmeldung | 29 | Seit ANF-026 mit E-Mail statt Benutzername; TS-007-26/27 entfallen |
-| ANF-026 | Registrierung, Datenbank, Mandant | 29 | Schritte 1 bis 4 (Portal-Datenbank, Registrierung, Anmeldung, Datenbank erstellen, Mandant definieren) |
+| ANF-026 | Registrierung, Datenbank, Mandant | 32 | Alle Schritte (Portal-Datenbank, Registrierung, Anmeldung, Datenbank erstellen, Mandant definieren, Passwort im Portal) |
 
 Die Anforderungen ANF-005 bis ANF-007 haben bisher keine Prüfung im Browser. Mit diesen Szenarien starten.
 
@@ -46,7 +46,7 @@ Die Anforderungen ANF-005 bis ANF-007 haben bisher keine Prüfung im Browser. Mi
    - 123 weitere Adressen, damit die Seitenprüfung funktioniert (ANF-002 AK-4).
    - 61 Projekte insgesamt (ohne P-2026-001 und P-2026-002 mitgezählt, für TS-001-02 und TS-003-05).
    - 51 Einkaufsaufträge, damit die Seitenprüfung funktioniert (für TS-004-03).
-   - Benutzer **anna**, **ben** und **carla**, alle aktiv. Die Benutzer haben je ein eigenes Testpasswort mit mindestens 10 Zeichen. Schreib die Passwörter nicht in dieses Dokument.
+   - Benutzer **anna** (entsteht beim Erstellen der Datenbank), **ben** und **carla**, alle aktiv. Seit ANF-026 haben Benutzer kein Passwort; anmelden kann sich nur Anna über ihren Zugang im Portal. Schreib die Passwörter nicht in dieses Dokument.
    - Projekt **P-2026-001**, Kunde **Musterfirma AG**, verantwortlich **Anna**. Struktur:
      - Teilprojekt 1 (ohne Verantwortliche) mit Vorgang 1.1 und Aufgabe 1.1.1 (offen).
      - Teilprojekt 2 (verantwortlich **Ben**):
@@ -174,26 +174,26 @@ Hinweis: AK-5 (Navigation an einer zentralen Stelle definiert) wird im Code gepr
 
 | Nr | AK | Schritte | Erwartet |
 |----|----|----------|----------|
-| TS-005-01 | 1, 4 | Einstellungen → „Benutzer“ öffnen. | Die Tabelle hat die Spalten Benutzername, Name, E-Mail, Status und Letzte Anmeldung. Standard ist Benutzername aufsteigend. |
+| TS-005-01 | 1, 4 | Einstellungen → „Benutzer“ öffnen. | Die Tabelle hat die Spalten Benutzername, Name, E-Mail und Status (seit ANF-026 ohne Letzte Anmeldung. Standard ist Benutzername aufsteigend. |
 | TS-005-02 | 2 | Nach „anna“, nach „Muster“ und nach einem Teil der E-Mail-Adresse suchen. | Die Treffer stimmen. Gross- und Kleinschreibung spielen keine Rolle. |
 | TS-005-03 | 3 | Nach „alle“, „aktiv“ und „gesperrt“ filtern. | Die Liste passt zur Auswahl. |
 | TS-005-04 | 4, 5 | Auf den Spaltenkopf „Status“ zweimal klicken. Dann nach „xyz“ suchen. Danach die Seite neu laden. | Die Sortierung kehrt sich um. Ohne Treffer erscheint ein Hinweis. Der Zustand bleibt nach dem Neuladen erhalten. |
-| TS-005-05 | 6 | Eine Zeile anklicken. | Die Detailansicht unter `/einstellungen/benutzer/<Kennung>` zeigt Benutzername, Status, Letzte Anmeldung, Erstellt am, Geändert am und die Adressdaten. |
+| TS-005-05 | 6 | Eine Zeile anklicken. | Die Detailansicht unter `/einstellungen/benutzer/<Kennung>` zeigt Benutzername, Status, Zugang im Portal (statt Letzte Anmeldung, Erstellt am, Geändert am und die Adressdaten. |
 | TS-005-06 | 7 | Im Benutzer-Detail den Verweis auf die Adresse anklicken. | Die Adresse öffnet sich unter `/adressen/<Kennung>`. |
 | TS-005-07 | 8 | Die Adresse von Anna öffnen. | Ein Hinweis „Benutzer: anna“ erscheint mit einem Verweis auf den Benutzer. |
 | TS-005-08 | 9, 10 | „Neuer Benutzer“ öffnen. In der Adress-Suche nach „Musterfirma“ suchen, dann nach „Muster“. | Das Modal-Fenster liegt über der Liste, Webadresse `?neu=1`. Die Firma wird nicht angeboten. Anna wird nicht angeboten, weil sie schon einen Benutzer hat. |
-| TS-005-09 | 11 | Das leere Formular speichern. | Benutzername, Adresse, Passwort und Wiederholung sind Pflicht. Der Status „aktiv“ ist vorausgewählt. |
-| TS-005-10 | 12 | Benutzername „dora.demo“, Adresse „Demo Dora“, gültiges Passwort mit Wiederholung. Speichern. | Die Erfolgsmeldung erscheint. Die Detailansicht des neuen Benutzers öffnet sich. |
+| TS-005-09 | 11 | Das leere Formular speichern. | Benutzername und Adresse sind Pflicht (seit ANF-026 ohne Passwortfelder). Der Status „aktiv“ ist vorausgewählt. |
+| TS-005-10 | 12 | Benutzername „dora.demo“, Adresse „Demo Dora“. Speichern. | Die Erfolgsmeldung erscheint. Die Detailansicht des neuen Benutzers öffnet sich. |
 | TS-005-11 | 13 | Benutzername nacheinander eingeben: „dora demo“ (mit Leerzeichen), „dora!“, 51 Zeichen, leer, „Dora“ (Grossbuchstabe, siehe Offene Punkte), und „anna“ bei der Adresse von Dora. | Jeder Fehler wird am Feld mit einer Meldung markiert. „anna“ wird als bereits vergeben abgelehnt. Nichts wird gespeichert. |
 | TS-005-12 | 13 | Ohne Adresse speichern. Dann prüfen, ob die Adress-Suche die Firma „Musterfirma AG“ oder Anna anbietet. Dann ein Passwort mit 9 Zeichen eingeben. Dann eine Wiederholung eingeben, die nicht passt. | Die Adresse ist Pflicht. Die Firma und Anna werden nicht angeboten. Falls die Auswahl sie trotzdem zulässt, lehnt der Server sie ab. Das kurze Passwort und die ungleiche Wiederholung werden abgelehnt. Die Meldungen nennen den Grund. Nichts wird gespeichert. |
 | TS-005-13 | 14 | Einen Benutzer mit „Bearbeiten“ öffnen. | Benutzername, Adresse und Status lassen sich ändern. Passwortfelder fehlen. Webadresse `…?bearbeiten=1`. |
-| TS-005-14 | 15 | „Passwort setzen“ öffnen, Webadresse `…?passwort=1`. Ein neues Passwort mit 10 Zeichen und Wiederholung eingeben. Speichern. Danach mit dem alten und dem neuen Passwort anmelden. | Das neue Passwort funktioniert. Das alte wird abgelehnt. |
+| ~~TS-005-14~~ | 15 | *Entfällt (ANF-026): Passwort ändern im Portal, siehe TS-026-30.* | – |
 | TS-005-15 | 16 | Carla auf „gesperrt“ setzen. Dann die Liste und die Detailansicht ansehen. | Carla bleibt mit allen Daten erhalten und ist als „gesperrt“ markiert. Die Anmeldung ist nicht mehr möglich (siehe TS-007-09). |
 | TS-005-16 | 17 | Einen Benutzer bearbeiten und einen ungültigen Benutzernamen eingeben. Speichern. Dann eine zweite Änderung mit „Abbrechen“ verwerfen. | Die Prüfung ist dieselbe wie beim Anlegen. „Abbrechen“ speichert nichts. |
 | TS-005-17 | 18 | „Löschen“ klicken und im Dialog abbrechen. Dann erneut löschen und bestätigen. | Der Dialog nennt Benutzername und Name. Nach Abbrechen bleibt der Benutzer. Nach Bestätigen ist er weg. Die Adresse „Demo Dora“ bleibt erhalten. |
 | TS-005-18 | 19 | Die Adresse von Ben in der Adressverwaltung löschen. | Das Löschen wird verhindert. Die Meldung nennt „als Benutzer ben“. |
 | TS-005-19 | 20 | Die Adresse von Ben auf „Firma“ ändern und speichern. | Die Änderung wird verhindert. Die Meldung nennt den Benutzer. |
-| TS-005-20 | 21 | DB: `SELECT benutzername, passwort_hash FROM benutzer;` ausführen. Dann die Antworten der Liste und der Detailansicht im Browser-Netzwerkbereich prüfen. | Der Hash beginnt mit `$argon2id$`. Kein Klartext. Keine Antwort enthält den Hash. |
+| ~~TS-005-20~~ | 21 | *Entfällt (ANF-026): keine Passwörter in der Mandanten-Datenbank, siehe TS-026-31.* | – |
 | TS-005-21 | 22 | Webadresse `/einstellungen/benutzer/99999` aufrufen. | Die Meldung „Benutzer nicht gefunden“ erscheint. |
 | TS-005-22 | 23 | DB: `\d benutzer` ausführen. | Die Tabelle `benutzer` ist vorhanden. `adresse_id` ist eindeutig. Der Benutzername ist ohne Beachtung der Gross- und Kleinschreibung eindeutig. |
 | TS-005-23 | 24 | Projekt-Formular öffnen. Das Feld „Verantwortlich“ ansehen. Carla (gesperrt) suchen. Dann das Feld leeren und speichern. | Nur aktive Benutzer werden angeboten. Carla ist nicht wählbar. Das Feld lässt sich leeren. |
@@ -251,7 +251,7 @@ Hinweis: AK-5 (Navigation an einer zentralen Stelle definiert) wird im Code gepr
 | TS-007-09 | 7 | Dreimal eine falsche Anmeldung: unbekannter Name, falsches Passwort, gesperrte Carla. | Immer dieselbe Meldung: „Benutzername oder Passwort ist falsch.“. Der Name bleibt im Feld. Das Passwortfeld ist leer. |
 | TS-007-10 | 8 | Beide Felder leer lassen und „Anmelden“ klicken. | Die Meldung „Bitte Benutzername und Passwort eingeben.“ erscheint. |
 | TS-007-11 | 9 | Angemeldet `/anmelden` öffnen. | Du wirst auf die Startseite weitergeleitet, bzw. auf das Ziel von `zurueck`. |
-| TS-007-12 | 10 | Nach der Anmeldung von Anna den Benutzer-Detail von Anna öffnen. | „Letzte Anmeldung“ zeigt den jetzigen Zeitpunkt. |
+| ~~TS-007-12~~ | 10 | *Entfällt (ANF-026): keine „Letzte Anmeldung“ mehr im ERP.* | – |
 | TS-007-13 | 11 | Fünfmal falsch für „ben“ anmelden. Dann das richtige Passwort für „ben“ eingeben. | Der sechste Versuch zeigt „Zu viele Fehlversuche. Bitte später erneut versuchen.“. Nach 15 Minuten geht die Anmeldung wieder. Zum Zurücksetzen in der Testdatenbank `DELETE FROM anmeldeversuch;` ausführen. |
 | TS-007-14 | 11 | Fünfmal falsch für den unbekannten Namen „niemand“ anmelden. Dann einen sechsten Versuch machen. | Der sechste Versuch ist gesperrt. Die Meldung ist dieselbe wie in TS-007-13. |
 | TS-007-15 | 12 | Je viermal falsch anmelden: für „ben“ (bekannt) und für „niemand“ (unbekannt). Die Dauer jedes Versuchs notieren. | Die Dauern sind ähnlich. Diese Prüfung ist nur grob von Hand möglich. Danach die Fehlversuche in der Testdatenbank löschen. |
@@ -261,7 +261,7 @@ Hinweis: AK-5 (Navigation an einer zentralen Stelle definiert) wird im Code gepr
 | TS-007-19 | 14 | DB: `UPDATE sitzung SET zuletzt_aktiv = now() - interval '13 hours';` ausführen. Dann eine Seite aufrufen. | Du wirst nach `/anmelden?abgelaufen=1` umgeleitet. Die Meldung „Ihre Sitzung ist abgelaufen. Bitte erneut anmelden.“ erscheint. |
 | TS-007-20 | 14 | DB: `UPDATE sitzung SET erstellt_am = now() - interval '8 days', zuletzt_aktiv = now();` ausführen. Dann eine Seite aufrufen. | Die Sitzung ist abgelaufen, obwohl sie aktiv ist. |
 | TS-007-21 | 15 | Anna in zwei Fenstern angemeldet lassen. Ben sperrt Anna in seiner Sitzung. Dann in beiden Fenstern eine Seite aufrufen. | Beide Fenster zeigen die Anmeldung mit „Ihre Sitzung ist abgelaufen“. |
-| TS-007-22 | 15 | Ben setzt das Passwort von Carla neu. Danach setzt Ben sein eigenes Passwort neu. | Carlas Sitzungen enden. Bei Ben bleibt die laufende Sitzung bestehen. Seine anderen Sitzungen enden. |
+| ~~TS-007-22~~ | 15 | *Entfällt (ANF-026): siehe TS-026-30.* | – |
 | TS-007-23 | 17 | Mit Anna angemeldet die Kopfzeile ansehen. Dann auf dem Mobiltelefon. | Die Kopfzeile zeigt den Namen und „Abmelden“. Auf dem Mobiltelefon ist der Name gekürzt oder steht nur als Symbol da. |
 | TS-007-24 | 18 | „Abmelden“ klicken. Dann die Zurück-Taste drücken. | Die Anmeldeseite erscheint mit „Sie wurden abgemeldet.“. Die Zurück-Taste führt nicht in geschützte Seiten. DB: Die Sitzungszeile ist weg. |
 | TS-007-25 | 20 | Als Ben die eigene Zeile in der Benutzerverwaltung sperren, dann löschen. | Beide Male wird es verhindert. Die Meldungen lauten „Sie können sich nicht selbst sperren.“ und „Sie können sich nicht selbst löschen.“. |
@@ -305,6 +305,9 @@ Vorbereitung: leere PostgreSQL-Instanz bzw. Datenbanken `uniqwork` und `uniqwork
 | TS-026-27 | 19 | Mit einem zweiten Zugang nach „Datenbank erstellen“ das Fenster mit Escape schliessen. | `/portal` zeigt „Mandant noch nicht definiert …“ und die Schaltfläche „Mandant definieren“, die das Fenster wieder öffnet. |
 | TS-026-28 | 19 | Mit diesem Zugang `/adressen` aufrufen, abmelden und neu anmelden. | Beide Male erscheint `/portal?mandant=<Kennung>` mit offenem Fenster; das ERP bleibt geschlossen. |
 | TS-026-29 | 18 | Als Anna (Mandant definiert) die Server-Funktion „Mandant definieren“ erneut aufrufen. | „Der Mandant ist bereits definiert …“; keine zweite Firma. |
+| TS-026-30 | 28 | Als Anna in einem zweiten Browser angemeldet bleiben. Im ersten über den Namen in der Kopfzeile `/portal` öffnen, „Passwort ändern“: zuerst leer, dann falsches bisheriges Passwort, dann neues = bisheriges, dann gültig. | Meldungen „Bitte das bisherige Passwort eingeben.“, „Das bisherige Passwort ist falsch.“, „Das neue Passwort muss sich vom bisherigen unterscheiden.“. Gültig: „Passwort geändert …“; die laufende Sitzung bleibt, die zweite endet („Sitzung abgelaufen“). Anmeldung nur noch mit dem neuen Passwort. |
+| TS-026-31 | 8, 29 | In `uq_m_000001`: Spalten von `benutzer` und Tabellen auflisten. Dann in der Benutzerverwaltung „Neuer Benutzer“ öffnen und Ben anlegen. | Keine Spalten `passwort_hash`/`letzte_anmeldung`, keine Tabellen `sitzung`/`anmeldeversuch`. Das Formular hat keine Passwortfelder; Ben zeigt „Zugang im Portal: Nein“, Anna „Ja“. Kein „Passwort setzen“, `?passwort=1` öffnet nichts. |
+| TS-026-32 | 24 | Eine vor Schritt 3b erstellte Mandanten-Datenbank (mit `passwort_hash`, `sitzung`) haben und den Server starten. | Die Migration entfernt Spalten und Tabellen; die Benutzer bleiben erhalten und das ERP funktioniert weiter. |
 
 ## ANF-011 Kontenplan
 

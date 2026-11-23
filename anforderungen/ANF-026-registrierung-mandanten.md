@@ -3,13 +3,13 @@
 | Feld          | Wert                                              |
 |---------------|---------------------------------------------------|
 | **Nummer**    | ANF-026                                           |
-| **Status**    | In Umsetzung                                      |
+| **Status**    | Erledigt                                          |
 | **Priorität** | Muss                                              |
 | **Typ**       | Funktional                                        |
 | **Modul**     | Portal / Mandanten                                |
 | **Autor**     | Hatem Ben Belgacem                                |
 | **Erstellt**  | 2026-11-23                                        |
-| **Geändert**  | 2026-11-23                                        |
+| **Geändert**  | 2026-11-24                                        |
 
 ## 1. Beschreibung
 
@@ -81,7 +81,7 @@ Jede **Mandanten-Datenbank** enthält das bisherige ERP (alle Migrationen aus `m
   eigene Migrationen im Ordner `migrations_portal/`. Die Migrationen in `migrations/` gelten nur für
   Mandanten-Datenbanken. Ist `PORTAL_DATABASE_URL` leer, gilt `DATABASE_URL` mit dem Datenbanknamen
   `uniqwork_portal` (gleicher PostgreSQL-Dienst, keine zusätzliche Einstellung auf Railway nötig).
-- [ ] **AK-8:** Die Portal-Datenbank enthält keine ERP-Tabellen (Adressen, Projekte, Konten …). Die
+- [x] **AK-8:** Die Portal-Datenbank enthält keine ERP-Tabellen (Adressen, Projekte, Konten …). Die
   Mandanten-Datenbanken enthalten keine Zugangsdaten des Portals (E-Mail als Anmeldename, Passwort-Hash,
   Sitzungen), sondern nur den Verweis `portal_benutzer_id`.
 - [x] **AK-9:** Die Portal-Datenbank ist die einzige Datenbank, die der Server beim Start selbst anlegt, falls
@@ -135,6 +135,16 @@ Jede **Mandanten-Datenbank** enthält das bisherige ERP (alle Migrationen aus `m
   Mandanten-Datenbanken mit Status „Bereit“ ausgeführt.
 - [x] **AK-25:** Die bisherige **Ersteinrichtung** (ANF-007 AK-21/22) entfällt; ihre Aufgabe übernimmt
   die Registrierung (AK-4) mit dem Anlegen des ersten Benutzers (AK-15).
+
+**Passwort und Benutzerverwaltung (Schritt 3b)**
+- [x] **AK-28:** Gegeben die Portal-Übersicht, dann zeigt der Abschnitt „Ihr Zugang“ die E-Mail und die Schaltfläche
+  **„Passwort ändern“** (Modal-Fenster `/portal?passwort=1`): bisheriges Passwort, neues Passwort mit Wiederholung
+  (Regeln wie AK-2). Ein falsches bisheriges Passwort wird abgelehnt und zählt als Fehlversuch (Sperre wie ANF-007);
+  das neue muss sich vom bisherigen unterscheiden. Nach dem Speichern enden alle anderen Sitzungen des Zugangs, die
+  laufende bleibt. Aus dem ERP führt der Name in der Kopfzeile zum Portal.
+- [x] **AK-29:** Die Benutzerverwaltung des ERP (ANF-005) kennt keine Passwörter mehr: Anlegen ohne Passwort, kein
+  „Passwort setzen“, keine „Letzte Anmeldung“. Die Detailansicht zeigt „Zugang im Portal: Ja/Nein“ – anmelden kann
+  sich nur ein Benutzer, der mit einem Zugang des Portals verknüpft ist.
 
 **Nicht-funktional**
 - [x] **AK-26:** Das Erstellen einer Datenbank inklusive Migrationen dauert auf Railway höchstens 30 Sekunden.
@@ -222,3 +232,4 @@ Passwort und Sitzungen stehen nur in der Portal-Datenbank (AK-8).
 | 2026-11-23 | Hatem Ben Belgacem | Schritt 2 umgesetzt: Registrierung, Anmeldung über das Portal, Portal-Übersicht, Zugang zum ERP nur mit Mandant (AK-1 bis AK-6, AK-9) |
 | 2026-11-23 | Hatem Ben Belgacem | Schritt 3 umgesetzt: Datenbank erstellen, Rolle `uniqwork_erp`, Pools je Mandant, Migrationen beim Start (AK-10 bis AK-15, AK-21 bis AK-27) |
 | 2026-11-23 | Hatem Ben Belgacem | Schritt 4 umgesetzt: Modal-Fenster „Mandant definieren“, Firmenname in der Kopfzeile (AK-16 bis AK-20) |
+| 2026-11-24 | Hatem Ben Belgacem | Schritt 3b umgesetzt: keine Zugangsdaten mehr in den Mandanten-Datenbanken (AK-8), Passwort ändern im Portal (AK-28), Benutzerverwaltung ohne Passwort (AK-29); Status Erledigt |

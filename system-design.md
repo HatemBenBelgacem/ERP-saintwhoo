@@ -61,10 +61,10 @@ src/
 | `addresses`        | ANF-002     | model, server_fns, repository                | list, detail, form                          |
 | `projects`         | ANF-003     | model, server_fns, repository                | list, detail, form                          |
 | `purchase_orders`  | ANF-004     | model, server_fns, repository                | list, detail, form                          |
-| `auth`             | ANF-007, ANF-026 | model, server_fns, repository, session, middleware (Portal-Datenbank) | login, register              |
+| `auth`             | ANF-007, ANF-026 | model, server_fns, repository, session, middleware, password (Portal-Datenbank) | login, register    |
 | `portal`           | ANF-026     | model, server_fns, repository, provision (Datenbanken anlegen) | page (`/portal`)          |
 | `tasks`            | ANF-006     | model, server_fns, repository                | list, detail, form                          |
-| `users`            | ANF-005     | model, server_fns, repository, password      | list, detail, form                          |
+| `users`            | ANF-005     | model, server_fns, repository (ohne Passwörter) | list, detail, form                       |
 | `system`           | ANF-001     | server_fns, repository (Datenbank-Status)    | –                                           |
 | `home`             | ANF-001     | – (nutzt `system`)                           | home_page                                   |
 | `finance::accounts` | ANF-011    | model, server_fns, repository (unter `backend/finance/`) | `settings/finance/accounts/`: list, form |

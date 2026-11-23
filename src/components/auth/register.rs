@@ -4,9 +4,9 @@ use leptos::prelude::*;
 use leptos_meta::Title;
 
 use super::login::AuthCard;
+use crate::backend::auth::model::PASSWORD_MIN;
 use crate::backend::auth::model::{FORM_ERROR, FieldErrors, LOGIN_PATH};
 use crate::backend::auth::server_fns::Register;
-use crate::backend::users::model::PASSWORD_MIN;
 use crate::forms::{ErrorText, TextField, field_errors, server_error};
 
 #[component]

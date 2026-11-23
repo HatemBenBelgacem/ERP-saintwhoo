@@ -1,4 +1,5 @@
-//! Passwort-Hashes mit Argon2id (ANF-005 AK-21, nur Server).
+//! Passwort-Hashes mit Argon2id (ANF-005 AK-21, ANF-026 AK-5; nur Server).
+//! Passwörter gibt es nur noch für Zugänge der Portal-Datenbank.
 //!
 //! Gespeichert wird nur der Hash im PHC-Format (`$argon2id$v=19$…`), der Verfahren, Parameter
 //! und ein zufälliges Salz enthält. Das Passwort selbst wird nirgends abgelegt.
@@ -17,7 +18,7 @@ pub fn hash(password: &str) -> Result<String, argon2::password_hash::Error> {
         .to_string())
 }
 
-/// `true`, wenn das Passwort zum gespeicherten Hash passt (für die spätere Anmeldung).
+/// `true`, wenn das Passwort zum gespeicherten Hash passt.
 pub fn verify(password: &str, stored_hash: &str) -> bool {
     PasswordHash::new(stored_hash).is_ok_and(|h| {
         Argon2::default()

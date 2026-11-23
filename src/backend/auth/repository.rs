@@ -212,3 +212,37 @@ pub async fn end_session(pool: &PgPool, token_hash: &str) -> Result<(), sqlx::Er
         .await?;
     Ok(())
 }
+
+/// Passwort-Hash des Zugangs (Passwort ändern, ANF-026).
+pub async fn password_hash(pool: &PgPool, user_id: i64) -> Result<String, sqlx::Error> {
+    sqlx::query_scalar("SELECT passwort_hash FROM portal_benutzer WHERE id = $1")
+        .bind(user_id)
+        .fetch_one(pool)
+        .await
+}
+
+/// Neues Passwort speichern und alle anderen Sitzungen des Zugangs beenden; die Sitzung mit
+/// `keep_hash` (die laufende) bleibt bestehen (wie ANF-007 AK-15).
+pub async fn set_password(
+    conn: &mut PgConnection,
+    user_id: i64,
+    password_hash: &str,
+    keep_hash: Option<&str>,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "UPDATE portal_benutzer SET passwort_hash = $2, geaendert_am = now() WHERE id = $1",
+    )
+    .bind(user_id)
+    .bind(password_hash)
+    .execute(&mut *conn)
+    .await?;
+    sqlx::query(
+        "DELETE FROM portal_sitzung \
+         WHERE portal_benutzer_id = $1 AND merkmal_hash IS DISTINCT FROM $2",
+    )
+    .bind(user_id)
+    .bind(keep_hash)
+    .execute(&mut *conn)
+    .await?;
+    Ok(())
+}

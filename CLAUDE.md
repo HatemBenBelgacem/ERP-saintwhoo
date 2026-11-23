@@ -180,6 +180,8 @@ Rolle `uniqwork_erp` wird bei jedem Start neu gesetzt. `PORT` setzt Railway selb
   Neue `#[server]`-Funktionen sind damit automatisch geschützt.
 - Nur Funktionen, die **ohne** Anmeldung gehen müssen, bekommen `#[server(prefix = "/oeffentlich")]` – sparsam verwenden.
 - Funktionen des Portals, die angemeldet, aber **ohne Mandant** gehen müssen, bekommen `#[server(prefix = "/api/portal")]`.
+- Passwörter gibt es nur für Zugänge der Portal-Datenbank (`crate::backend::auth::password`, `PasswordInput` in
+  `auth::model`). Benutzer der Mandanten-Datenbank haben kein Passwort; ihr Passwort ändern sie im Portal.
 - Den angemeldeten Zugang in Server-Funktionen mit `crate::backend::auth::session::current_user()` bzw. `require_user()`
   holen. `CurrentUser::benutzer_id` ist der Benutzer in der Mandanten-Datenbank (z. B. für „meine Aufgaben“).
 

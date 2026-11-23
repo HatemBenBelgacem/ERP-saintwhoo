@@ -4,8 +4,11 @@
 use serde::{Deserialize, Serialize};
 
 use crate::backend::addresses::model::is_valid_email;
-use crate::backend::users::model::PasswordInput;
 pub use crate::forms::{FieldErrors, SaveOutcome};
+
+/// Passwortregeln (ANF-005 AK-13, ANF-026 AK-2).
+pub const PASSWORD_MIN: usize = 10;
+pub const PASSWORD_MAX: usize = 200;
 
 /// Name des Sitzungs-Cookies.
 pub const COOKIE_NAME: &str = "erp_sitzung";
@@ -41,6 +44,8 @@ pub const MSG_EMPTY: &str = "Bitte E-Mail und Passwort eingeben.";
 pub const MSG_LOCKED: &str = "Zu viele Fehlversuche. Bitte später erneut versuchen.";
 pub const MSG_NOT_LOGGED_IN: &str = "Nicht angemeldet.";
 pub const MSG_NO_TENANT: &str = "Kein Mandant gewählt.";
+pub const MSG_WRONG_CURRENT: &str = "Das bisherige Passwort ist falsch.";
+pub const MSG_SAME_PASSWORD: &str = "Das neue Passwort muss sich vom bisherigen unterscheiden.";
 pub const MSG_EMAIL_TAKEN: &str = "Für diese E-Mail-Adresse gibt es bereits einen Zugang.";
 pub const MSG_TOO_MANY_REGISTRATIONS: &str =
     "Zurzeit gibt es zu viele Registrierungen. Bitte später erneut versuchen.";
@@ -142,6 +147,49 @@ pub fn target_after_login(zurueck: Option<&str>) -> String {
         .filter(|t| !t.starts_with(LOGIN_PATH) && !t.starts_with(REGISTER_PATH))
         .unwrap_or("/")
         .to_string()
+}
+
+/// Passwort mit Wiederholung (Registrierung, Passwort ändern). Wird nie gekürzt oder verändert.
+#[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct PasswordInput {
+    pub passwort: String,
+    pub wiederholung: String,
+}
+
+/// Passwörter erscheinen nie in Protokollen.
+impl std::fmt::Debug for PasswordInput {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("PasswordInput { … }")
+    }
+}
+
+impl PasswordInput {
+    /// Mindestens 10 Zeichen, Wiederholung gleich. Leere Map = gültig.
+    pub fn validate(&self) -> FieldErrors {
+        let mut errors = FieldErrors::new();
+        let len = self.passwort.chars().count();
+        if self.passwort.is_empty() {
+            errors.insert("passwort".into(), "Bitte ein Passwort eingeben.".into());
+        } else if len < PASSWORD_MIN {
+            errors.insert(
+                "passwort".into(),
+                format!("Mindestens {PASSWORD_MIN} Zeichen."),
+            );
+        } else if len > PASSWORD_MAX {
+            errors.insert(
+                "passwort".into(),
+                format!("Höchstens {PASSWORD_MAX} Zeichen."),
+            );
+        }
+        if self.wiederholung != self.passwort {
+            errors.insert(
+                "wiederholung".into(),
+                "Die Wiederholung stimmt nicht mit dem Passwort überein.".into(),
+            );
+        }
+        errors
+    }
 }
 
 /// Eingabe der Registrierung (ANF-026 AK-2). Das Passwort kommt getrennt als `PasswordInput`.
@@ -368,5 +416,26 @@ mod tests {
             !json.contains("uq_m_"),
             "Datenbankname nicht an den Browser: {json}"
         );
+    }
+
+    #[test]
+    fn password_rules() {
+        let p = |a: &str, b: &str| PasswordInput {
+            passwort: a.into(),
+            wiederholung: b.into(),
+        };
+        assert!(p("geheim-1234", "geheim-1234").validate().is_empty());
+        assert!(p("", "").validate().contains_key("passwort"));
+        assert!(
+            p("kurz12345", "kurz12345")
+                .validate()
+                .contains_key("passwort")
+        );
+        let e = p("geheim-1234", "geheim-1235").validate();
+        assert!(!e.contains_key("passwort"));
+        assert!(e.contains_key("wiederholung"));
+        // Umlaute zählen als ein Zeichen
+        assert!(p("ääääääääää", "ääääääääää").validate().is_empty());
+        assert!(!format!("{:?}", p("geheim-1234", "x")).contains("geheim"));
     }
 }
