@@ -14,6 +14,10 @@ const MAPLIBRE_CSS = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css';
 
 const EARTH_RADIUS_M = 6378137.0;
 
+// Ausdehnung von SWISSIMAGE (Schweiz und Liechtenstein) als [West, Süd, Ost, Nord]; gleiche Werte wie
+// SWISS_BOUNDS in src/backend/site_plans/model.rs
+const SWISS_BOUNDS = [5.9, 45.8, 10.5, 47.9];
+
 let libraries = null;
 
 // Lädt MapLibre (mit Stilvorlage) und Three.js einmal je Seitenaufruf.
@@ -91,18 +95,24 @@ export class SitePlanMap {
             style: {
                 version: 8,
                 sources: {
-                    // Satellitenbilder von Esri World Imagery (Nutzungsbedingungen von Esri beachten)
-                    satellite: {
+                    // Amtliches Luftbild der Schweiz: swisstopo SWISSIMAGE (rund 10 cm pro Bildpunkt),
+                    // frei nutzbar mit Quellenangabe. Deckt nur die Schweiz und Liechtenstein ab (bounds);
+                    // ausserhalb bleibt der Hintergrund sichtbar. Über Zoomstufe 20 wird vergrössert.
+                    luftbild: {
                         type: 'raster',
                         tiles: [
-                            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                            'https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/3857/{z}/{x}/{y}.jpeg'
                         ],
                         tileSize: 256,
-                        maxzoom: 19,
-                        attribution: 'Satellitenbild © Esri, Maxar, Earthstar Geographics'
+                        maxzoom: 20,
+                        bounds: SWISS_BOUNDS,
+                        attribution: '<a href="https://www.swisstopo.admin.ch/" target="_blank" rel="noopener">Luftbild © swisstopo</a>'
                     }
                 },
-                layers: [{ id: 'satellit', type: 'raster', source: 'satellite' }]
+                layers: [
+                    { id: 'hintergrund', type: 'background', paint: { 'background-color': cssColor('--color-base-300', '#e2e8f0') } },
+                    { id: 'luftbild', type: 'raster', source: 'luftbild' }
+                ]
             }
         });
         this.map = map;
