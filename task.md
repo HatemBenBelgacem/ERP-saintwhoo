@@ -8,7 +8,7 @@ Stand: 2026-11-24
 
 ## Offen
 
-- [ ] ANF-027: offene Fragen klären (eigene Seite, Speichern, „Verpflegungsstand“, Bibliotheken aus dem Netz, Vorgabe-Standort, Dienst der Adresssuche) und im Browser mit Luftbild prüfen (SWISSIMAGE: Zoomstufe 20 bestätigen)
+- [ ] ANF-027: offene Fragen klären (eigene Seite, Speichern, „Verpflegungsstand“, Bibliotheken aus dem Netz, Vorgabe-Standort) und im Browser mit Luftbild prüfen (SWISSIMAGE: Zoomstufe 20 bestätigen)
 - [ ] ANF-026: vor Inbetriebnahme klären, wie die bestehende Datenbank zum ersten Mandanten wird
 - [ ] ANF-025 Rest: Bankkonten als Verweis (mit ANF-015), MWST-Nummer nur bei MWST-Pflicht (mit ANF-012), Absender in Druckansichten und Buchungssperre ohne Firma (mit ANF-018)
 - [ ] ANF-011 Rest: Sperre von Nummer/Kontoart nach Buchungen (mit ANF-017), Vorgabe-MWST-Code (mit ANF-012)
@@ -34,6 +34,7 @@ Stand: 2026-11-24
 
 - [x] ANF-027 Geländeplan eines Projekts erfasst und umgesetzt: 3D-Karte (MapLibre + Three.js) unter `/projekte/<Kennung>/gelaendeplan`, Bühnen/Verpflegungsstände/Festzelte platzieren, drehen, löschen, Rasenfläche abstecken (m², Lageprüfung mit `geo`), Standort im Modal-Fenster, Speichern in `gelaendeplan*`
 - [x] ANF-027 AK-4: Elemente als gestaltete 3D-Modelle statt Quadern (Bühne, Verpflegungsstand, Festzelt)
+- [x] ANF-027 AK-12a: Adresssuche über den Suchdienst von swisstopo statt Nominatim (Geländeplan nur in der Schweiz)
 - [x] ANF-027 AK-2: Luftbild swisstopo SWISSIMAGE statt Esri World Imagery (Geländeplan nur in der Schweiz)
 - [x] ANF-027 AK-5, AK-21, AK-22: Elemente am Drehgriff um die eigene Achse drehen (Taste R, ↺/↻ in 15°-Schritten), Rasenfläche lila, Eckpunkte ziehbar
 - [x] ANF-027 AK-18 bis AK-20: Elemente auswählen und verschieben (Ziehen mit Maus oder Finger, Pfeiltasten, Rücksprung ausserhalb der Rasenfläche)

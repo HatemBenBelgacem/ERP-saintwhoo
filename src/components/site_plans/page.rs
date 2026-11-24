@@ -1006,7 +1006,7 @@ fn OriginForm() -> impl IntoView {
                                     }
                                 }).collect_view()}
                             </ul>
-                            <p class="mt-1 text-xs text-base-content/60">"Suche: Nominatim, Daten © OpenStreetMap-Mitwirkende"</p>
+                            <p class="mt-1 text-xs text-base-content/60">"Suche: © swisstopo (Schweiz und Liechtenstein)"</p>
                         </div>
                     }.into_any(),
                 })}
