@@ -55,7 +55,7 @@ pub(super) struct Editor {
     /// Postanschrift des Kunden – Vorschlag für die Adresssuche.
     customer_address: StoredValue<Option<String>>,
     /// Ausgewähltes Element (Index in `plan.elements`).
-    selected: RwSignal<Option<usize>>,
+    pub(super) selected: RwSignal<Option<usize>>,
     /// Besucherweg bzw. Zone, an dem gerade gezeichnet wird (ANF-028); `None` = der nächste Klick mit
     /// dem Werkzeug beginnt einen neuen Weg bzw. eine neue Zone.
     pub(super) active_route: RwSignal<Option<usize>>,

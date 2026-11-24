@@ -6,9 +6,10 @@
 use leptos::prelude::*;
 
 use super::page::{Editor, Tool};
+use crate::backend::site_plans::bottlenecks;
 use crate::backend::site_plans::flows::{
     Access, AccessKind, DEFAULT_DENSITY, MAX_FLOW_ITEMS, MAX_FLOW_LABEL_LEN, RouteDirection,
-    VisitorRoute, Zone, format_count, parse_count, parse_decimal,
+    VisitorRoute, Zone, format_count, format_percent, parse_count, parse_decimal,
 };
 use crate::backend::site_plans::model::{Corner, format_area, format_distance, format_m};
 
@@ -188,6 +189,7 @@ pub(super) fn FlowsCard() -> impl IntoView {
                     </p>
                 </Show>
 
+                <BottleneckList/>
                 <Show when=has_routes>
                     <h3 class="text-sm font-semibold">"Wege " <span class="badge badge-ghost badge-sm">{routes}</span></h3>
                     <ul class="flex flex-col gap-2">
@@ -214,6 +216,86 @@ pub(super) fn FlowsCard() -> impl IntoView {
                 </Show>
             </div>
         </div>
+    }
+}
+
+/// Engstellen (Stufe 3) und Planungswert „Durchfluss je Meter Wegbreite“.
+#[component]
+fn BottleneckList() -> impl IntoView {
+    let ed = expect_context::<Editor>();
+    let found = Memo::new(move |_| ed.plan.with(bottlenecks::find));
+    let has_routes_with_flow = move || {
+        ed.plan
+            .with(|p| p.routes.iter().any(|r| r.persons_per_hour > 0))
+    };
+    // Bezeichnung eines Elements wie in der Liste „Platzierte Elemente“
+    let element_name = move |j: usize| {
+        ed.plan.with(|p| {
+            p.elements
+                .get(j)
+                .map(|e| format!("{} {}", e.kind.label(), j + 1))
+                .unwrap_or_default()
+        })
+    };
+    view! {
+        <Show when=has_routes_with_flow>
+            <div class="flex flex-col gap-2 rounded-box border border-base-300 p-2">
+                <div class="flex items-center justify-between gap-2">
+                    <h3 class="text-sm font-semibold">"Engstellen"</h3>
+                    {move || match found.with(Vec::len) {
+                        0 => view! { <span class="badge badge-success badge-sm">"Keine"</span> }.into_any(),
+                        n => view! { <span class="badge badge-error badge-sm">{n}</span> }.into_any(),
+                    }}
+                </div>
+                {number_field(
+                    "Durchfluss je Meter Wegbreite (P/h)",
+                    move || format_count(ed.plan.with(|p| p.flow_per_meter).round() as u32),
+                    "2’000",
+                    move |s| {
+                        let (min, max) = bottlenecks::FLOW_PER_METER_RANGE;
+                        let v = if s.trim().is_empty() {
+                            Some(bottlenecks::DEFAULT_FLOW_PER_METER)
+                        } else {
+                            parse_decimal(s).filter(|v| (min..=max).contains(v))
+                        };
+                        v.inspect(|v| ed.plan.update(|p| p.flow_per_meter = *v)).is_some()
+                    },
+                )}
+                <p class="text-xs text-base-content/60">
+                    "Planungswert, Vorgabe 2’000 P/h (rund 33 Personen pro Minute und Meter). Wege mit "
+                    "erwarteten Personen werden auf die eingetragene Breite und auf Bühnen, Stände und "
+                    "Zelte geprüft, die sie einengen."
+                </p>
+                <ul class="flex flex-col gap-1">
+                    {move || found.get().into_iter().map(|b| {
+                        let route = ed.plan.with(|p| p.routes.get(b.route).map(|r| r.display_name(b.route)).unwrap_or_default());
+                        let elements = b.elements.iter().map(|j| element_name(*j)).collect::<Vec<_>>().join(", ");
+                        let first = b.elements.first().copied();
+                        let cause = if b.free_width_m.is_none() { "versperrt durch" } else { "eingeengt durch" };
+                        view! {
+                            <li>
+                                <button
+                                    type="button"
+                                    class="flex w-full flex-col items-start gap-1 rounded-box bg-base-200 p-2 text-left text-xs hover:bg-base-300"
+                                    title="Element auswählen"
+                                    on:click=move |_| {
+                                        ed.tool.set(Tool::Select);
+                                        ed.selected.set(first);
+                                    }
+                                >
+                                    <span class="flex w-full items-center justify-between gap-2">
+                                        <span class="font-semibold">{route}</span>
+                                        <span class=b.status.badge_class()>{format!("{} · {}", b.status.route_label(), b.utilization_text())}</span>
+                                    </span>
+                                    <span>{b.short_text()}</span>
+                                    <span class="text-base-content/60">{format!("{cause} {elements}")}</span>
+                                </button>
+                            </li>
+                        }
+                    }).collect_view()}
+                </ul>
+            </div>
+        </Show>
     }
 }
 
@@ -400,6 +482,21 @@ fn RouteRow(i: usize) -> impl IntoView {
                     </span>
                 </div>
             </div>
+            // Stufe 3: nötige Breite und Auslastung über die eingetragene Breite
+            {move || get().and_then(|r| {
+                let flow = ed.plan.with(|p| p.flow_per_meter);
+                let required = bottlenecks::required_width_m(&r, flow)?;
+                let utilization = bottlenecks::route_utilization(&r, flow);
+                let status = bottlenecks::status_of(utilization);
+                Some(view! {
+                    <div class="flex items-center justify-between gap-2 text-xs">
+                        <span class="text-base-content/70">"Nötige Breite " {format!("{} m", format_m(required))}</span>
+                        {utilization.map(|u| view! {
+                            <span class=status.badge_class()>{format!("{} · {}", status.route_label(), format_percent(u))}</span>
+                        })}
+                    </div>
+                })
+            })}
             {move || get().filter(|r| r.points.len() < 2).map(|_| view! {
                 <p class="text-xs text-base-content/70">"Mindestens zwei Punkte setzen."</p>
             })}
