@@ -6,7 +6,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::backend::site_plans::model::{
-    AddressHit, Corner, MeasureKind, SitePlan, format_area, format_distance, measure,
+    AddressHit, Measure, MeasureKind, SitePlan, format_distance,
 };
 
 /// Bedienung auf der Karte, gemeldet von `map_bridge.js` (Meter relativ zum Ursprung).
@@ -60,58 +60,67 @@ struct SceneLabel {
     main: bool,
 }
 
-/// Laufende Messung (wird nicht gespeichert).
+/// Eine Messung, wie sie die Karte zeichnet.
 #[derive(Serialize)]
 struct SceneMeasure {
     points: Vec<[f64; 2]>,
     /// Fläche: Linienzug geschlossen und gefüllt.
     closed: bool,
+    /// Messung, an der gerade gemessen wird (kräftiger gezeichnet, mit Abschnittslängen).
+    active: bool,
     labels: Vec<SceneLabel>,
 }
 
 impl SceneMeasure {
-    fn new(kind: MeasureKind, points: &[Corner]) -> Option<Self> {
-        if points.is_empty() {
-            return None;
-        }
-        let result = measure(kind, points);
-        let closed = kind == MeasureKind::Area && points.len() >= 3;
-        // Abschnittslängen in der Mitte jedes Abschnitts
-        let mut labels: Vec<SceneLabel> = result
-            .segments
-            .iter()
-            .enumerate()
-            .map(|(i, len)| {
-                let (a, b) = (points[i], points[(i + 1) % points.len()]);
-                SceneLabel {
-                    x: (a.x + b.x) / 2.0,
-                    z: (a.z + b.z) / 2.0,
-                    text: format_distance(*len),
-                    main: false,
-                }
-            })
-            .collect();
-        // Gesamtwert: Fläche im Schwerpunkt der Punkte, Strecke am letzten Punkt
-        if let Some(area) = result.area_m2 {
+    fn new(index: usize, m: &Measure, active: bool) -> Option<Self> {
+        let points = &m.points;
+        let last = *points.last()?;
+        let result = m.result();
+        let closed = m.kind == MeasureKind::Area && points.len() >= 3;
+        // Abschnittslängen in der Mitte jedes Abschnitts – nur bei der aktiven Messung (übersichtlich)
+        let mut labels: Vec<SceneLabel> = if active {
+            result
+                .segments
+                .iter()
+                .enumerate()
+                .map(|(i, len)| {
+                    let (a, b) = (points[i], points[(i + 1) % points.len()]);
+                    SceneLabel {
+                        x: (a.x + b.x) / 2.0,
+                        z: (a.z + b.z) / 2.0,
+                        text: format_distance(*len),
+                        main: false,
+                    }
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
+        // Bezeichnung mit Ergebnis: Fläche im Schwerpunkt der Punkte, Strecke am letzten Punkt
+        let (x, z) = if closed {
             let n = points.len() as f64;
-            labels.push(SceneLabel {
-                x: points.iter().map(|p| p.x).sum::<f64>() / n,
-                z: points.iter().map(|p| p.z).sum::<f64>() / n,
-                text: format_area(area),
-                main: true,
-            });
-        } else if kind == MeasureKind::Distance && points.len() >= 3 {
-            let last = points[points.len() - 1];
-            labels.push(SceneLabel {
-                x: last.x,
-                z: last.z,
-                text: format!("Total {}", format_distance(result.length_m)),
-                main: true,
-            });
-        }
+            (
+                points.iter().map(|p| p.x).sum::<f64>() / n,
+                points.iter().map(|p| p.z).sum::<f64>() / n,
+            )
+        } else {
+            (last.x, last.z)
+        };
+        let summary = m.summary();
+        labels.push(SceneLabel {
+            x,
+            z,
+            text: if summary == "–" {
+                m.display_name(index)
+            } else {
+                format!("{}: {summary}", m.display_name(index))
+            },
+            main: true,
+        });
         Some(Self {
             points: points.iter().map(|c| [c.x, c.z]).collect(),
             closed,
+            active,
             labels,
         })
     }
@@ -126,13 +135,13 @@ struct Scene {
     drag_corners: bool,
     elements: Vec<SceneElement>,
     corners: Vec<[f64; 2]>,
-    measure: Option<SceneMeasure>,
+    measures: Vec<SceneMeasure>,
 }
 
 /// Zustand der Bedienung, der nicht zum Plan gehört.
-pub struct ViewState<'a> {
-    /// Laufende Messung (Art und Punkte).
-    pub measurement: Option<(MeasureKind, &'a [Corner])>,
+pub struct ViewState {
+    /// Messung, an der gerade gemessen wird (Index in `plan.measures`).
+    pub active_measure: Option<usize>,
     /// Ausgewähltes Element (Index in `plan.elements`).
     pub selected: Option<usize>,
     /// Elemente lassen sich anfassen, ziehen und drehen.
@@ -146,9 +155,12 @@ impl Scene {
         Self {
             drag_elements: view.drag_elements,
             drag_corners: view.drag_corners,
-            measure: view
-                .measurement
-                .and_then(|(kind, points)| SceneMeasure::new(kind, points)),
+            measures: plan
+                .measures
+                .iter()
+                .enumerate()
+                .filter_map(|(i, m)| SceneMeasure::new(i, m, view.active_measure == Some(i)))
+                .collect(),
             elements: plan
                 .elements
                 .iter()

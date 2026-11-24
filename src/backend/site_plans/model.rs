@@ -24,6 +24,11 @@ pub fn has_aerial_image(lng: f64, lat: f64) -> bool {
 /// Höchstzahl der Elemente bzw. Eckpunkte je Plan.
 pub const MAX_ELEMENTS: usize = 500;
 pub const MAX_CORNERS: usize = 100;
+/// Höchstzahl der Messungen je Plan und der Punkte je Messung.
+pub const MAX_MEASURES: usize = 50;
+pub const MAX_MEASURE_POINTS: usize = 100;
+/// Höchstlänge der Bezeichnung einer Messung.
+pub const MAX_MEASURE_LABEL_LEN: usize = 100;
 /// Grösste erlaubte Kantenlänge eines Elements in Metern.
 pub const MAX_SIZE_M: f64 = 200.0;
 /// Grösster erlaubter Abstand vom Ursprung in Metern (Plan bleibt ein Gelände, kein Land).
@@ -180,6 +185,9 @@ pub struct SitePlan {
     /// Adresse oder Bezeichnung des Standorts (z. B. aus der Adresssuche); `None` = keine hinterlegt.
     #[serde(default)]
     pub address: Option<String>,
+    /// Beschriftete Messungen (Strecken und Flächen).
+    #[serde(default)]
+    pub measures: Vec<Measure>,
 }
 
 impl Default for SitePlan {
@@ -190,6 +198,7 @@ impl Default for SitePlan {
             elements: Vec::new(),
             corners: Vec::new(),
             address: None,
+            measures: Vec::new(),
         }
     }
 }
@@ -296,6 +305,43 @@ impl SitePlan {
                     );
                 }
                 Some(_) => {}
+            }
+        }
+
+        if self.measures.len() > MAX_MEASURES {
+            errors.insert(
+                "messungen".into(),
+                format!("Ein Plan darf höchstens {MAX_MEASURES} Messungen enthalten."),
+            );
+        } else {
+            for (i, m) in self.measures.iter().enumerate() {
+                let name = m.display_name(i);
+                let message = if m.label.chars().count() > MAX_MEASURE_LABEL_LEN {
+                    Some(format!(
+                        "Messung {}: Die Bezeichnung darf höchstens {MAX_MEASURE_LABEL_LEN} Zeichen lang sein.",
+                        i + 1
+                    ))
+                } else if m.points.len() > MAX_MEASURE_POINTS {
+                    Some(format!(
+                        "„{name}“ darf höchstens {MAX_MEASURE_POINTS} Punkte haben."
+                    ))
+                } else if m.points.len() < m.kind.min_points() {
+                    Some(format!(
+                        "„{name}“ braucht mindestens {} Punkte. Punkte ergänzen oder die Messung löschen.",
+                        m.kind.min_points()
+                    ))
+                } else if m.points.iter().any(|c| !in_range(c.x) || !in_range(c.z)) {
+                    Some(format!(
+                        "„{name}“: Punkte dürfen höchstens {} km vom Standort entfernt sein.",
+                        MAX_DISTANCE_M / 1000.0
+                    ))
+                } else {
+                    None
+                };
+                if let Some(message) = message {
+                    errors.insert("messungen".into(), message);
+                    break;
+                }
             }
         }
 
@@ -427,11 +473,79 @@ pub struct AddressHit {
     pub lat: f64,
 }
 
-/// Messwerkzeug: Strecke (Linienzug) oder Fläche (Vieleck). Messungen werden nicht gespeichert.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// Art einer Messung: Strecke (Linienzug) oder Fläche (Vieleck).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MeasureKind {
     Distance,
     Area,
+}
+
+impl MeasureKind {
+    /// Wert in der Datenbank (Spalte `art`).
+    pub fn key(self) -> &'static str {
+        match self {
+            MeasureKind::Distance => "strecke",
+            MeasureKind::Area => "flaeche",
+        }
+    }
+
+    pub fn from_key(key: &str) -> Option<Self> {
+        [MeasureKind::Distance, MeasureKind::Area]
+            .into_iter()
+            .find(|k| k.key() == key)
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            MeasureKind::Distance => "Strecke",
+            MeasureKind::Area => "Fläche",
+        }
+    }
+
+    /// Mindestzahl der Punkte, damit die Messung ein Ergebnis hat.
+    pub fn min_points(self) -> usize {
+        match self {
+            MeasureKind::Distance => 2,
+            MeasureKind::Area => 3,
+        }
+    }
+}
+
+/// Eine beschriftete Messung im Plan.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Measure {
+    pub kind: MeasureKind,
+    /// Bezeichnung, z. B. „Zufahrt Feuerwehr“; leer = „Messung <Nummer>“.
+    pub label: String,
+    pub points: Vec<Corner>,
+}
+
+impl Measure {
+    /// Angezeigter Name: Bezeichnung oder „Messung <Nummer>“ (Nummer ab 1).
+    pub fn display_name(&self, index: usize) -> String {
+        let label = self.label.trim();
+        if label.is_empty() {
+            format!("Messung {}", index + 1)
+        } else {
+            label.to_string()
+        }
+    }
+
+    /// Ergebnis der Messung.
+    pub fn result(&self) -> Measurement {
+        measure(self.kind, &self.points)
+    }
+
+    /// Hauptwert als Text: Gesamtstrecke bzw. Fläche („–“, solange Punkte fehlen oder der Umriss
+    /// sich überschneidet).
+    pub fn summary(&self) -> String {
+        let m = self.result();
+        match self.kind {
+            _ if self.points.len() < self.kind.min_points() => "–".into(),
+            MeasureKind::Distance => format_distance(m.length_m),
+            MeasureKind::Area => m.area_m2.map_or_else(|| "–".into(), format_area),
+        }
+    }
 }
 
 /// Längen der einzelnen Abschnitte eines Linienzugs in Metern.
@@ -686,5 +800,42 @@ mod tests {
         assert!(has_aerial_image(8.5417, 47.3769)); // Zürich
         assert!(has_aerial_image(9.5209, 47.1410)); // Vaduz
         assert!(!has_aerial_image(13.4050, 52.5200)); // Berlin
+    }
+
+    #[test]
+    fn measures_are_named_and_validated() {
+        let line = Measure {
+            kind: MeasureKind::Distance,
+            label: "  ".into(),
+            points: vec![Corner { x: 0.0, z: 0.0 }, Corner { x: 30.0, z: 40.0 }],
+        };
+        assert_eq!(line.display_name(0), "Messung 1");
+        assert_eq!(line.summary(), "50,0 m");
+        let area = Measure {
+            kind: MeasureKind::Area,
+            label: "Parkplatz".into(),
+            points: square(10.0),
+        };
+        assert_eq!(area.display_name(1), "Parkplatz");
+        assert_eq!(area.summary(), "100 m²");
+
+        let mut plan = SitePlan {
+            measures: vec![line.clone(), area],
+            ..SitePlan::default()
+        };
+        assert!(plan.validate().is_empty());
+
+        // zu wenige Punkte
+        plan.measures[0].points.truncate(1);
+        assert!(plan.validate()["messungen"].contains("mindestens 2 Punkte"));
+        assert_eq!(plan.measures[0].summary(), "–");
+        plan.measures[0] = line;
+
+        plan.measures[1].label = "x".repeat(MAX_MEASURE_LABEL_LEN + 1);
+        assert!(plan.validate().contains_key("messungen"));
+
+        for k in [MeasureKind::Distance, MeasureKind::Area] {
+            assert_eq!(MeasureKind::from_key(k.key()), Some(k));
+        }
     }
 }

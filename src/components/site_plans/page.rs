@@ -12,8 +12,9 @@ use leptos_router::hooks::{use_navigate, use_params_map, use_query_map};
 
 use super::bridge::{MapEvent, MapView, ViewState, search_address};
 use crate::backend::site_plans::model::{
-    AddressHit, Corner, ElementKind, MeasureKind, OriginInput, ROTATION_STEP_DEG, SiteElement,
-    SitePlan, SitePlanPage, format_area, format_distance, format_m, has_aerial_image, measure,
+    AddressHit, Corner, ElementKind, MAX_MEASURE_LABEL_LEN, MAX_MEASURES, Measure, MeasureKind,
+    OriginInput, ROTATION_STEP_DEG, SiteElement, SitePlan, SitePlanPage, format_area,
+    format_distance, format_m, has_aerial_image,
 };
 use crate::backend::site_plans::server_fns::{DeleteSitePlan, SaveSitePlan, get_site_plan};
 use crate::forms::{
@@ -42,10 +43,9 @@ struct Editor {
     /// Hinweis zur letzten Aktion (z. B. Element passt nicht auf die Fläche).
     notice: RwSignal<Option<String>>,
     map: StoredValue<Option<MapView>, LocalStorage>,
-    /// Punkte der laufenden Messung (nicht Teil des Plans).
-    measure_points: RwSignal<Vec<Corner>>,
-    /// Art der laufenden Messung (bleibt beim Wechsel zu einem anderen Werkzeug sichtbar).
-    measure_kind: RwSignal<MeasureKind>,
+    /// Messung, an der gerade gemessen wird (Index in `plan.measures`); `None` = der nächste Klick
+    /// mit einem Messwerkzeug beginnt eine neue Messung.
+    active_measure: RwSignal<Option<usize>>,
     /// Postanschrift des Kunden – Vorschlag für die Adresssuche.
     customer_address: StoredValue<Option<String>>,
     /// Ausgewähltes Element (Index in `plan.elements`).
@@ -59,25 +59,23 @@ impl Editor {
 
     /// Plan und Messung an die Karte geben (liest die Signale beobachtend).
     fn sync_map(self) {
-        let kind = self.measure_kind.get();
+        let active_measure = self.active_measure.get();
         let selected = self.selected.get();
         // Elemente ziehen und drehen: beim Auswählen und Platzieren; Eckpunkte ziehen: ausser beim Messen
         let tool = self.tool.get();
         let drag_elements = matches!(tool, Tool::Select | Tool::Place(_));
         let drag_corners = !matches!(tool, Tool::Measure(_));
         self.plan.with(|p| {
-            self.measure_points.with(|pts| {
-                let view = ViewState {
-                    measurement: Some((kind, pts.as_slice())),
-                    selected: selected.filter(|i| *i < p.elements.len()),
-                    drag_elements,
-                    drag_corners,
-                };
-                self.map.with_value(|m| {
-                    if let Some(m) = m {
-                        m.sync(p, &view);
-                    }
-                })
+            let view = ViewState {
+                active_measure,
+                selected: selected.filter(|i| *i < p.elements.len()),
+                drag_elements,
+                drag_corners,
+            };
+            self.map.with_value(|m| {
+                if let Some(m) = m {
+                    m.sync(p, &view);
+                }
             })
         });
     }
@@ -161,8 +159,7 @@ fn SitePlanEditor(page: SitePlanPage) -> impl IntoView {
         tool: RwSignal::new(Tool::Select),
         notice: RwSignal::new(None),
         map: StoredValue::new_local(None),
-        measure_points: RwSignal::new(Vec::new()),
-        measure_kind: RwSignal::new(MeasureKind::Distance),
+        active_measure: RwSignal::new(None),
         selected: RwSignal::new(None),
         customer_address: StoredValue::new(page.kunde_adresse.clone()),
     };
@@ -370,6 +367,36 @@ fn handle_event(ed: Editor, event: MapEvent) {
     }
 }
 
+/// Messpunkt setzen: an die aktive Messung anhängen oder – wenn keine passende aktiv ist – eine
+/// neue Messung dieser Art beginnen.
+fn add_measure_point(ed: Editor, kind: MeasureKind, point: Corner) {
+    let active = ed.active_measure.get_untracked().filter(|i| {
+        ed.plan
+            .with_untracked(|p| p.measures.get(*i).is_some_and(|m| m.kind == kind))
+    });
+    if let Some(i) = active {
+        ed.plan.update(|p| p.measures[i].points.push(point));
+        return;
+    }
+    if ed.plan.with_untracked(|p| p.measures.len()) >= MAX_MEASURES {
+        ed.notice.set(Some(format!(
+            "Ein Plan darf höchstens {MAX_MEASURES} Messungen enthalten."
+        )));
+        return;
+    }
+    ed.notice.set(None);
+    let mut index = 0;
+    ed.plan.update(|p| {
+        p.measures.push(Measure {
+            kind,
+            label: String::new(),
+            points: vec![point],
+        });
+        index = p.measures.len() - 1;
+    });
+    ed.active_measure.set(Some(index));
+}
+
 /// Klick auf eine freie Stelle: Auswahl aufheben, Eckpunkt oder Messpunkt setzen oder Element
 /// platzieren (nur auf der Rasenfläche).
 fn place(ed: Editor, x: f64, z: f64) {
@@ -379,7 +406,7 @@ fn place(ed: Editor, x: f64, z: f64) {
             ed.plan.update(|p| p.corners.push(Corner { x, z }));
             ed.notice.set(None);
         }
-        Tool::Measure(_) => ed.measure_points.update(|pts| pts.push(Corner { x, z })),
+        Tool::Measure(kind) => add_measure_point(ed, kind, Corner { x, z }),
         Tool::Place(kind) => {
             let element = SiteElement::new(kind, x, z);
             if ed.plan.with_untracked(|p| p.fits(&element)) {
@@ -465,6 +492,7 @@ fn Header(
                         let saved = ed.saved.get_untracked();
                         let origin = (saved.origin_lng, saved.origin_lat);
                         ed.selected.set(None);
+                        ed.active_measure.set(None);
                         ed.plan.set(saved);
                         ed.map.with_value(|m| if let Some(m) = m { m.set_origin(origin.0, origin.1) });
                         ed.notice.set(None);
@@ -558,101 +586,200 @@ fn ToolCard() -> impl IntoView {
     }
 }
 
-/// Messwerkzeuge: Strecke und Fläche. Jeder Klick auf die Karte setzt einen Messpunkt; die
-/// Längen erscheinen auf der Karte und hier. Messungen werden nicht gespeichert.
+/// Messungen: mehrere Strecken und Flächen, jede mit Bezeichnung. Jeder Klick auf die Karte setzt
+/// einen Punkt der aktiven Messung; Ergebnis und Bezeichnung erscheinen auf der Karte und hier.
+/// Messungen gehören zum Plan und werden mit ihm gespeichert.
 #[component]
 fn MeasureCard() -> impl IntoView {
     let ed = expect_context::<Editor>();
-    let result = move || {
-        let kind = ed.measure_kind.get();
-        ed.measure_points
-            .with(|pts| (kind, pts.len(), measure(kind, pts)))
-    };
-    let tool_button = move |kind: MeasureKind, label: &'static str| {
+    let count = move || ed.plan.with(|p| p.measures.len());
+    let new_button = move |kind: MeasureKind, label: &'static str| {
         let tool = Tool::Measure(kind);
+        let starting = move || ed.tool.get() == tool && ed.active_measure.get().is_none();
         view! {
             <button
                 type="button"
                 class="btn btn-sm flex-1"
-                class:btn-primary=move || ed.tool.get() == tool
-                class:btn-outline=move || ed.tool.get() != tool
-                aria-pressed=move || (ed.tool.get() == tool).to_string()
+                class:btn-primary=starting
+                class:btn-outline=move || !starting()
+                aria-pressed=move || starting().to_string()
                 on:click=move |_| {
+                    // Der nächste Klick auf die Karte beginnt eine neue Messung
                     ed.tool.set(tool);
-                    ed.measure_kind.set(kind);
+                    ed.active_measure.set(None);
                 }
             >
                 {label}
             </button>
         }
     };
+    let hint = move || match ed.tool.get() {
+        Tool::Measure(kind) => Some(match ed.active_measure.get() {
+            Some(_) => {
+                "Jeder Klick auf die Karte setzt einen weiteren Punkt der markierten Messung."
+                    .to_string()
+            }
+            None => format!(
+                "Auf die Karte klicken, um eine neue {} zu beginnen.",
+                match kind {
+                    MeasureKind::Distance => "Strecke",
+                    MeasureKind::Area => "Flächenmessung",
+                }
+            ),
+        }),
+        _ => None,
+    };
     view! {
         <div class="card bg-base-100 shadow">
             <div class="card-body gap-3">
-                <h2 class="card-title text-base">"Messen"</h2>
+                <h2 class="card-title text-base">
+                    "Messungen"
+                    <span class="badge badge-ghost">{count}</span>
+                </h2>
                 <div class="flex gap-2">
-                    {tool_button(MeasureKind::Distance, "Strecke messen")}
-                    {tool_button(MeasureKind::Area, "Fläche messen")}
+                    {new_button(MeasureKind::Distance, "Neue Strecke")}
+                    {new_button(MeasureKind::Area, "Neue Fläche")}
                 </div>
-                {move || {
-                    let (kind, count, m) = result();
-                    if count == 0 {
-                        return view! {
-                            <p class="text-sm text-base-content/70">
-                                "Werkzeug wählen und auf die Karte klicken: jeder Klick setzt einen Messpunkt. "
-                                "Messungen werden nicht gespeichert."
-                            </p>
-                        }.into_any();
-                    }
-                    let total_label = if kind == MeasureKind::Area { "Umfang" } else { "Strecke" };
-                    view! {
-                        <dl class="grid grid-cols-2 gap-1 text-sm">
-                            <dt class="text-base-content/70">{total_label}</dt>
-                            <dd class="text-right font-semibold">{format_distance(m.length_m)}</dd>
-                            {(kind == MeasureKind::Area).then(|| view! {
-                                <dt class="text-base-content/70">"Fläche"</dt>
-                                <dd class="text-right font-semibold">
-                                    {m.area_m2.map_or_else(|| "–".to_string(), format_area)}
-                                </dd>
-                            })}
-                            <dt class="text-base-content/70">"Punkte"</dt>
-                            <dd class="text-right">{count}</dd>
-                        </dl>
-                        {(m.segments.len() > 1).then(|| view! {
-                            <ol class="list-inside list-decimal text-xs text-base-content/70">
-                                {m.segments.iter().map(|s| view! { <li>{format_distance(*s)}</li> }).collect_view()}
-                            </ol>
-                        })}
-                        {m.self_intersecting.then(|| view! {
-                            <div role="alert" class="alert alert-warning text-sm">
-                                "Der Umriss überschneidet sich – die Fläche stimmt so nicht. Punkte rund um die Fläche setzen."
-                            </div>
-                        })}
-                        {(kind == MeasureKind::Area && count < 3).then(|| view! {
-                            <p class="text-sm text-base-content/70">"Für eine Fläche mindestens drei Punkte setzen."</p>
-                        })}
-                    }.into_any()
-                }}
-                <div class="flex flex-wrap gap-2">
-                    <button
-                        type="button"
-                        class="btn btn-sm"
-                        disabled=move || ed.measure_points.with(Vec::is_empty)
-                        on:click=move |_| ed.measure_points.update(|pts| { pts.pop(); })
-                    >
-                        "Letzten Punkt entfernen"
-                    </button>
-                    <button
-                        type="button"
-                        class="btn btn-sm btn-ghost"
-                        disabled=move || ed.measure_points.with(Vec::is_empty)
-                        on:click=move |_| ed.measure_points.update(Vec::clear)
-                    >
-                        "Messung löschen"
-                    </button>
-                </div>
+                {move || hint().map(|h| view! { <p class="text-sm text-base-content/70">{h}</p> })}
+                <Show when=move || count() == 0 && hint().is_none()>
+                    <p class="text-sm text-base-content/70">
+                        "Strecken und Flächen messen und beschriften, z. B. „Zufahrt Feuerwehr“. "
+                        "Messungen werden mit dem Plan gespeichert."
+                    </p>
+                </Show>
+                <ul class="flex flex-col gap-2">
+                    // Nach Index geschlüsselt: Zeilen bleiben bestehen, das Eingabefeld behält beim Tippen den Fokus
+                    <For each=move || 0..count() key=|i| *i let:i>
+                        <MeasureRow i/>
+                    </For>
+                </ul>
             </div>
         </div>
+    }
+}
+
+/// Eine Messung in der Liste: Bezeichnung, Ergebnis, weiter messen, Punkte entfernen, löschen.
+#[component]
+fn MeasureRow(i: usize) -> impl IntoView {
+    let ed = expect_context::<Editor>();
+    let get = move || ed.plan.with(|p| p.measures.get(i).cloned());
+    let active = move || ed.active_measure.get() == Some(i);
+    let kind = move || get().map_or(MeasureKind::Distance, |m| m.kind);
+    let name = move || get().map(|m| m.display_name(i)).unwrap_or_default();
+    let remove = move |_| {
+        ed.active_measure.update(|a| {
+            *a = match *a {
+                Some(j) if j == i => None,
+                Some(j) if j > i => Some(j - 1),
+                other => other,
+            }
+        });
+        ed.plan.update(|p| {
+            if i < p.measures.len() {
+                p.measures.remove(i);
+            }
+        });
+    };
+    view! {
+        <li
+            class="flex flex-col gap-2 rounded-box p-2 text-sm"
+            class:bg-base-200=move || !active()
+            class=("bg-primary/15", active)
+            class=("ring-1", active)
+            class=("ring-primary", active)
+        >
+            <div class="flex items-center gap-2">
+                <span class="inline-block h-1 w-4 shrink-0 rounded-full bg-site-measure"></span>
+                <input
+                    type="text"
+                    class="input input-sm min-w-0 flex-1"
+                    maxlength=MAX_MEASURE_LABEL_LEN
+                    placeholder=move || format!("Messung {}", i + 1)
+                    aria-label=move || format!("Bezeichnung von {}", name())
+                    prop:value=move || get().map(|m| m.label).unwrap_or_default()
+                    on:input=move |ev| {
+                        let v = event_target_value(&ev);
+                        ed.plan.update(|p| {
+                            if let Some(m) = p.measures.get_mut(i) {
+                                m.label = v;
+                            }
+                        });
+                    }
+                />
+                <button
+                    type="button"
+                    class="btn btn-ghost btn-xs text-error"
+                    title=move || format!("{} löschen", name())
+                    aria-label=move || format!("{} löschen", name())
+                    on:click=remove
+                >"✕"</button>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+                <span class="badge badge-ghost badge-sm">{move || kind().label()}</span>
+                <span class="font-semibold">{move || get().map(|m| m.summary()).unwrap_or_default()}</span>
+            </div>
+            {move || get().filter(|_| active()).map(|m| {
+                let r = m.result();
+                let needed = m.kind.min_points().saturating_sub(m.points.len());
+                view! {
+                    <dl class="grid grid-cols-2 gap-1 text-xs text-base-content/70">
+                        <dt>{if m.kind == MeasureKind::Area { "Umfang" } else { "Strecke" }}</dt>
+                        <dd class="text-right">{format_distance(r.length_m)}</dd>
+                        <dt>"Punkte"</dt>
+                        <dd class="text-right">{m.points.len()}</dd>
+                    </dl>
+                    {(r.segments.len() > 1).then(|| view! {
+                        <ol class="list-inside list-decimal text-xs text-base-content/70">
+                            {r.segments.iter().map(|s| view! { <li>{format_distance(*s)}</li> }).collect_view()}
+                        </ol>
+                    })}
+                    {(needed > 0).then(|| view! {
+                        <p class="text-xs text-base-content/70">
+                            {format!("Noch mindestens {needed} Punkt(e) setzen.")}
+                        </p>
+                    })}
+                    {r.self_intersecting.then(|| view! {
+                        <div role="alert" class="alert alert-warning text-xs">
+                            "Der Umriss überschneidet sich – die Fläche stimmt so nicht. Punkte rund um die Fläche setzen."
+                        </div>
+                    })}
+                }
+            })}
+            <div class="flex flex-wrap gap-2">
+                <Show
+                    when=active
+                    fallback=move || view! {
+                        <button
+                            type="button"
+                            class="btn btn-xs"
+                            on:click=move |_| {
+                                ed.tool.set(Tool::Measure(kind()));
+                                ed.active_measure.set(Some(i));
+                            }
+                        >"Weiter messen"</button>
+                    }
+                >
+                    <button
+                        type="button"
+                        class="btn btn-xs"
+                        disabled=move || get().is_none_or(|m| m.points.is_empty())
+                        on:click=move |_| ed.plan.update(|p| {
+                            if let Some(m) = p.measures.get_mut(i) {
+                                m.points.pop();
+                            }
+                        })
+                    >"Letzten Punkt entfernen"</button>
+                    <button
+                        type="button"
+                        class="btn btn-xs btn-primary"
+                        on:click=move |_| {
+                            ed.active_measure.set(None);
+                            ed.tool.set(Tool::Select);
+                        }
+                    >"Fertig"</button>
+                </Show>
+            </div>
+        </li>
     }
 }
 

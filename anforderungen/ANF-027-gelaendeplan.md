@@ -29,7 +29,7 @@ Technik (Vorgabe des Auftraggebers):
 | Brücke | `src/components/site_plans/map_bridge.js`, aus Rust über `wasm-bindgen` gesteuert (`bridge.rs`) |
 | Flächen und Lage | Rust-Paket **`geo`** (`unsigned_area`, `contains`, `is_valid`) – im Browser und auf dem Server |
 | Adresssuche | **Suchdienst von swisstopo** (geo.admin.ch SearchServer: Adressen, Orte, Flurnamen, Gemeinden, PLZ der Schweiz und Liechtensteins), direkt aus dem Browser, auf Knopfdruck |
-| Messwerkzeuge | Linien, Punkte und Flächen als Ebenen von MapLibre, Beschriftungen als Marken auf der Karte |
+| Messungen | Mehrere beschriftete Strecken und Flächen, **rot** gezeichnet als Ebenen von MapLibre, Beschriftungen als Marken auf der Karte, mit dem Plan gespeichert |
 
 Koordinaten: Ein Plan hat einen **Standort** (Ursprung, Längen- und Breitengrad). Elemente und Eckpunkte
 stehen in Metern relativ dazu (x nach Osten, z nach Süden). Wird der Standort geändert, wandert der ganze
@@ -93,15 +93,20 @@ Plan mit.
 - [x] **AK-13:** Gegeben ein gespeicherter Plan, wenn ich „Löschen“ wähle und bestätige, dann wird der Plan
   gelöscht und die Projektansicht zeigt „„Geländeplan“ wurde gelöscht.“ Wird das Projekt gelöscht, wird
   auch sein Plan gelöscht.
-- [x] **AK-15:** Gegeben das Messwerkzeug **„Strecke messen“**, wenn ich auf die Karte klicke, dann setzt
-  jeder Klick einen Messpunkt; die Länge jedes Abschnitts steht auf der Karte und in der Seitenleiste, dazu
-  die Gesamtstrecke (bis 1 km in m, darüber in km).
-- [x] **AK-16:** Gegeben das Messwerkzeug **„Fläche messen“**, dann wird der Linienzug geschlossen und ab
-  drei Punkten gefüllt; Umfang, Fläche in m² und die Abschnitte werden angezeigt. Überschneidet sich der
-  Umriss, steht statt der Fläche „–“ und ein Hinweis erscheint.
-- [x] **AK-17:** Gegeben eine Messung, dann bleibt sie beim Wechsel zu einem anderen Werkzeug sichtbar;
-  „Letzten Punkt entfernen“ und „Messung löschen“ machen sie rückgängig. Messungen gehören nicht zum Plan
-  und werden nicht gespeichert.
+- [x] **AK-15:** Gegeben „Neue Strecke“, wenn ich auf die Karte klicke, dann beginnt eine neue Messung; jeder
+  weitere Klick setzt einen Punkt. Die Länge jedes Abschnitts steht auf der Karte und in der Liste, dazu die
+  Gesamtstrecke (bis 1 km in m, darüber in km). Die Messlinien sind **rot**.
+- [x] **AK-16:** Gegeben „Neue Fläche“, dann wird der Linienzug geschlossen und ab drei Punkten rot gefüllt;
+  Umfang, Fläche in m² und die Abschnitte werden angezeigt. Überschneidet sich der Umriss, steht statt der
+  Fläche „–“ und ein Hinweis erscheint.
+- [x] **AK-17:** Gegeben mehrere Messungen, dann stehen sie alle in der Liste „Messungen“ und auf der Karte.
+  Jede lässt sich **beschriften** (höchstens 100 Zeichen, leer = „Messung <Nummer>“); auf der Karte steht
+  „Bezeichnung: Ergebnis“. Die Messung, an der gerade gemessen wird, ist in der Liste markiert und auf der
+  Karte kräftiger gezeichnet, mit Abschnittslängen. „Weiter messen“ setzt weitere Punkte an eine bestehende
+  Messung, „Letzten Punkt entfernen“ und „✕“ machen rückgängig, „Fertig“ beendet das Messen.
+- [x] **AK-17a:** Gegeben Messungen, dann gehören sie zum Plan: Sie werden mit „Speichern“ gespeichert, mit
+  „Verwerfen“ zurückgesetzt und beim Öffnen wieder angezeigt. Höchstens 50 Messungen mit je höchstens 100
+  Punkten; eine Strecke braucht mindestens 2, eine Fläche mindestens 3 Punkte, sonst meldet der Server einen Fehler.
 - [x] **AK-18:** Gegeben das Werkzeug **„Auswählen und verschieben“** (Vorgabe) oder ein Platzier-Werkzeug,
   wenn ich ein Element auf der Karte mit der Maus oder einem Finger anfasse und ziehe, dann folgt es dem
   Zeiger, ohne dass sich die Karte bewegt. Über einem Element zeigt der Mauszeiger „verschieben“. Ein Klick
@@ -148,6 +153,10 @@ Tabelle `gelaendeplan_element`:
 
 Tabelle `gelaendeplan_eckpunkt`: `reihenfolge`, `x_m`, `z_m` (leer = keine Rasenfläche).
 
+Tabelle `gelaendeplan_messung`: `reihenfolge`, `art` (`strecke`, `flaeche`), `bezeichnung` (höchstens 100
+Zeichen, leer = „Messung <Nummer>“). Ihre Punkte in `gelaendeplan_messpunkt`: `messung_id`, `reihenfolge`,
+`x_m`, `z_m`.
+
 ## 5. Abhängigkeiten
 
 - Hängt ab von: ANF-003 (Projekte)
@@ -158,7 +167,7 @@ Tabelle `gelaendeplan_eckpunkt`: `reihenfolge`, `x_m`, `z_m` (leer = keine Rasen
 ## 6. Nicht im Umfang
 
 - Suche während des Tippens (Vorschläge) und Adressen ausserhalb der Schweiz und Liechtensteins.
-- Messungen speichern, Höhen messen, an Elementen oder Eckpunkten einrasten.
+- Höhen messen, Messpunkte ziehen, an Elementen oder Eckpunkten einrasten.
 - Freie Grösse je Element, mehrere Elemente gleichzeitig verschieben, Eckpunkte einfügen oder einzeln löschen.
 - Fertige 3D-Modelle aus Dateien (`.glb` über den `GLTFLoader`); die Modelle werden aus Grundformen gebaut.
 - Mehrere Pläne oder Versionen je Projekt, Druckansicht, Export.
@@ -188,6 +197,7 @@ Vorläufige Annahmen, bis sie geklärt sind:
 |------------|-------|-----------------|
 | 2026-11-23 | Hatem Ben Belgacem | Erstellt und umgesetzt (Vorgabe: Anleitung Leptos + MapLibre + Three.js) |
 | 2026-11-24 | Hatem Ben Belgacem | AK-4: gestaltete 3D-Modelle statt Quadern (Bühne, Verpflegungsstand, Festzelt) |
+| 2026-11-24 | Hatem Ben Belgacem | AK-15 bis AK-17a: mehrere beschriftete Messungen, rot, mit dem Plan gespeichert |
 | 2026-11-24 | Hatem Ben Belgacem | AK-12a: Adresssuche über swisstopo statt Nominatim |
 | 2026-11-24 | Hatem Ben Belgacem | AK-2: Luftbild swisstopo SWISSIMAGE statt Esri (nur Schweiz) |
 | 2026-11-24 | Hatem Ben Belgacem | AK-5, AK-21: Drehen um die eigene Achse (Drehgriff, Taste R, 15°-Schritte); AK-6, AK-22: Rasenfläche lila, Eckpunkte ziehbar |

@@ -34,6 +34,7 @@ Stand: 2026-11-24
 
 - [x] ANF-027 Geländeplan eines Projekts erfasst und umgesetzt: 3D-Karte (MapLibre + Three.js) unter `/projekte/<Kennung>/gelaendeplan`, Bühnen/Verpflegungsstände/Festzelte platzieren, drehen, löschen, Rasenfläche abstecken (m², Lageprüfung mit `geo`), Standort im Modal-Fenster, Speichern in `gelaendeplan*`
 - [x] ANF-027 AK-4: Elemente als gestaltete 3D-Modelle statt Quadern (Bühne, Verpflegungsstand, Festzelt)
+- [x] ANF-027 AK-15 bis AK-17a: mehrere Messungen mit Bezeichnung, rote Messlinien, Messungen werden mit dem Plan gespeichert (`gelaendeplan_messung`, `gelaendeplan_messpunkt`)
 - [x] ANF-027 AK-12a: Adresssuche über den Suchdienst von swisstopo statt Nominatim (Geländeplan nur in der Schweiz)
 - [x] ANF-027 AK-2: Luftbild swisstopo SWISSIMAGE statt Esri World Imagery (Geländeplan nur in der Schweiz)
 - [x] ANF-027 AK-5, AK-21, AK-22: Elemente am Drehgriff um die eigene Achse drehen (Taste R, ↺/↻ in 15°-Schritten), Rasenfläche lila, Eckpunkte ziehbar
