@@ -18,6 +18,7 @@
   --gelaende-buehne: #ef4444; /* Rot */
   --gelaende-verpflegungsstand: #f59e0b; /* Orange */
   --gelaende-festzelt: #3b82f6; /* Blau */
+  --gelaende-gitterabsperrung: #94a3b8; /* Metallgrau: Gitterabsperrung */
   --gelaende-flaeche: #a855f7; /* Lila: abgesteckte Rasenfläche (Füllung, Umriss, Eckpunkte) */
   --gelaende-gestell: #374151; /* Anthrazit: Stützen, Bühnenboden, Lautsprecher, Eingang */
   --gelaende-plane: #f8fafc; /* Hell: Zeltwände, Thekenplatte, Streifen des Vordachs */
@@ -91,6 +92,7 @@
   --color-site-stage: var(--gelaende-buehne);
   --color-site-food-stall: var(--gelaende-verpflegungsstand);
   --color-site-tent: var(--gelaende-festzelt);
+  --color-site-barrier: var(--gelaende-gitterabsperrung);
   --color-site-area: var(--gelaende-flaeche);
   --color-site-measure: var(--gelaende-messung);
   --color-site-route: var(--gelaende-besucherweg);

@@ -337,7 +337,7 @@ fn label_input(
 
 /// Zahlenfeld mit Beschriftung; übernommen wird beim Verlassen des Felds. Ungültige Eingaben
 /// werden am Feld gemeldet und nicht übernommen.
-fn number_field(
+pub(super) fn number_field(
     label: &'static str,
     value: impl Fn() -> String + Send + Sync + 'static,
     placeholder: &'static str,

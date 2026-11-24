@@ -33,6 +33,7 @@ Stand: 2026-11-24
 
 ## Erledigt
 
+- [x] ANF-027 AK-23, AK-24: eigene Masse je Element (Breite, Tiefe, Höhe, Drehung) und Elementart Gitterabsperrung (Migration `gelaendeplan_element_masse`)
 - [x] ANF-028 Stufe 3 Engstellen: nötige Breite je Weg, freie Breite zwischen Elementen, versperrte Wege, Liste „Engstellen“ und Warnzeichen auf der Karte, Planungswert „Durchfluss je Meter Wegbreite“ (Migration `gelaendeplan_durchfluss`)
 - [x] ANF-028 Besucherströme erfasst und Stufen 1 und 2 umgesetzt: Besucherwege (Richtung, Personen pro Stunde, Breite; Linienbreite nach Menge, Pfeile), Zugänge (Eingang, Ausgang, Notausgang), Zonen mit Fassungsvermögen und Ampel; gespeichert in `gelaendeplan_besucherweg`, `gelaendeplan_zugang`, `gelaendeplan_zone`
 - [x] ANF-027 Geländeplan eines Projekts erfasst und umgesetzt: 3D-Karte (MapLibre + Three.js) unter `/projekte/<Kennung>/gelaendeplan`, Bühnen/Verpflegungsstände/Festzelte platzieren, drehen, löschen, Rasenfläche abstecken (m², Lageprüfung mit `geo`), Standort im Modal-Fenster, Speichern in `gelaendeplan*`

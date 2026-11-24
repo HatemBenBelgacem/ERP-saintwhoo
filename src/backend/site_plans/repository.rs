@@ -56,8 +56,9 @@ pub async fn find(
         return Ok(None);
     };
 
-    let rows: Vec<(String, f64, f64, f64, f64, f64)> = sqlx::query_as(
-        "SELECT art, x_m, z_m, drehung_grad, breite_m, tiefe_m \
+    #[allow(clippy::type_complexity)]
+    let rows: Vec<(String, f64, f64, f64, f64, f64, Option<f64>)> = sqlx::query_as(
+        "SELECT art, x_m, z_m, drehung_grad, breite_m, tiefe_m, hoehe_m \
          FROM gelaendeplan_element WHERE gelaendeplan_id = $1 ORDER BY reihenfolge",
     )
     .bind(id)
@@ -65,7 +66,7 @@ pub async fn find(
     .await?;
     let elements = rows
         .into_iter()
-        .filter_map(|(art, x, z, rotation_deg, width_m, depth_m)| {
+        .filter_map(|(art, x, z, rotation_deg, width_m, depth_m, height_m)| {
             ElementKind::from_key(&art).map(|kind| SiteElement {
                 kind,
                 x,
@@ -73,6 +74,7 @@ pub async fn find(
                 rotation_deg,
                 width_m,
                 depth_m,
+                height_m,
             })
         })
         .collect();
@@ -142,10 +144,11 @@ pub async fn save(
     let e = &plan.elements;
     sqlx::query(
         "INSERT INTO gelaendeplan_element \
-             (gelaendeplan_id, reihenfolge, art, x_m, z_m, drehung_grad, breite_m, tiefe_m) \
-         SELECT $1, t.nr, t.art, t.x, t.z, t.drehung, t.breite, t.tiefe \
-         FROM unnest($2::int[], $3::text[], $4::float8[], $5::float8[], $6::float8[], $7::float8[], $8::float8[]) \
-              AS t(nr, art, x, z, drehung, breite, tiefe)",
+             (gelaendeplan_id, reihenfolge, art, x_m, z_m, drehung_grad, breite_m, tiefe_m, hoehe_m) \
+         SELECT $1, t.nr, t.art, t.x, t.z, t.drehung, t.breite, t.tiefe, t.hoehe \
+         FROM unnest($2::int[], $3::text[], $4::float8[], $5::float8[], $6::float8[], $7::float8[], \
+                     $8::float8[], $9::float8[]) \
+              AS t(nr, art, x, z, drehung, breite, tiefe, hoehe)",
     )
     .bind(id)
     .bind((1..=e.len() as i32).collect::<Vec<i32>>())
@@ -155,6 +158,7 @@ pub async fn save(
     .bind(e.iter().map(|e| e.rotation_deg).collect::<Vec<_>>())
     .bind(e.iter().map(|e| e.width_m).collect::<Vec<_>>())
     .bind(e.iter().map(|e| e.depth_m).collect::<Vec<_>>())
+    .bind(e.iter().map(|e| e.height_m).collect::<Vec<Option<f64>>>())
     .execute(&mut *conn)
     .await?;
 

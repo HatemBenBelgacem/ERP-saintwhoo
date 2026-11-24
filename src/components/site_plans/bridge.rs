@@ -313,7 +313,7 @@ impl Scene {
                     rotation_deg: e.rotation_deg,
                     width_m: e.width_m,
                     depth_m: e.depth_m,
-                    height_m: e.kind.height_m(),
+                    height_m: e.height(),
                     outside: !plan.fits(e),
                 })
                 .collect(),

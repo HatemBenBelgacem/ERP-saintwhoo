@@ -60,6 +60,8 @@ Plan mit.
   - **Verpflegungsstand** (2,8 m): orange Theke mit heller Platte, Rück- und Seitenwände, Dach, orange-hell
     gestreiftes Vordach nach vorne.
   - **Festzelt** (3 m): helle Zeltwände, blaues Giebeldach mit Firststange, dunkler Eingang vorne.
+  - **Gitterabsperrung** „Gitterabsperrung (2,5 × 0,6 m)“ (1,1 m): metallgraue Gitterfelder von rund 2,5 m
+    mit Pfosten, Ober- und Unterholm, Gitterstäben und Füssen; mit grösserer Breite eine ganze Absperrlinie.
 - [x] **AK-5:** Gegeben ein Element in der Liste, wenn ich „↺“ bzw. „↻“ wähle, dann dreht es sich um 15° gegen
   bzw. im Uhrzeigersinn um die eigene Achse (Mittelpunkt); mit „✕“ wird es entfernt.
 - [x] **AK-6:** Gegeben das Werkzeug „Rasenfläche abstecken“, wenn ich auf die Karte klicke, dann setzt jeder
@@ -127,6 +129,17 @@ Plan mit.
   (beim Auswählen, Platzieren und Abstecken, nicht beim Messen), dann folgt er dem Zeiger; Fläche in m²,
   Lageprüfung der Elemente und Markierung „ausserhalb“ werden laufend nachgeführt. Ein Klick auf einen
   bestehenden Eckpunkt setzt keinen neuen. Fläche, Umriss und Eckpunkte sind **lila**.
+- [x] **AK-23:** Gegeben ein ausgewähltes Element, dann zeigt die Liste „Platzierte Elemente“ darunter
+  „Masse von …“ mit **Breite, Tiefe, Höhe** (in Metern, Dezimalkomma erlaubt) und **Drehung** (°). Ein
+  geänderter Wert wird beim Verlassen des Felds übernommen; 3D-Modell, Liste, Lageprüfung und Engstellen
+  (ANF-028) folgen sofort. Erlaubt sind Breite und Tiefe 0,1 bis 200 m, Höhe 0,1 bis 50 m; ungültige Werte
+  werden am Feld gemeldet. Würde ein Element auf der Rasenfläche über den Rand wachsen, wird die Änderung mit
+  Hinweis abgewiesen. „Vorgabemasse“ setzt Breite, Tiefe und Höhe auf die Vorgabe der Art zurück. Die Masse
+  werden mit dem Plan gespeichert und in der Liste als „Breite × Tiefe × Höhe“ angezeigt.
+- [x] **AK-24:** Gegeben das Werkzeug **„Gitterabsperrung (2,5 × 0,6 m)“**, wenn ich auf die Karte klicke,
+  dann steht dort ein Gitterelement von 1,1 m Höhe. Mit eigener Breite (AK-23) wird daraus eine Absperrlinie,
+  z. B. 20 m; Pfosten und Füsse stehen rund alle 2,5 m. Gitterabsperrungen lassen sich wie alle Elemente
+  verschieben und drehen und engen Besucherwege ein bzw. versperren sie (ANF-028).
 - [x] **AK-14:** Gegeben die Karte kann nicht geladen werden (z. B. ohne Internet), dann erscheint eine
   Fehlermeldung; der Rest der Seite bleibt bedienbar.
 
@@ -146,10 +159,11 @@ Tabelle `gelaendeplan_element`:
 | Feld | Typ | Pflicht | Bemerkung |
 |------|-----|---------|-----------|
 | `reihenfolge` | Zahl | ja | Reihenfolge in der Liste |
-| `art` | Text | ja | `buehne`, `verpflegungsstand`, `festzelt` |
+| `art` | Text | ja | `buehne`, `verpflegungsstand`, `festzelt`, `gitterabsperrung` |
 | `x_m`, `z_m` | Zahl | ja | Mittelpunkt in Metern relativ zum Standort |
 | `drehung_grad` | Zahl | ja | 0 ≤ Wert < 360 |
-| `breite_m`, `tiefe_m` | Zahl | ja | > 0, Vorgabe je Art |
+| `breite_m`, `tiefe_m` | Zahl | ja | 0,1 … 200 m, Vorgabe je Art, änderbar |
+| `hoehe_m` | Zahl | nein | 0,1 … 50 m; leer = Vorgabe der Art |
 
 Tabelle `gelaendeplan_eckpunkt`: `reihenfolge`, `x_m`, `z_m` (leer = keine Rasenfläche).
 
@@ -169,7 +183,8 @@ Zeichen, leer = „Messung <Nummer>“). Ihre Punkte in `gelaendeplan_messpunkt`
 
 - Suche während des Tippens (Vorschläge) und Adressen ausserhalb der Schweiz und Liechtensteins.
 - Höhen messen, Messpunkte ziehen, an Elementen oder Eckpunkten einrasten.
-- Freie Grösse je Element, mehrere Elemente gleichzeitig verschieben, Eckpunkte einfügen oder einzeln löschen.
+- Gebogene Absperrlinien (eine Gitterabsperrung ist gerade; Kurven aus mehreren Elementen zusammensetzen),
+  mehrere Elemente gleichzeitig verschieben, Eckpunkte einfügen oder einzeln löschen.
 - Fertige 3D-Modelle aus Dateien (`.glb` über den `GLTFLoader`); die Modelle werden aus Grundformen gebaut.
 - Mehrere Pläne oder Versionen je Projekt, Druckansicht, Export.
 - Gleichzeitiges Bearbeiten durch mehrere Benutzer (wer zuletzt speichert, gewinnt).
@@ -197,6 +212,7 @@ Vorläufige Annahmen, bis sie geklärt sind:
 | Datum      | Autor | Änderung        |
 |------------|-------|-----------------|
 | 2026-11-23 | Hatem Ben Belgacem | Erstellt und umgesetzt (Vorgabe: Anleitung Leptos + MapLibre + Three.js) |
+| 2026-11-24 | Hatem Ben Belgacem | AK-23: eigene Masse je Element (Breite, Tiefe, Höhe, Drehung); AK-24: Gitterabsperrung |
 | 2026-11-24 | Hatem Ben Belgacem | AK-4: gestaltete 3D-Modelle statt Quadern (Bühne, Verpflegungsstand, Festzelt) |
 | 2026-11-24 | Hatem Ben Belgacem | AK-15 bis AK-17a: mehrere beschriftete Messungen, rot, mit dem Plan gespeichert |
 | 2026-11-24 | Hatem Ben Belgacem | AK-12a: Adresssuche über swisstopo statt Nominatim |
