@@ -406,46 +406,52 @@ export class SitePlanMap {
     // Messung als Ebenen von MapLibre: Linien und Punkte in Bildschirmpixeln, damit sie in jeder
     // Zoomstufe gut sichtbar sind; sie liegen über den 3D-Modellen.
     #addMeasureLayers() {
-        const color = getComputedStyle(document.documentElement).getPropertyValue('--gelaende-messung').trim() || '#facc15';
-        this.map.addSource('messung', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        const color = cssColor('--gelaende-messung', '#dc2626');
+        // Aktive Messung (an der gerade gemessen wird) kräftiger, die übrigen etwas dünner
+        const active = (on, off) => ['case', ['get', 'active'], on, off];
+        this.map.addSource('messung', { type: 'geojson', data: emptyCollection() });
         this.map.addLayer({
             id: 'messung-flaeche', type: 'fill', source: 'messung',
             filter: ['==', '$type', 'Polygon'],
-            paint: { 'fill-color': color, 'fill-opacity': 0.2 }
+            paint: { 'fill-color': color, 'fill-opacity': active(0.2, 0.12) }
         });
         this.map.addLayer({
             id: 'messung-linie', type: 'line', source: 'messung',
             filter: ['==', '$type', 'LineString'],
-            paint: { 'line-color': color, 'line-width': 3, 'line-dasharray': [2, 1] }
+            paint: { 'line-color': color, 'line-width': active(3.5, 2.5) }
         });
         this.map.addLayer({
             id: 'messung-punkt', type: 'circle', source: 'messung',
             filter: ['==', '$type', 'Point'],
-            paint: { 'circle-color': color, 'circle-radius': 5, 'circle-stroke-color': '#000', 'circle-stroke-width': 1 }
+            paint: {
+                'circle-color': color,
+                'circle-radius': active(5, 3.5),
+                'circle-stroke-color': cssColor('--gelaende-auswahl', '#ffffff'),
+                'circle-stroke-width': 1.5
+            }
         });
         this.#updateMeasure();
     }
 
-    // Messung aus dem zuletzt gemeldeten Inhalt zeichnen und beschriften.
+    // Alle Messungen aus dem zuletzt gemeldeten Inhalt zeichnen und beschriften.
     #updateMeasure() {
         for (const m of this.labels ?? []) m.remove();
         this.labels = [];
         const source = this.map?.getSource('messung');
         if (!source) return;
-        const measure = this.scene?.measure;
         const features = [];
-        if (measure) {
+        for (const measure of this.scene?.measures ?? []) {
+            const props = { active: measure.active };
             const coords = measure.points.map(([x, z]) => this.#toLngLat(x, z));
-            for (const c of coords) {
-                features.push({ type: 'Feature', geometry: { type: 'Point', coordinates: c }, properties: {} });
-            }
+            for (const c of coords) features.push(point(c, props));
             // Umriss immer als Linie (auch wenn er sich überschneidet), die Fläche zusätzlich gefüllt
             if (coords.length >= 2) {
-                const line = measure.closed ? [...coords, coords[0]] : coords;
-                features.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: line }, properties: {} });
+                const line = lineString(measure.closed ? [...coords, coords[0]] : coords);
+                line.properties = props;
+                features.push(line);
             }
             if (measure.closed) {
-                features.push({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[...coords, coords[0]]] }, properties: {} });
+                features.push({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[...coords, coords[0]]] }, properties: props });
             }
             // Beschriftungen als HTML-Marken; Klicks gehen an die Karte durch
             for (const label of measure.labels) {
@@ -467,7 +473,7 @@ export class SitePlanMap {
     //                    drag_corners,   // Eckpunkte der Rasenfläche lassen sich ziehen
     //                    elements: [{ kind, x, z, rotation_deg, width_m, depth_m, height_m, outside, selected }],
     //                    corners: [[x, z], …],
-    //                    measure: null | { points: [[x, z], …], closed, labels: [{ x, z, text, main }] } }
+    //                    measures: [{ points: [[x, z], …], closed, active, labels: [{ x, z, text, main }] }] }
     sync(scene) {
         this.scene = scene;
         this.#rebuild();

@@ -4,7 +4,7 @@
 
 use sqlx::{PgConnection, PgPool};
 
-use super::model::{Corner, ElementKind, SiteElement, SitePlan};
+use super::model::{Corner, ElementKind, Measure, MeasureKind, SiteElement, SitePlan};
 
 /// Nummer und Name des Projekts; `None`, wenn es das Projekt nicht gibt.
 pub async fn project_head(
@@ -81,6 +81,8 @@ pub async fn find(
     .fetch_all(pool)
     .await?;
 
+    let measures = load_measures(pool, id).await?;
+
     Ok(Some((
         SitePlan {
             origin_lng,
@@ -88,6 +90,7 @@ pub async fn find(
             elements,
             corners: corners.into_iter().map(|(x, z)| Corner { x, z }).collect(),
             address,
+            measures,
         },
         changed,
     )))
@@ -155,7 +158,69 @@ pub async fn save(
     .bind(c.iter().map(|c| c.z).collect::<Vec<_>>())
     .execute(&mut *conn)
     .await?;
+
+    // Messungen: alte löschen (Punkte über ON DELETE CASCADE), dann je Messung Kopf und Punkte
+    sqlx::query("DELETE FROM gelaendeplan_messung WHERE gelaendeplan_id = $1")
+        .bind(id)
+        .execute(&mut *conn)
+        .await?;
+    for (i, m) in plan.measures.iter().enumerate() {
+        let label = m.label.trim();
+        let (measure_id,): (i64,) = sqlx::query_as(
+            "INSERT INTO gelaendeplan_messung (gelaendeplan_id, reihenfolge, art, bezeichnung) \
+             VALUES ($1, $2, $3, $4) RETURNING id",
+        )
+        .bind(id)
+        .bind(i as i32 + 1)
+        .bind(m.kind.key())
+        .bind((!label.is_empty()).then_some(label))
+        .fetch_one(&mut *conn)
+        .await?;
+        sqlx::query(
+            "INSERT INTO gelaendeplan_messpunkt (messung_id, reihenfolge, x_m, z_m) \
+             SELECT $1, t.nr, t.x, t.z FROM unnest($2::int[], $3::float8[], $4::float8[]) AS t(nr, x, z)",
+        )
+        .bind(measure_id)
+        .bind((1..=m.points.len() as i32).collect::<Vec<i32>>())
+        .bind(m.points.iter().map(|c| c.x).collect::<Vec<_>>())
+        .bind(m.points.iter().map(|c| c.z).collect::<Vec<_>>())
+        .execute(&mut *conn)
+        .await?;
+    }
     Ok(())
+}
+
+/// Messungen eines Plans mit ihren Punkten, in Reihenfolge.
+async fn load_measures(pool: &PgPool, plan_id: i64) -> Result<Vec<Measure>, sqlx::Error> {
+    let heads: Vec<(i64, String, Option<String>)> = sqlx::query_as(
+        "SELECT id, art, bezeichnung FROM gelaendeplan_messung \
+         WHERE gelaendeplan_id = $1 ORDER BY reihenfolge",
+    )
+    .bind(plan_id)
+    .fetch_all(pool)
+    .await?;
+    let points: Vec<(i64, f64, f64)> = sqlx::query_as(
+        "SELECT p.messung_id, p.x_m, p.z_m FROM gelaendeplan_messpunkt p \
+         JOIN gelaendeplan_messung m ON m.id = p.messung_id \
+         WHERE m.gelaendeplan_id = $1 ORDER BY p.messung_id, p.reihenfolge",
+    )
+    .bind(plan_id)
+    .fetch_all(pool)
+    .await?;
+    Ok(heads
+        .into_iter()
+        .filter_map(|(measure_id, art, label)| {
+            MeasureKind::from_key(&art).map(|kind| Measure {
+                kind,
+                label: label.unwrap_or_default(),
+                points: points
+                    .iter()
+                    .filter(|(m, _, _)| *m == measure_id)
+                    .map(|(_, x, z)| Corner { x: *x, z: *z })
+                    .collect(),
+            })
+        })
+        .collect())
 }
 
 /// Plan des Projekts löschen; liefert, ob es einen gab.
