@@ -23,6 +23,11 @@
   --gelaende-plane: #f8fafc; /* Hell: Zeltwände, Thekenplatte, Streifen des Vordachs */
   --gelaende-auswahl: #ffffff; /* Weiss: Rahmen um das ausgewählte Element */
   --gelaende-messung: #dc2626; /* Rot: Linien, Flächen und Punkte der Messungen */
+  /* Besucherströme (ANF-028); Zonen nutzen die Signalfarben (Ampel = Status) */
+  --gelaende-besucherweg: #0891b2; /* Cyan: Besucherwege */
+  --gelaende-eingang: #2563eb; /* Blau: Eingang */
+  --gelaende-ausgang: #ea580c; /* Orange: Ausgang */
+  --gelaende-notausgang: #16a34a; /* Grün wie das Rettungszeichen: Notausgang */
 }
 
 /* daisyUI-Farbschema „light“ (ANF-009). Alle daisyUI-Bausteine nutzen diese Farben automatisch:
@@ -88,6 +93,10 @@
   --color-site-tent: var(--gelaende-festzelt);
   --color-site-area: var(--gelaende-flaeche);
   --color-site-measure: var(--gelaende-messung);
+  --color-site-route: var(--gelaende-besucherweg);
+  --color-site-entrance: var(--gelaende-eingang);
+  --color-site-exit: var(--gelaende-ausgang);
+  --color-site-emergency-exit: var(--gelaende-notausgang);
 }
 
 /* Modal-Fenster auf dem Mobiltelefon gleiten beim Öffnen von unten herein (Klasse

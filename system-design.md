@@ -68,7 +68,7 @@ src/
 | `system`           | ANF-001     | server_fns, repository (Datenbank-Status)    | –                                           |
 | `home`             | ANF-001     | – (nutzt `system`)                           | home_page                                   |
 | `finance::accounts` | ANF-011    | model, server_fns, repository (unter `backend/finance/`) | `settings/finance/accounts/`: list, form |
-| `site_plans`       | ANF-027     | model (Prüfregeln mit `geo`), server_fns, repository | page, bridge (Rust ↔ `map_bridge.js`: MapLibre + Three.js) |
+| `site_plans`       | ANF-027, ANF-028 | model (Prüfregeln mit `geo`), flows (Besucherströme), server_fns, repository | page, flows (Besucherströme), bridge (Rust ↔ `map_bridge.js`: MapLibre + Three.js) |
 | `company`          | ANF-025     | model, server_fns, repository, logo (Auslieferung `/firma/logo`) | `settings/company/`: page, form |
 | `settings`         | –           | –                                            | general, company, finance (Stammdaten der Finanzen) |
 

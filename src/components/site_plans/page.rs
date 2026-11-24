@@ -2,8 +2,8 @@
 //! Bühnen, Verpflegungsständen und Festzelten sowie zum Abstecken der Rasenfläche.
 //!
 //! Der Plan wird im Browser bearbeitet und mit „Speichern“ als Ganzes an den Server geschickt.
-//! Den Standort ändert man im Modal-Fenster `?standort=1` (mit Adresssuche). Die Messwerkzeuge
-//! (Strecke, Fläche) zeichnen nur auf der Karte und werden nicht gespeichert.
+//! Den Standort ändert man im Modal-Fenster `?standort=1` (mit Adresssuche). Messungen und
+//! Besucherströme (ANF-028, siehe `flows.rs`) gehören zum Plan und werden mit ihm gespeichert.
 
 use leptos::html::Div;
 use leptos::prelude::*;
@@ -11,6 +11,8 @@ use leptos_meta::Title;
 use leptos_router::hooks::{use_navigate, use_params_map, use_query_map};
 
 use super::bridge::{MapEvent, MapView, ViewState, search_address};
+use super::flows;
+use crate::backend::site_plans::flows::AccessKind;
 use crate::backend::site_plans::model::{
     AddressHit, Corner, ElementKind, MAX_MEASURE_LABEL_LEN, MAX_MEASURES, Measure, MeasureKind,
     OriginInput, ROTATION_STEP_DEG, SiteElement, SitePlan, SitePlanPage, format_area,
@@ -22,26 +24,30 @@ use crate::forms::{
 };
 use crate::icons::{Icon, IconView};
 
-/// Gewähltes Werkzeug: auswählen und verschieben, Element platzieren, Rasenfläche abstecken oder messen.
+/// Gewähltes Werkzeug: auswählen und verschieben, Element platzieren, Rasenfläche abstecken, messen
+/// oder Besucherströme zeichnen (ANF-028).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Tool {
+pub(super) enum Tool {
     Select,
     Place(ElementKind),
     Area,
     Measure(MeasureKind),
+    Route,
+    Access(AccessKind),
+    Zone,
 }
 
 /// Zustand des Editors, für die Teil-Komponenten bereitgestellt.
 #[derive(Clone, Copy)]
-struct Editor {
-    plan: RwSignal<SitePlan>,
+pub(super) struct Editor {
+    pub(super) plan: RwSignal<SitePlan>,
     /// Zuletzt gespeicherter Stand (für „Ungespeicherte Änderungen“ und „Verwerfen“).
     saved: RwSignal<SitePlan>,
     /// Gibt es den Plan schon in der Datenbank?
     stored: RwSignal<bool>,
-    tool: RwSignal<Tool>,
+    pub(super) tool: RwSignal<Tool>,
     /// Hinweis zur letzten Aktion (z. B. Element passt nicht auf die Fläche).
-    notice: RwSignal<Option<String>>,
+    pub(super) notice: RwSignal<Option<String>>,
     map: StoredValue<Option<MapView>, LocalStorage>,
     /// Messung, an der gerade gemessen wird (Index in `plan.measures`); `None` = der nächste Klick
     /// mit einem Messwerkzeug beginnt eine neue Messung.
@@ -50,6 +56,10 @@ struct Editor {
     customer_address: StoredValue<Option<String>>,
     /// Ausgewähltes Element (Index in `plan.elements`).
     selected: RwSignal<Option<usize>>,
+    /// Besucherweg bzw. Zone, an dem gerade gezeichnet wird (ANF-028); `None` = der nächste Klick mit
+    /// dem Werkzeug beginnt einen neuen Weg bzw. eine neue Zone.
+    pub(super) active_route: RwSignal<Option<usize>>,
+    pub(super) active_zone: RwSignal<Option<usize>>,
 }
 
 impl Editor {
@@ -60,14 +70,18 @@ impl Editor {
     /// Plan und Messung an die Karte geben (liest die Signale beobachtend).
     fn sync_map(self) {
         let active_measure = self.active_measure.get();
+        let active_route = self.active_route.get();
+        let active_zone = self.active_zone.get();
         let selected = self.selected.get();
         // Elemente ziehen und drehen: beim Auswählen und Platzieren; Eckpunkte ziehen: ausser beim Messen
         let tool = self.tool.get();
         let drag_elements = matches!(tool, Tool::Select | Tool::Place(_));
-        let drag_corners = !matches!(tool, Tool::Measure(_));
+        let drag_corners = matches!(tool, Tool::Select | Tool::Place(_) | Tool::Area);
         self.plan.with(|p| {
             let view = ViewState {
                 active_measure,
+                active_route,
+                active_zone,
                 selected: selected.filter(|i| *i < p.elements.len()),
                 drag_elements,
                 drag_corners,
@@ -160,6 +174,8 @@ fn SitePlanEditor(page: SitePlanPage) -> impl IntoView {
         notice: RwSignal::new(None),
         map: StoredValue::new_local(None),
         active_measure: RwSignal::new(None),
+        active_route: RwSignal::new(None),
+        active_zone: RwSignal::new(None),
         selected: RwSignal::new(None),
         customer_address: StoredValue::new(page.kunde_adresse.clone()),
     };
@@ -268,6 +284,7 @@ fn SitePlanEditor(page: SitePlanPage) -> impl IntoView {
                 <div class="order-2 space-y-4 lg:order-1">
                     <ToolCard/>
                     <MeasureCard/>
+                    <flows::FlowsCard/>
                     <AreaCard/>
                     <ElementList/>
                 </div>
@@ -407,6 +424,9 @@ fn place(ed: Editor, x: f64, z: f64) {
             ed.notice.set(None);
         }
         Tool::Measure(kind) => add_measure_point(ed, kind, Corner { x, z }),
+        Tool::Route => flows::add_route_point(ed, Corner { x, z }),
+        Tool::Access(kind) => flows::add_access(ed, kind, x, z),
+        Tool::Zone => flows::add_zone_point(ed, Corner { x, z }),
         Tool::Place(kind) => {
             let element = SiteElement::new(kind, x, z);
             if ed.plan.with_untracked(|p| p.fits(&element)) {
@@ -493,6 +513,8 @@ fn Header(
                         let origin = (saved.origin_lng, saved.origin_lat);
                         ed.selected.set(None);
                         ed.active_measure.set(None);
+                        ed.active_route.set(None);
+                        ed.active_zone.set(None);
                         ed.plan.set(saved);
                         ed.map.with_value(|m| if let Some(m) = m { m.set_origin(origin.0, origin.1) });
                         ed.notice.set(None);

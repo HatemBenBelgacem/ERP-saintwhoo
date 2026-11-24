@@ -160,6 +160,7 @@ Zeichen, leer = „Messung <Nummer>“). Ihre Punkte in `gelaendeplan_messpunkt`
 ## 5. Abhängigkeiten
 
 - Hängt ab von: ANF-003 (Projekte)
+- Wird benötigt von: ANF-028 (Besucherströme im Geländeplan)
 - Externe Dienste: esm.sh / unpkg.com (MapLibre, Three.js), wmts.geo.admin.ch (Luftbild SWISSIMAGE),
   api3.geo.admin.ch (Adresssuche)
 - Nutzt ANF-002 (Postanschrift des Kunden als Vorschlag für die Suche)
