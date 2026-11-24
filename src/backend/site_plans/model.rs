@@ -11,6 +11,16 @@ use crate::forms::FieldErrors;
 
 /// Vorgabe-Ursprung eines neuen Plans: St. Gallen (Längengrad, Breitengrad).
 pub const DEFAULT_ORIGIN: (f64, f64) = (9.3767, 47.4245);
+/// Ausdehnung des Luftbilds SWISSIMAGE (Schweiz und Liechtenstein) als (West, Süd, Ost, Nord);
+/// gleiche Werte wie `SWISS_BOUNDS` in `map_bridge.js`.
+pub const SWISS_BOUNDS: (f64, f64, f64, f64) = (5.9, 45.8, 10.5, 47.9);
+
+/// `true`, wenn für den Punkt (Längengrad, Breitengrad) ein Luftbild vorhanden ist.
+pub fn has_aerial_image(lng: f64, lat: f64) -> bool {
+    let (west, south, east, north) = SWISS_BOUNDS;
+    (west..=east).contains(&lng) && (south..=north).contains(&lat)
+}
+
 /// Höchstzahl der Elemente bzw. Eckpunkte je Plan.
 pub const MAX_ELEMENTS: usize = 500;
 pub const MAX_CORNERS: usize = 100;
@@ -668,5 +678,13 @@ mod tests {
             "Verpflegungsstand (4 × 2,5 m)"
         );
         assert_eq!(ElementKind::Stage.tool_label(), "Bühne (10 × 8 m)");
+    }
+
+    #[test]
+    fn aerial_image_only_in_switzerland() {
+        assert!(has_aerial_image(DEFAULT_ORIGIN.0, DEFAULT_ORIGIN.1)); // St. Gallen
+        assert!(has_aerial_image(8.5417, 47.3769)); // Zürich
+        assert!(has_aerial_image(9.5209, 47.1410)); // Vaduz
+        assert!(!has_aerial_image(13.4050, 52.5200)); // Berlin
     }
 }

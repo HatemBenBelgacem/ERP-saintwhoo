@@ -13,7 +13,7 @@ use leptos_router::hooks::{use_navigate, use_params_map, use_query_map};
 use super::bridge::{MapEvent, MapView, ViewState, search_address};
 use crate::backend::site_plans::model::{
     AddressHit, Corner, ElementKind, MeasureKind, OriginInput, ROTATION_STEP_DEG, SiteElement,
-    SitePlan, SitePlanPage, format_area, format_distance, format_m, measure,
+    SitePlan, SitePlanPage, format_area, format_distance, format_m, has_aerial_image, measure,
 };
 use crate::backend::site_plans::server_fns::{DeleteSitePlan, SaveSitePlan, get_site_plan};
 use crate::forms::{
@@ -1030,6 +1030,16 @@ fn OriginForm() -> impl IntoView {
                     {field("breite", "Breitengrad (Nord)")}
                     {field("laenge", "Längengrad (Ost)")}
                 </div>
+                // Luftbild gibt es nur in der Schweiz und in Liechtenstein
+                {move || {
+                    let outside = input.with(|i| i.parse().ok())
+                        .is_some_and(|(lng, lat, _)| !has_aerial_image(lng, lat));
+                    outside.then(|| view! {
+                        <div role="alert" class="alert alert-info text-sm">
+                            "Dieser Standort liegt ausserhalb der Schweiz. Dort zeigt die Karte kein Luftbild."
+                        </div>
+                    })
+                }}
                 <div class="modal-action flex-wrap">
                     <button type="button" class="btn" on:click=take_center>"Kartenmitte übernehmen"</button>
                     <a href=move || base.get() class="btn btn-ghost">"Abbrechen"</a>

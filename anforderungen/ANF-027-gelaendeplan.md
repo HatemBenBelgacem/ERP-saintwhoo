@@ -23,7 +23,7 @@ Technik (Vorgabe des Auftraggebers):
 
 | Teil | Technik |
 |------|---------|
-| Karte und Satellitenbild | **MapLibre GL JS** 4.7.1, Bilder von Esri World Imagery |
+| Karte und Luftbild | **MapLibre GL JS** 4.7.1, amtliches Luftbild **swisstopo SWISSIMAGE** (rund 10 cm pro Bildpunkt, nur Schweiz und Liechtenstein) |
 | 3D-Elemente | **Three.js** 0.170, als eigene Ebene („custom layer“) im selben `<canvas>` wie die Karte; Modelle aus Grundformen (Quader, Zylinder, ausgezogenes Dreieck) |
 | Einbindung | Beide als ES-Module aus dem Netz (esm.sh), erst beim Öffnen des Geländeplans geladen – kein npm, kein Bündeln |
 | Brücke | `src/components/site_plans/map_bridge.js`, aus Rust über `wasm-bindgen` gesteuert (`bridge.rs`) |
@@ -47,8 +47,9 @@ Plan mit.
   `/projekte/<Kennung>/gelaendeplan` mit Pfadleiste Projekte › Projektnummer › Geländeplan. Für ein
   unbekanntes Projekt erscheint „Projekt nicht gefunden“.
 - [x] **AK-2:** Gegeben ein Projekt ohne Plan, wenn ich den Geländeplan öffne, dann zeigt die Karte den
-  Vorgabe-Standort (St. Gallen) geneigt (60°) als Satellitenbild, und der Plan ist als „Noch nicht gespeichert“
-  markiert.
+  Vorgabe-Standort (St. Gallen) geneigt (60°) als Luftbild von swisstopo (Quellenangabe „Luftbild © swisstopo“),
+  und der Plan ist als „Noch nicht gespeichert“ markiert. Ausserhalb der Schweiz und Liechtensteins zeigt die
+  Karte einen neutralen Hintergrund; im Fenster „Standort“ weist ein Hinweis darauf hin.
 - [x] **AK-3:** Gegeben die Karte, wenn ich sie mit der rechten Maustaste bzw. Strg + Ziehen kippe und drehe,
   dann bleiben alle 3D-Elemente an ihrer Stelle auf dem Boden.
 - [x] **AK-4:** Gegeben ein gewähltes Werkzeug „Bühne (10 × 8 m)“, „Verpflegungsstand (4 × 2,5 m)“ oder
@@ -150,7 +151,7 @@ Tabelle `gelaendeplan_eckpunkt`: `reihenfolge`, `x_m`, `z_m` (leer = keine Rasen
 ## 5. Abhängigkeiten
 
 - Hängt ab von: ANF-003 (Projekte)
-- Externe Dienste: esm.sh / unpkg.com (MapLibre, Three.js), server.arcgisonline.com (Satellitenbilder),
+- Externe Dienste: esm.sh / unpkg.com (MapLibre, Three.js), wmts.geo.admin.ch (Luftbild SWISSIMAGE),
   nominatim.openstreetmap.org (Adresssuche)
 - Nutzt ANF-002 (Postanschrift des Kunden als Vorschlag für die Suche)
 
@@ -171,8 +172,8 @@ Vorläufige Annahmen, bis sie geklärt sind:
   Formular; sie braucht die ganze Breite. Eingaben (Standort, Löschen) laufen trotzdem in Modal-Fenstern.
 - [ ] Speichern ausdrücklich oder automatisch? *Annahme: ausdrücklich mit „Speichern“* (Plan als Ganzes).
 - [ ] Begriff „Foodstand“ oder „Verpflegungsstand“? *Annahme: „Verpflegungsstand“* (deutscher Begriff).
-- [ ] Satellitenbilder: Esri World Imagery darf nach den Nutzungsbedingungen von Esri verwendet werden?
-  Für den Betrieb ggf. einen eigenen Anbieter (z. B. swisstopo SWISSIMAGE) wählen.
+- [x] Welches Luftbild? **Geklärt (2026-11-24):** Der Geländeplan wird nur in der Schweiz verwendet → swisstopo
+  SWISSIMAGE statt Esri World Imagery (schärfer, amtlich, frei nutzbar mit Quellenangabe).
 - [ ] Bibliotheken aus dem Netz (esm.sh) oder selbst ausliefern (`public/`)? *Annahme: aus dem Netz*,
   feste Fassungen. Für Betrieb ohne fremde Dienste später selbst ausliefern.
 - [ ] Vorgabe-Standort: St. Gallen oder Adresse des Kunden? *Annahme: St. Gallen*; die Kundenadresse wird
@@ -187,6 +188,7 @@ Vorläufige Annahmen, bis sie geklärt sind:
 |------------|-------|-----------------|
 | 2026-11-23 | Hatem Ben Belgacem | Erstellt und umgesetzt (Vorgabe: Anleitung Leptos + MapLibre + Three.js) |
 | 2026-11-24 | Hatem Ben Belgacem | AK-4: gestaltete 3D-Modelle statt Quadern (Bühne, Verpflegungsstand, Festzelt) |
+| 2026-11-24 | Hatem Ben Belgacem | AK-2: Luftbild swisstopo SWISSIMAGE statt Esri (nur Schweiz) |
 | 2026-11-24 | Hatem Ben Belgacem | AK-5, AK-21: Drehen um die eigene Achse (Drehgriff, Taste R, 15°-Schritte); AK-6, AK-22: Rasenfläche lila, Eckpunkte ziehbar |
 | 2026-11-24 | Hatem Ben Belgacem | AK-18 bis AK-20: Elemente auswählen und verschieben (Ziehen mit Maus/Finger, Pfeiltasten) |
 | 2026-11-24 | Hatem Ben Belgacem | AK-12a/b: Adresssuche und Standort-Adresse; AK-15 bis AK-17: Messwerkzeuge Strecke und Fläche; AK-11: Umriss ohne Überschneidung |
