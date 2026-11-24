@@ -28,7 +28,7 @@ Technik (Vorgabe des Auftraggebers):
 | Einbindung | Beide als ES-Module aus dem Netz (esm.sh), erst beim Öffnen des Geländeplans geladen – kein npm, kein Bündeln |
 | Brücke | `src/components/site_plans/map_bridge.js`, aus Rust über `wasm-bindgen` gesteuert (`bridge.rs`) |
 | Flächen und Lage | Rust-Paket **`geo`** (`unsigned_area`, `contains`, `is_valid`) – im Browser und auf dem Server |
-| Adresssuche | **Nominatim** (OpenStreetMap), direkt aus dem Browser, nur auf Knopfdruck (höchstens 1 Anfrage pro Sekunde) |
+| Adresssuche | **Suchdienst von swisstopo** (geo.admin.ch SearchServer: Adressen, Orte, Flurnamen, Gemeinden, PLZ der Schweiz und Liechtensteins), direkt aus dem Browser, auf Knopfdruck |
 | Messwerkzeuge | Linien, Punkte und Flächen als Ebenen von MapLibre, Beschriftungen als Marken auf der Karte |
 
 Koordinaten: Ein Plan hat einen **Standort** (Ursprung, Längen- und Breitengrad). Elemente und Eckpunkte
@@ -152,12 +152,12 @@ Tabelle `gelaendeplan_eckpunkt`: `reihenfolge`, `x_m`, `z_m` (leer = keine Rasen
 
 - Hängt ab von: ANF-003 (Projekte)
 - Externe Dienste: esm.sh / unpkg.com (MapLibre, Three.js), wmts.geo.admin.ch (Luftbild SWISSIMAGE),
-  nominatim.openstreetmap.org (Adresssuche)
+  api3.geo.admin.ch (Adresssuche)
 - Nutzt ANF-002 (Postanschrift des Kunden als Vorschlag für die Suche)
 
 ## 6. Nicht im Umfang
 
-- Suche während des Tippens (Vorschläge); die Nutzungsregeln von Nominatim verbieten das.
+- Suche während des Tippens (Vorschläge) und Adressen ausserhalb der Schweiz und Liechtensteins.
 - Messungen speichern, Höhen messen, an Elementen oder Eckpunkten einrasten.
 - Freie Grösse je Element, mehrere Elemente gleichzeitig verschieben, Eckpunkte einfügen oder einzeln löschen.
 - Fertige 3D-Modelle aus Dateien (`.glb` über den `GLTFLoader`); die Modelle werden aus Grundformen gebaut.
@@ -178,9 +178,9 @@ Vorläufige Annahmen, bis sie geklärt sind:
   feste Fassungen. Für Betrieb ohne fremde Dienste später selbst ausliefern.
 - [ ] Vorgabe-Standort: St. Gallen oder Adresse des Kunden? *Annahme: St. Gallen*; die Kundenadresse wird
   als Suchbegriff vorgeschlagen, aber nicht automatisch gesucht.
-- [ ] Adresssuche: Nominatim (weltweit, freiwilliger Dienst mit Nutzungsregeln) oder der Suchdienst von
-  swisstopo (nur Schweiz, genauer für Schweizer Adressen)? *Annahme: Nominatim.* Für viele Benutzer im
-  Betrieb einen eigenen bzw. kostenpflichtigen Dienst prüfen. Der Suchbegriff geht an den Dienst.
+- [x] Adresssuche: Nominatim oder der Suchdienst von swisstopo? **Geklärt (2026-11-24):** swisstopo, da der
+  Geländeplan nur in der Schweiz verwendet wird (genauer für Schweizer Adressen, findet auch Flurnamen).
+  Der Suchbegriff geht an den Dienst.
 
 ## 8. Änderungshistorie
 
@@ -188,6 +188,7 @@ Vorläufige Annahmen, bis sie geklärt sind:
 |------------|-------|-----------------|
 | 2026-11-23 | Hatem Ben Belgacem | Erstellt und umgesetzt (Vorgabe: Anleitung Leptos + MapLibre + Three.js) |
 | 2026-11-24 | Hatem Ben Belgacem | AK-4: gestaltete 3D-Modelle statt Quadern (Bühne, Verpflegungsstand, Festzelt) |
+| 2026-11-24 | Hatem Ben Belgacem | AK-12a: Adresssuche über swisstopo statt Nominatim |
 | 2026-11-24 | Hatem Ben Belgacem | AK-2: Luftbild swisstopo SWISSIMAGE statt Esri (nur Schweiz) |
 | 2026-11-24 | Hatem Ben Belgacem | AK-5, AK-21: Drehen um die eigene Achse (Drehgriff, Taste R, 15°-Schritte); AK-6, AK-22: Rasenfläche lila, Eckpunkte ziehbar |
 | 2026-11-24 | Hatem Ben Belgacem | AK-18 bis AK-20: Elemente auswählen und verschieben (Ziehen mit Maus/Finger, Pfeiltasten) |

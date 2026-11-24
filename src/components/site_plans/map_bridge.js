@@ -545,37 +545,42 @@ export class SitePlanMap {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Adresssuche mit Nominatim (OpenStreetMap). Nutzungsregeln: höchstens eine Anfrage pro Sekunde,
-// keine Suche während des Tippens – deshalb sucht die Seite nur auf Knopfdruck bzw. mit Enter.
+// Adresssuche mit dem Suchdienst von swisstopo (geo.admin.ch): Adressen, Orte, Flurnamen, Gemeinden
+// und Postleitzahlen der Schweiz und Liechtensteins. Frei nutzbar mit Quellenangabe, ohne Schlüssel.
 // Liefert [{ label, lng, lat }] (höchstens fünf Treffer).
 
-const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
-let lastSearch = 0;
+const SEARCH_URL = 'https://api3.geo.admin.ch/rest/services/api/SearchServer';
+
+// Die Beschriftungen enthalten Auszeichnungen wie <b>…</b> – als reinen Text lesen (nichts wird ausgeführt)
+function plainText(html) {
+    return new DOMParser().parseFromString(html ?? '', 'text/html').body.textContent.replace(/\s+/g, ' ').trim();
+}
 
 export async function searchAddress(query) {
-    const wait = lastSearch + 1100 - Date.now();
-    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-    lastSearch = Date.now();
-
     const params = new URLSearchParams({
-        q: query,
-        format: 'jsonv2',
+        searchText: query,
+        type: 'locations',
+        sr: '4326',
         limit: '5',
-        'accept-language': 'de'
+        lang: 'de'
     });
     let response;
     try {
-        response = await fetch(`${NOMINATIM_URL}?${params}`, { headers: { Accept: 'application/json' } });
+        response = await fetch(`${SEARCH_URL}?${params}`, { headers: { Accept: 'application/json' } });
     } catch (_) {
         throw new Error('Die Adresssuche ist nicht erreichbar. Bitte Internetverbindung prüfen.');
     }
     if (!response.ok) {
         throw new Error(`Die Adresssuche hat mit Fehler ${response.status} geantwortet. Bitte später erneut versuchen.`);
     }
-    const results = await response.json();
-    return results
-        .map((r) => ({ label: r.display_name, lng: parseFloat(r.lon), lat: parseFloat(r.lat) }))
-        .filter((r) => Number.isFinite(r.lng) && Number.isFinite(r.lat));
+    const data = await response.json();
+    return (data.results ?? [])
+        .map((r) => ({
+            label: plainText(r.attrs?.label),
+            lng: parseFloat(r.attrs?.lon),
+            lat: parseFloat(r.attrs?.lat)
+        }))
+        .filter((r) => r.label && Number.isFinite(r.lng) && Number.isFinite(r.lat));
 }
 
 // Lage des Drehgriffs: vor der Vorderseite des Elements (Richtung +z, mitgedreht), 5 m über den Rand
