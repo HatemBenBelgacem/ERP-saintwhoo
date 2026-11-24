@@ -529,6 +529,18 @@ export class SitePlanMap {
             this.flowMarkers.push(new this.maplibregl.Marker({ element: el, anchor: 'left', offset: [-12, 0] })
                 .setLngLat(this.#toLngLat(access.x, access.z)).addTo(this.map));
         }
+
+        // Engstellen (Stufe 3): Warnzeichen mit freier und nötiger Breite, gelb = knapp, rot = zu eng
+        for (const b of this.scene.bottlenecks ?? []) {
+            const el = document.createElement('div');
+            el.className = b.status === 'voll'
+                ? 'badge badge-error pointer-events-none gap-1 font-semibold shadow'
+                : 'badge badge-warning pointer-events-none gap-1 font-semibold shadow';
+            el.textContent = `⚠ ${b.text}`;
+            // über der Beschriftung des Wegs, damit beide lesbar bleiben
+            this.flowMarkers.push(new this.maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -16] })
+                .setLngLat(this.#toLngLat(b.x, b.z)).addTo(this.map));
+        }
     }
 
     // Messung als Ebenen von MapLibre: Linien und Punkte in Bildschirmpixeln, damit sie in jeder
@@ -604,7 +616,8 @@ export class SitePlanMap {
     //                    measures: [{ points: [[x, z], …], closed, active, labels: [{ x, z, text, main }] }],
     //                    routes: [{ points, flow, one_way, active, label, label_at }],     (ANF-028)
     //                    accesses: [{ kind, short, label, x, z }],
-    //                    zones: [{ points, status, active, label, label_at }] }
+    //                    zones: [{ points, status, active, label, label_at }],
+    //                    bottlenecks: [{ x, z, text, status }] }                          (Stufe 3)
     sync(scene) {
         this.scene = scene;
         this.#rebuild();

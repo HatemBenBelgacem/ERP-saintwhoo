@@ -27,8 +27,14 @@ Im Geländeplan (ANF-027) lassen sich die **Besucherströme** einer Veranstaltun
 Die Darstellung ist eine Planungshilfe und ersetzt keine Personenstrom-Simulation und keine Prüfung durch
 Brandschutz oder Bewilligungsbehörde. Die Personendichte ist je Zone einstellbar.
 
-Umsetzung in Stufen (siehe ANF-027-Gespräch): **1** Besucherwege, **2** Zugänge und Zonen (diese
-Anforderung). Später: **3** Engstellen erkennen, **4** zeitliche Abläufe, **5** bewegte Darstellung.
+Umsetzung in Stufen: **1** Besucherwege, **2** Zugänge und Zonen, **3** Engstellen erkennen (umgesetzt).
+Später: **4** zeitliche Abläufe, **5** bewegte Darstellung.
+
+**Engstellen (Stufe 3):** Aus den Personen pro Stunde eines Wegs und dem Planungswert „Durchfluss je Meter
+Wegbreite“ (Vorgabe 2’000 Personen pro Stunde und Meter, je Plan einstellbar) ergibt sich die **nötige
+Breite**. Sie wird verglichen mit der eingetragenen Wegbreite und mit der **freien Breite** zwischen
+Bühnen, Ständen und Zelten links und rechts des Wegs. Steht ein Element auf der Wegmitte, ist der Weg
+versperrt.
 
 ## 2. Benutzergeschichte
 
@@ -61,6 +67,20 @@ Anforderung). Später: **3** Engstellen erkennen, **4** zeitliche Abläufe, **5*
   setzt weitere Punkte, „Letzten Punkt entfernen“, „✕“ löscht, „Fertig“ beendet das Zeichnen.
 - [x] **AK-8:** Gegeben Besucherströme, dann gehören sie zum Plan: Sie werden mit „Speichern“ gespeichert,
   mit „Verwerfen“ zurückgesetzt und beim Öffnen wieder angezeigt.
+- [x] **AK-10:** Gegeben ein Weg mit Personen pro Stunde, dann zeigt seine Zeile die **nötige Breite**
+  (Personen pro Stunde ÷ Durchfluss je Meter) und – wenn eine Wegbreite eingetragen ist – die Auslastung
+  mit Ampel (bis 80 % „Ausreichend“, bis 100 % „Knapp“, darüber „Zu eng“).
+- [x] **AK-11:** Gegeben Elemente neben einem solchen Weg, dann gilt je Wegabschnitt als **freie Breite** der
+  Abstand zum nächsten Element links plus rechts der Wegmitte, je Seite höchstens die halbe Wegbreite (ohne
+  Wegbreite: nur wenn auf beiden Seiten ein Element steht). Ist die freie Breite über 80 % ausgelastet,
+  erscheint eine **Engstelle**: auf der Karte als Warnzeichen „Engstelle 1,2 m (nötig 1,5 m)“ (gelb knapp,
+  rot zu eng) und in der Liste „Engstellen“ mit Weg, Auslastung und den einengenden Elementen.
+- [x] **AK-12:** Gegeben ein Element, das die Wegmitte berührt, dann ist der Weg **versperrt**: Warnzeichen
+  „Weg versperrt“ (rot) und Eintrag „versperrt durch …“.
+- [x] **AK-13:** Gegeben die Liste „Engstellen“, wenn ich einen Eintrag wähle, dann wird das betroffene
+  Element ausgewählt (zum Verschieben oder Drehen). Den **Durchfluss je Meter Wegbreite** (100 bis 10’000
+  Personen pro Stunde) stelle ich darüber ein; er wird mit dem Plan gespeichert und die Engstellen werden
+  sofort neu berechnet. Ohne Wege mit Personen pro Stunde ist die Liste ausgeblendet.
 - [x] **AK-9:** Gegeben ein ungültiger Plan, dann weist der Server ihn mit Meldung ab: Weg mit weniger als
   2 Punkten, Zone mit weniger als 3 Punkten oder überschneidendem Umriss, Bezeichnung länger als 100 Zeichen,
   Personen pro Stunde bzw. erwartete Personen über 1 000 000, Durchlass über 100 000 pro Minute, Wegbreite
@@ -83,6 +103,7 @@ Anforderung). Später: **3** Engstellen erkennen, **4** zeitliche Abläufe, **5*
 | | `erwartete_personen` | Zahl | ja | 0 = unbekannt |
 | | `dichte` | Zahl | ja | Personen pro m², Vorgabe 2 |
 | `gelaendeplan_zone_punkt` | `reihenfolge`, `x_m`, `z_m` | Zahl | ja | Eckpunkte |
+| `gelaendeplan` | `durchfluss_pro_meter` | Zahl | ja | Personen pro Stunde je Meter Wegbreite, 100 … 10’000, Vorgabe 2’000 |
 
 ## 5. Abhängigkeiten
 
@@ -90,7 +111,8 @@ Anforderung). Später: **3** Engstellen erkennen, **4** zeitliche Abläufe, **5*
 
 ## 6. Nicht im Umfang
 
-- Engstellen erkennen (Menge eines Wegs gegen Breite bzw. Abstand zwischen Elementen) – Stufe 3.
+- Engstellen durch Zonen, Rasenfläche oder an Zugängen (Durchlass gegen Wege); Engstellen an Wegenden
+  und Knicken werden nur je Abschnitt geprüft.
 - Zeitliche Abläufe mit Zeitregler (Einlass, Hauptprogramm, Auslass) – Stufe 4.
 - Bewegte Punkte, Dichtekarte – Stufe 5.
 - Personenstrom-Simulation einzelner Personen; verbindliche Bemessung von Fluchtwegen.
@@ -105,9 +127,13 @@ Vorläufige Annahmen, bis sie geklärt sind:
 - [ ] Gehört die erwartete Besucherzahl zum Projekt (gesamt) oder zu den Zonen? *Annahme: je Zone.*
 - [ ] Grenzen der Ampel? *Annahme: grün bis 80 %, gelb bis 100 %, rot darüber.*
 - [ ] Braucht es den Zeitregler (Stufe 4) schon früh? *Annahme: nein.*
+- [ ] Vorgabe für den Durchfluss je Meter Wegbreite? *Annahme: 2’000 Personen pro Stunde und Meter*
+  (rund 33 Personen pro Minute und Meter, bequemes Gehen). Für Fluchtwege gelten die Vorgaben von
+  Brandschutz bzw. Bewilligungsbehörde.
 
 ## 8. Änderungshistorie
 
 | Datum      | Autor | Änderung        |
 |------------|-------|-----------------|
 | 2026-11-24 | Hatem Ben Belgacem | Erstellt; Stufen 1 (Besucherwege) und 2 (Zugänge, Zonen) umgesetzt |
+| 2026-11-24 | Hatem Ben Belgacem | Stufe 3 Engstellen umgesetzt (AK-10 bis AK-13) |

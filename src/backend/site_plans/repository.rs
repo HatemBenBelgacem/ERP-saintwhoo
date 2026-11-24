@@ -44,15 +44,15 @@ pub async fn find(
     pool: &PgPool,
     projekt_id: i64,
 ) -> Result<Option<(SitePlan, String)>, sqlx::Error> {
-    let head: Option<(i64, f64, f64, Option<String>, String)> = sqlx::query_as(
-        "SELECT id, ursprung_laenge, ursprung_breite, standort_adresse, \
+    let head: Option<(i64, f64, f64, Option<String>, f64, String)> = sqlx::query_as(
+        "SELECT id, ursprung_laenge, ursprung_breite, standort_adresse, durchfluss_pro_meter, \
                 to_char(geaendert_am AT TIME ZONE 'Europe/Zurich', 'DD.MM.YYYY HH24:MI') \
          FROM gelaendeplan WHERE projekt_id = $1",
     )
     .bind(projekt_id)
     .fetch_optional(pool)
     .await?;
-    let Some((id, origin_lng, origin_lat, address, changed)) = head else {
+    let Some((id, origin_lng, origin_lat, address, flow_per_meter, changed)) = head else {
         return Ok(None);
     };
 
@@ -94,6 +94,7 @@ pub async fn find(
             elements,
             corners: corners.into_iter().map(|(x, z)| Corner { x, z }).collect(),
             address,
+            flow_per_meter,
             measures,
             routes,
             accesses,
@@ -111,17 +112,20 @@ pub async fn save(
     plan: &SitePlan,
 ) -> Result<(), sqlx::Error> {
     let (id,): (i64,) = sqlx::query_as(
-        "INSERT INTO gelaendeplan (projekt_id, ursprung_laenge, ursprung_breite, standort_adresse) \
-         VALUES ($1, $2, $3, $4) \
+        "INSERT INTO gelaendeplan \
+             (projekt_id, ursprung_laenge, ursprung_breite, standort_adresse, durchfluss_pro_meter) \
+         VALUES ($1, $2, $3, $4, $5) \
          ON CONFLICT (projekt_id) DO UPDATE \
          SET ursprung_laenge = EXCLUDED.ursprung_laenge, ursprung_breite = EXCLUDED.ursprung_breite, \
-             standort_adresse = EXCLUDED.standort_adresse, geaendert_am = now() \
+             standort_adresse = EXCLUDED.standort_adresse, \
+             durchfluss_pro_meter = EXCLUDED.durchfluss_pro_meter, geaendert_am = now() \
          RETURNING id",
     )
     .bind(projekt_id)
     .bind(plan.origin_lng)
     .bind(plan.origin_lat)
     .bind(plan.address.as_deref())
+    .bind(plan.flow_per_meter)
     .fetch_one(&mut *conn)
     .await?;
 

@@ -206,6 +206,16 @@ impl ZoneStatus {
         }
     }
 
+    /// Bezeichnung als Auslastung eines Wegs bzw. einer Engstelle.
+    pub fn route_label(self) -> &'static str {
+        match self {
+            ZoneStatus::Unknown => "Offen",
+            ZoneStatus::Ok => "Ausreichend",
+            ZoneStatus::Tight => "Knapp",
+            ZoneStatus::Over => "Zu eng",
+        }
+    }
+
     /// Plakette in der Liste (Signalfarben für den Status).
     pub fn badge_class(self) -> &'static str {
         match self {

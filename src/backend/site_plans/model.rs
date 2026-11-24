@@ -7,6 +7,7 @@
 use geo::{Area, Contains, Coord, LineString, Point, Polygon, Rotate, Validation};
 use serde::{Deserialize, Serialize};
 
+use super::bottlenecks::{DEFAULT_FLOW_PER_METER, FLOW_PER_METER_RANGE};
 use super::flows::{self, Access, VisitorRoute, Zone};
 use crate::forms::FieldErrors;
 
@@ -196,6 +197,13 @@ pub struct SitePlan {
     pub accesses: Vec<Access>,
     #[serde(default)]
     pub zones: Vec<Zone>,
+    /// Planungswert für Engstellen (ANF-028 Stufe 3): Personen pro Stunde je Meter Wegbreite.
+    #[serde(default = "default_flow_per_meter")]
+    pub flow_per_meter: f64,
+}
+
+fn default_flow_per_meter() -> f64 {
+    DEFAULT_FLOW_PER_METER
 }
 
 impl Default for SitePlan {
@@ -210,6 +218,7 @@ impl Default for SitePlan {
             routes: Vec::new(),
             accesses: Vec::new(),
             zones: Vec::new(),
+            flow_per_meter: DEFAULT_FLOW_PER_METER,
         }
     }
 }
@@ -254,6 +263,19 @@ impl SitePlan {
     pub fn validate(&self) -> FieldErrors {
         let mut errors = FieldErrors::new();
         flows::validate(&self.routes, &self.accesses, &self.zones, &mut errors);
+        let (min_flow, max_flow) = FLOW_PER_METER_RANGE;
+        if !(self.flow_per_meter.is_finite()
+            && (min_flow..=max_flow).contains(&self.flow_per_meter))
+        {
+            errors.insert(
+                "besucherstroeme".into(),
+                format!(
+                    "Der Durchfluss je Meter Wegbreite muss zwischen {} und {} Personen pro Stunde liegen.",
+                    flows::format_count(min_flow as u32),
+                    flows::format_count(max_flow as u32)
+                ),
+            );
+        }
         if self
             .address
             .as_ref()

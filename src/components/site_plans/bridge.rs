@@ -5,6 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::backend::site_plans::bottlenecks;
 use crate::backend::site_plans::flows::RouteDirection;
 use crate::backend::site_plans::model::{
     AddressHit, Corner, Measure, MeasureKind, SitePlan, format_distance,
@@ -163,6 +164,16 @@ struct SceneZone {
     label_at: [f64; 2],
 }
 
+/// Engstelle auf einem Besucherweg (ANF-028 Stufe 3).
+#[derive(Serialize)]
+struct SceneBottleneck {
+    x: f64,
+    z: f64,
+    text: String,
+    /// `knapp` oder `voll`
+    status: &'static str,
+}
+
 /// Mitte eines Linienzugs entlang seiner Länge.
 fn path_middle(points: &[Corner]) -> [f64; 2] {
     let total: f64 = points
@@ -206,6 +217,7 @@ struct Scene {
     routes: Vec<SceneRoute>,
     accesses: Vec<SceneAccess>,
     zones: Vec<SceneZone>,
+    bottlenecks: Vec<SceneBottleneck>,
 }
 
 /// Zustand der Bedienung, der nicht zum Plan gehört.
@@ -270,6 +282,15 @@ impl Scene {
                         text => format!("{}: {text}", z.display_name(i)),
                     },
                     label_at: centroid(&z.points),
+                })
+                .collect(),
+            bottlenecks: bottlenecks::find(plan)
+                .into_iter()
+                .map(|b| SceneBottleneck {
+                    x: b.at.x,
+                    z: b.at.z,
+                    text: b.short_text(),
+                    status: b.status.key(),
                 })
                 .collect(),
             drag_elements: view.drag_elements,
