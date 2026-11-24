@@ -8,6 +8,7 @@ Stand: 2026-11-24
 
 ## Offen
 
+- [ ] ANF-028: offene Fragen klären (Vorgabe der Personendichte, Besucherzahl je Zone oder Projekt, Grenzen der Ampel); später Stufe 3 (Engstellen) und 4 (Zeitregler)
 - [ ] ANF-027: offene Fragen klären (eigene Seite, Speichern, „Verpflegungsstand“, Bibliotheken aus dem Netz, Vorgabe-Standort) und im Browser mit Luftbild prüfen (SWISSIMAGE: Zoomstufe 20 bestätigen)
 - [ ] ANF-026: vor Inbetriebnahme klären, wie die bestehende Datenbank zum ersten Mandanten wird
 - [ ] ANF-025 Rest: Bankkonten als Verweis (mit ANF-015), MWST-Nummer nur bei MWST-Pflicht (mit ANF-012), Absender in Druckansichten und Buchungssperre ohne Firma (mit ANF-018)
@@ -32,6 +33,7 @@ Stand: 2026-11-24
 
 ## Erledigt
 
+- [x] ANF-028 Besucherströme erfasst und Stufen 1 und 2 umgesetzt: Besucherwege (Richtung, Personen pro Stunde, Breite; Linienbreite nach Menge, Pfeile), Zugänge (Eingang, Ausgang, Notausgang), Zonen mit Fassungsvermögen und Ampel; gespeichert in `gelaendeplan_besucherweg`, `gelaendeplan_zugang`, `gelaendeplan_zone`
 - [x] ANF-027 Geländeplan eines Projekts erfasst und umgesetzt: 3D-Karte (MapLibre + Three.js) unter `/projekte/<Kennung>/gelaendeplan`, Bühnen/Verpflegungsstände/Festzelte platzieren, drehen, löschen, Rasenfläche abstecken (m², Lageprüfung mit `geo`), Standort im Modal-Fenster, Speichern in `gelaendeplan*`
 - [x] ANF-027 AK-4: Elemente als gestaltete 3D-Modelle statt Quadern (Bühne, Verpflegungsstand, Festzelt)
 - [x] ANF-027 AK-15 bis AK-17a: mehrere Messungen mit Bezeichnung, rote Messlinien, Messungen werden mit dem Plan gespeichert (`gelaendeplan_messung`, `gelaendeplan_messpunkt`)

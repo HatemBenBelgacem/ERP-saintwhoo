@@ -44,7 +44,8 @@
 | [ANF-025](anforderungen/ANF-025-firma.md) | Firmenverwaltung (eigene Firma, verknüpft mit Adresse) | Einstellungen | Muss | In Umsetzung |
 | [ANF-026](anforderungen/ANF-026-registrierung-mandanten.md) | Registrierung, eigene Datenbank und Mandant | Portal / Mandanten | Muss | Erledigt |
 | [ANF-027](anforderungen/ANF-027-gelaendeplan.md) | Geländeplan eines Projekts (3D-Karte) | Projekte | Soll | In Umsetzung |
+| [ANF-028](anforderungen/ANF-028-besucherstroeme.md) | Besucherströme im Geländeplan | Projekte | Soll | In Umsetzung |
 
 <!-- Neue Zeile pro Anforderung, z. B.:
-| [ANF-028](anforderungen/ANF-028-artikelstamm.md) | Artikelstamm verwalten | Lager | Muss | Entwurf |
+| [ANF-029](anforderungen/ANF-029-artikelstamm.md) | Artikelstamm verwalten | Lager | Muss | Entwurf |
 -->

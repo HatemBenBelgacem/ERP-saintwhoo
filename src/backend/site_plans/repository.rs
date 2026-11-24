@@ -2,8 +2,11 @@
 //!
 //! Hier steht ausschliesslich Datenbankzugriff: keine Prüfregeln, keine Weiterleitungen.
 
-use sqlx::{PgConnection, PgPool};
+use std::collections::HashMap;
 
+use sqlx::{AssertSqlSafe, PgConnection, PgPool};
+
+use super::flows::{Access, AccessKind, RouteDirection, VisitorRoute, Zone};
 use super::model::{Corner, ElementKind, Measure, MeasureKind, SiteElement, SitePlan};
 
 /// Nummer und Name des Projekts; `None`, wenn es das Projekt nicht gibt.
@@ -82,6 +85,7 @@ pub async fn find(
     .await?;
 
     let measures = load_measures(pool, id).await?;
+    let (routes, accesses, zones) = load_flows(pool, id).await?;
 
     Ok(Some((
         SitePlan {
@@ -91,6 +95,9 @@ pub async fn find(
             corners: corners.into_iter().map(|(x, z)| Corner { x, z }).collect(),
             address,
             measures,
+            routes,
+            accesses,
+            zones,
         },
         changed,
     )))
@@ -187,7 +194,218 @@ pub async fn save(
         .execute(&mut *conn)
         .await?;
     }
+
+    // Besucherströme (ANF-028): alte löschen (Punkte über ON DELETE CASCADE), neu schreiben
+    for table in [
+        "gelaendeplan_besucherweg",
+        "gelaendeplan_zugang",
+        "gelaendeplan_zone",
+    ] {
+        sqlx::query(AssertSqlSafe(format!(
+            "DELETE FROM {table} WHERE gelaendeplan_id = $1"
+        )))
+        .bind(id)
+        .execute(&mut *conn)
+        .await?;
+    }
+    insert_flows(conn, id, plan).await?;
     Ok(())
+}
+
+/// Tabellen mit Punkten eines Linienzugs bzw. einer Fläche (ANF-028). Nur feste Namen – deshalb
+/// darf das SQL daraus zusammengesetzt werden (`AssertSqlSafe`).
+#[derive(Clone, Copy)]
+enum PointTable {
+    Route,
+    Zone,
+}
+
+impl PointTable {
+    /// (Punkttabelle, Fremdschlüssel, Kopftabelle)
+    fn names(self) -> (&'static str, &'static str, &'static str) {
+        match self {
+            PointTable::Route => (
+                "gelaendeplan_besucherweg_punkt",
+                "besucherweg_id",
+                "gelaendeplan_besucherweg",
+            ),
+            PointTable::Zone => ("gelaendeplan_zone_punkt", "zone_id", "gelaendeplan_zone"),
+        }
+    }
+}
+
+/// Punkte eines Kopfs in Reihenfolge schreiben.
+async fn insert_points(
+    conn: &mut PgConnection,
+    table: PointTable,
+    parent_id: i64,
+    points: &[Corner],
+) -> Result<(), sqlx::Error> {
+    let (points_table, fk, _) = table.names();
+    sqlx::query(AssertSqlSafe(format!(
+        "INSERT INTO {points_table} ({fk}, reihenfolge, x_m, z_m) \
+         SELECT $1, t.nr, t.x, t.z FROM unnest($2::int[], $3::float8[], $4::float8[]) AS t(nr, x, z)"
+    )))
+    .bind(parent_id)
+    .bind((1..=points.len() as i32).collect::<Vec<i32>>())
+    .bind(points.iter().map(|c| c.x).collect::<Vec<_>>())
+    .bind(points.iter().map(|c| c.z).collect::<Vec<_>>())
+    .execute(&mut *conn)
+    .await?;
+    Ok(())
+}
+
+/// Alle Punkte der Köpfe eines Plans, nach Kopf gruppiert und in Reihenfolge.
+async fn load_points(
+    pool: &PgPool,
+    table: PointTable,
+    plan_id: i64,
+) -> Result<HashMap<i64, Vec<Corner>>, sqlx::Error> {
+    let (points_table, fk, parent_table) = table.names();
+    let rows: Vec<(i64, f64, f64)> = sqlx::query_as(AssertSqlSafe(format!(
+        "SELECT p.{fk}, p.x_m, p.z_m FROM {points_table} p \
+         JOIN {parent_table} k ON k.id = p.{fk} \
+         WHERE k.gelaendeplan_id = $1 ORDER BY p.{fk}, p.reihenfolge"
+    )))
+    .bind(plan_id)
+    .fetch_all(pool)
+    .await?;
+    let mut map: HashMap<i64, Vec<Corner>> = HashMap::new();
+    for (parent, x, z) in rows {
+        map.entry(parent).or_default().push(Corner { x, z });
+    }
+    Ok(map)
+}
+
+/// Leerer Text → NULL.
+fn opt_label(label: &str) -> Option<&str> {
+    let l = label.trim();
+    (!l.is_empty()).then_some(l)
+}
+
+/// Besucherwege, Zugänge und Zonen eines Plans schreiben (innerhalb der Speicher-Transaktion,
+/// nachdem die alten gelöscht sind).
+async fn insert_flows(
+    conn: &mut PgConnection,
+    plan_id: i64,
+    plan: &SitePlan,
+) -> Result<(), sqlx::Error> {
+    for (i, r) in plan.routes.iter().enumerate() {
+        let (route_id,): (i64,) = sqlx::query_as(
+            "INSERT INTO gelaendeplan_besucherweg \
+                 (gelaendeplan_id, reihenfolge, bezeichnung, richtung, personen_pro_stunde, breite_m) \
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+        )
+        .bind(plan_id)
+        .bind(i as i32 + 1)
+        .bind(opt_label(&r.label))
+        .bind(r.direction.key())
+        .bind(r.persons_per_hour as i32)
+        .bind(r.width_m)
+        .fetch_one(&mut *conn)
+        .await?;
+        insert_points(conn, PointTable::Route, route_id, &r.points).await?;
+    }
+    for (i, a) in plan.accesses.iter().enumerate() {
+        sqlx::query(
+            "INSERT INTO gelaendeplan_zugang \
+                 (gelaendeplan_id, reihenfolge, art, bezeichnung, x_m, z_m, personen_pro_minute) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7)",
+        )
+        .bind(plan_id)
+        .bind(i as i32 + 1)
+        .bind(a.kind.key())
+        .bind(opt_label(&a.label))
+        .bind(a.x)
+        .bind(a.z)
+        .bind(a.persons_per_minute.map(|n| n as i32))
+        .execute(&mut *conn)
+        .await?;
+    }
+    for (i, z) in plan.zones.iter().enumerate() {
+        let (zone_id,): (i64,) = sqlx::query_as(
+            "INSERT INTO gelaendeplan_zone \
+                 (gelaendeplan_id, reihenfolge, bezeichnung, erwartete_personen, dichte) \
+             VALUES ($1, $2, $3, $4, $5) RETURNING id",
+        )
+        .bind(plan_id)
+        .bind(i as i32 + 1)
+        .bind(opt_label(&z.label))
+        .bind(z.expected_persons as i32)
+        .bind(z.density)
+        .fetch_one(&mut *conn)
+        .await?;
+        insert_points(conn, PointTable::Zone, zone_id, &z.points).await?;
+    }
+    Ok(())
+}
+
+/// Besucherwege, Zugänge und Zonen eines Plans, je in Reihenfolge.
+#[allow(clippy::type_complexity)]
+async fn load_flows(
+    pool: &PgPool,
+    plan_id: i64,
+) -> Result<(Vec<VisitorRoute>, Vec<Access>, Vec<Zone>), sqlx::Error> {
+    let mut route_points = load_points(pool, PointTable::Route, plan_id).await?;
+    let routes: Vec<(i64, Option<String>, String, i32, Option<f64>)> = sqlx::query_as(
+        "SELECT id, bezeichnung, richtung, personen_pro_stunde, breite_m FROM gelaendeplan_besucherweg \
+         WHERE gelaendeplan_id = $1 ORDER BY reihenfolge",
+    )
+    .bind(plan_id)
+    .fetch_all(pool)
+    .await?;
+    let routes = routes
+        .into_iter()
+        .filter_map(|(id, label, direction, persons, width_m)| {
+            RouteDirection::from_key(&direction).map(|direction| VisitorRoute {
+                label: label.unwrap_or_default(),
+                direction,
+                persons_per_hour: persons.max(0) as u32,
+                width_m,
+                points: route_points.remove(&id).unwrap_or_default(),
+            })
+        })
+        .collect();
+
+    let accesses: Vec<(String, Option<String>, f64, f64, Option<i32>)> = sqlx::query_as(
+        "SELECT art, bezeichnung, x_m, z_m, personen_pro_minute FROM gelaendeplan_zugang \
+         WHERE gelaendeplan_id = $1 ORDER BY reihenfolge",
+    )
+    .bind(plan_id)
+    .fetch_all(pool)
+    .await?;
+    let accesses = accesses
+        .into_iter()
+        .filter_map(|(kind, label, x, z, per_minute)| {
+            AccessKind::from_key(&kind).map(|kind| Access {
+                kind,
+                label: label.unwrap_or_default(),
+                x,
+                z,
+                persons_per_minute: per_minute.map(|n| n.max(0) as u32),
+            })
+        })
+        .collect();
+
+    let mut zone_points = load_points(pool, PointTable::Zone, plan_id).await?;
+    let zones: Vec<(i64, Option<String>, i32, f64)> = sqlx::query_as(
+        "SELECT id, bezeichnung, erwartete_personen, dichte FROM gelaendeplan_zone \
+         WHERE gelaendeplan_id = $1 ORDER BY reihenfolge",
+    )
+    .bind(plan_id)
+    .fetch_all(pool)
+    .await?;
+    let zones = zones
+        .into_iter()
+        .map(|(id, label, expected, density)| Zone {
+            label: label.unwrap_or_default(),
+            expected_persons: expected.max(0) as u32,
+            density,
+            points: zone_points.remove(&id).unwrap_or_default(),
+        })
+        .collect();
+
+    Ok((routes, accesses, zones))
 }
 
 /// Messungen eines Plans mit ihren Punkten, in Reihenfolge.

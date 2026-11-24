@@ -167,6 +167,7 @@ export class SitePlanMap {
         // Reihenfolge der Ebenen: Rasenfläche (unter den Modellen), 3D-Modelle, Eckpunkte, Messung, Drehgriff
         map.on('style.load', () => {
             this.#addAreaLayers();
+            this.#addFlowLayers();
             map.addLayer(layer);
             this.#addCornerLayer();
             this.#addMeasureLayers();
@@ -401,6 +402,133 @@ export class SitePlanMap {
         }
 
         this.#updateMeasure();
+        this.#updateFlows();
+    }
+
+    // Besucherströme (ANF-028) als Ebenen von MapLibre, unter den 3D-Modellen:
+    // Zonen gefüllt in der Farbe ihrer Ampel, Wege umso breiter, je mehr Personen pro Stunde,
+    // bei Einbahn mit weissen Pfeilen in Wegrichtung.
+    #addFlowLayers() {
+        const zoneColor = ['match', ['get', 'status'],
+            'ok', cssColor('--color-success', '#15803d'),
+            'knapp', cssColor('--color-warning', '#f59e0b'),
+            'voll', cssColor('--color-error', '#dc2626'),
+            cssColor('--color-base-content', '#1e293b')];
+        this.map.addSource('zonen', { type: 'geojson', data: emptyCollection() });
+        this.map.addLayer({
+            id: 'zonen-fuellung', type: 'fill', source: 'zonen',
+            filter: ['==', '$type', 'Polygon'],
+            paint: { 'fill-color': zoneColor, 'fill-opacity': 0.3 }
+        });
+        this.map.addLayer({
+            id: 'zonen-linie', type: 'line', source: 'zonen',
+            filter: ['==', '$type', 'LineString'],
+            paint: { 'line-color': zoneColor, 'line-width': ['case', ['get', 'active'], 3, 2], 'line-dasharray': [3, 2] }
+        });
+        this.map.addLayer({
+            id: 'zonen-punkt', type: 'circle', source: 'zonen',
+            filter: ['all', ['==', '$type', 'Point'], ['==', 'active', true]],
+            paint: { 'circle-color': zoneColor, 'circle-radius': 4, 'circle-stroke-color': '#fff', 'circle-stroke-width': 1.5 }
+        });
+
+        const routeColor = cssColor('--gelaende-besucherweg', '#0891b2');
+        this.map.addSource('besucherwege', { type: 'geojson', data: emptyCollection() });
+        this.map.addLayer({
+            id: 'besucherwege-linie', type: 'line', source: 'besucherwege',
+            filter: ['==', '$type', 'LineString'],
+            layout: { 'line-cap': 'round', 'line-join': 'round' },
+            paint: {
+                'line-color': routeColor,
+                'line-opacity': 0.85,
+                // Breite in Bildschirmpixeln je nach Personen pro Stunde
+                'line-width': ['interpolate', ['linear'], ['get', 'flow'], 0, 4, 500, 7, 2000, 12, 10000, 20]
+            }
+        });
+        this.map.addImage('pfeil', arrowImage(), { pixelRatio: 2 });
+        this.map.addLayer({
+            id: 'besucherwege-pfeil', type: 'symbol', source: 'besucherwege',
+            filter: ['all', ['==', '$type', 'LineString'], ['==', 'one_way', true]],
+            layout: {
+                'symbol-placement': 'line',
+                'symbol-spacing': 70,
+                'icon-image': 'pfeil',
+                'icon-allow-overlap': true,
+                'icon-ignore-placement': true,
+                'icon-rotation-alignment': 'map'
+            }
+        });
+        this.map.addLayer({
+            id: 'besucherwege-punkt', type: 'circle', source: 'besucherwege',
+            filter: ['all', ['==', '$type', 'Point'], ['==', 'active', true]],
+            paint: { 'circle-color': routeColor, 'circle-radius': 4, 'circle-stroke-color': '#fff', 'circle-stroke-width': 1.5 }
+        });
+    }
+
+    // Wege, Zonen und Zugänge aus dem zuletzt gemeldeten Inhalt zeichnen und beschriften.
+    #updateFlows() {
+        for (const m of this.flowMarkers ?? []) m.remove();
+        this.flowMarkers = [];
+        const zones = this.map?.getSource('zonen');
+        const routes = this.map?.getSource('besucherwege');
+        if (!zones || !routes || !this.scene) return;
+        const label = (text, [x, z], className) => {
+            const el = document.createElement('div');
+            el.className = className;
+            el.textContent = text;
+            this.flowMarkers.push(new this.maplibregl.Marker({ element: el })
+                .setLngLat(this.#toLngLat(x, z)).addTo(this.map));
+        };
+
+        const zoneFeatures = [];
+        for (const zone of this.scene.zones ?? []) {
+            const props = { status: zone.status, active: zone.active };
+            const coords = zone.points.map(([x, z]) => this.#toLngLat(x, z));
+            if (zone.active) for (const c of coords) zoneFeatures.push(point(c, props));
+            if (coords.length >= 2) {
+                const line = lineString(coords.length >= 3 ? [...coords, coords[0]] : coords);
+                line.properties = props;
+                zoneFeatures.push(line);
+            }
+            if (coords.length >= 3) {
+                zoneFeatures.push({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[...coords, coords[0]]] }, properties: props });
+            }
+            label(zone.label, zone.label_at, 'badge badge-sm pointer-events-none border-base-300 bg-base-100/90 font-semibold text-base-content shadow-sm');
+        }
+        zones.setData({ type: 'FeatureCollection', features: zoneFeatures });
+
+        const routeFeatures = [];
+        for (const route of this.scene.routes ?? []) {
+            const props = { flow: route.flow, one_way: route.one_way, active: route.active };
+            const coords = route.points.map(([x, z]) => this.#toLngLat(x, z));
+            if (route.active) for (const c of coords) routeFeatures.push(point(c, props));
+            if (coords.length >= 2) {
+                const line = lineString(coords);
+                line.properties = props;
+                routeFeatures.push(line);
+            }
+            label(route.label, route.label_at, 'badge badge-sm pointer-events-none border-0 bg-site-route text-white shadow-sm');
+        }
+        routes.setData({ type: 'FeatureCollection', features: routeFeatures });
+
+        // Zugänge: Kurzzeichen im farbigen Kreis und Bezeichnung
+        const accessClass = {
+            eingang: 'bg-site-entrance',
+            ausgang: 'bg-site-exit',
+            notausgang: 'bg-site-emergency-exit'
+        };
+        for (const access of this.scene.accesses ?? []) {
+            const el = document.createElement('div');
+            el.className = 'pointer-events-none flex items-center gap-1';
+            const sign = document.createElement('span');
+            sign.className = `flex size-6 items-center justify-center rounded-full border-2 border-white text-xs font-bold text-white shadow ${accessClass[access.kind] ?? 'bg-neutral'}`;
+            sign.textContent = access.short;
+            const name = document.createElement('span');
+            name.className = 'badge badge-sm border-base-300 bg-base-100/90 text-base-content shadow-sm';
+            name.textContent = access.label;
+            el.append(sign, name);
+            this.flowMarkers.push(new this.maplibregl.Marker({ element: el, anchor: 'left', offset: [-12, 0] })
+                .setLngLat(this.#toLngLat(access.x, access.z)).addTo(this.map));
+        }
     }
 
     // Messung als Ebenen von MapLibre: Linien und Punkte in Bildschirmpixeln, damit sie in jeder
@@ -473,7 +601,10 @@ export class SitePlanMap {
     //                    drag_corners,   // Eckpunkte der Rasenfläche lassen sich ziehen
     //                    elements: [{ kind, x, z, rotation_deg, width_m, depth_m, height_m, outside, selected }],
     //                    corners: [[x, z], …],
-    //                    measures: [{ points: [[x, z], …], closed, active, labels: [{ x, z, text, main }] }] }
+    //                    measures: [{ points: [[x, z], …], closed, active, labels: [{ x, z, text, main }] }],
+    //                    routes: [{ points, flow, one_way, active, label, label_at }],     (ANF-028)
+    //                    accesses: [{ kind, short, label, x, z }],
+    //                    zones: [{ points, status, active, label, label_at }] }
     sync(scene) {
         this.scene = scene;
         this.#rebuild();
@@ -594,6 +725,25 @@ function handlePosition(el) {
     const r = Math.max(el.width_m, el.depth_m) / 2 + 5;
     const a = (el.rotation_deg * Math.PI) / 180;
     return [el.x + Math.sin(a) * r, el.z + Math.cos(a) * r];
+}
+
+// Weisser Pfeil nach rechts (Wegrichtung) für die Einbahn-Wege, als Bild für MapLibre
+function arrowImage() {
+    const size = 32; // bei pixelRatio 2 → 16 px
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(10, 7);
+    ctx.lineTo(22, 16);
+    ctx.lineTo(10, 25);
+    ctx.stroke();
+    return ctx.getImageData(0, 0, size, size);
 }
 
 // Farbe aus dem Farbschema als CSS-Text (für die Ebenen von MapLibre)

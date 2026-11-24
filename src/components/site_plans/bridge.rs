@@ -5,8 +5,9 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::backend::site_plans::flows::RouteDirection;
 use crate::backend::site_plans::model::{
-    AddressHit, Measure, MeasureKind, SitePlan, format_distance,
+    AddressHit, Corner, Measure, MeasureKind, SitePlan, format_distance,
 };
 
 /// Bedienung auf der Karte, gemeldet von `map_bridge.js` (Meter relativ zum Ursprung).
@@ -126,6 +127,72 @@ impl SceneMeasure {
     }
 }
 
+/// Besucherweg (ANF-028), wie ihn die Karte zeichnet.
+#[derive(Serialize)]
+struct SceneRoute {
+    points: Vec<[f64; 2]>,
+    /// Personen pro Stunde – bestimmt die Linienbreite.
+    flow: u32,
+    /// Pfeile vom ersten zum letzten Punkt.
+    one_way: bool,
+    active: bool,
+    /// Beschriftung „Name: … P/h“ und ihre Lage (Mitte des Wegs).
+    label: String,
+    label_at: [f64; 2],
+}
+
+/// Zugang (ANF-028).
+#[derive(Serialize)]
+struct SceneAccess {
+    /// Art als Schlüssel; die Farbe kommt aus `--gelaende-<kind>`.
+    kind: &'static str,
+    short: &'static str,
+    label: String,
+    x: f64,
+    z: f64,
+}
+
+/// Zone (ANF-028) mit Ampel.
+#[derive(Serialize)]
+struct SceneZone {
+    points: Vec<[f64; 2]>,
+    /// `offen`, `ok`, `knapp`, `voll`
+    status: &'static str,
+    active: bool,
+    label: String,
+    label_at: [f64; 2],
+}
+
+/// Mitte eines Linienzugs entlang seiner Länge.
+fn path_middle(points: &[Corner]) -> [f64; 2] {
+    let total: f64 = points
+        .windows(2)
+        .map(|w| (w[1].x - w[0].x).hypot(w[1].z - w[0].z))
+        .sum();
+    let mut rest = total / 2.0;
+    for w in points.windows(2) {
+        let len = (w[1].x - w[0].x).hypot(w[1].z - w[0].z);
+        if len >= rest && len > 0.0 {
+            let t = rest / len;
+            return [
+                w[0].x + (w[1].x - w[0].x) * t,
+                w[0].z + (w[1].z - w[0].z) * t,
+            ];
+        }
+        rest -= len;
+    }
+    points.first().map_or([0.0, 0.0], |p| [p.x, p.z])
+}
+
+/// Schwerpunkt der Punkte (für Beschriftungen von Flächen).
+fn centroid(points: &[Corner]) -> [f64; 2] {
+    let n = points.len().max(1) as f64;
+    [
+        points.iter().map(|p| p.x).sum::<f64>() / n,
+        points.iter().map(|p| p.z).sum::<f64>() / n,
+    ]
+}
+
 /// Inhalt der 3D-Szene.
 #[derive(Serialize)]
 struct Scene {
@@ -136,12 +203,18 @@ struct Scene {
     elements: Vec<SceneElement>,
     corners: Vec<[f64; 2]>,
     measures: Vec<SceneMeasure>,
+    routes: Vec<SceneRoute>,
+    accesses: Vec<SceneAccess>,
+    zones: Vec<SceneZone>,
 }
 
 /// Zustand der Bedienung, der nicht zum Plan gehört.
 pub struct ViewState {
     /// Messung, an der gerade gemessen wird (Index in `plan.measures`).
     pub active_measure: Option<usize>,
+    /// Besucherweg bzw. Zone, an dem gerade gezeichnet wird (ANF-028).
+    pub active_route: Option<usize>,
+    pub active_zone: Option<usize>,
     /// Ausgewähltes Element (Index in `plan.elements`).
     pub selected: Option<usize>,
     /// Elemente lassen sich anfassen, ziehen und drehen.
@@ -153,6 +226,52 @@ pub struct ViewState {
 impl Scene {
     fn from_plan(plan: &SitePlan, view: &ViewState) -> Self {
         Self {
+            routes: plan
+                .routes
+                .iter()
+                .enumerate()
+                .filter(|(_, r)| !r.points.is_empty())
+                .map(|(i, r)| SceneRoute {
+                    points: r.points.iter().map(|c| [c.x, c.z]).collect(),
+                    flow: r.persons_per_hour,
+                    one_way: r.direction == RouteDirection::OneWay,
+                    active: view.active_route == Some(i),
+                    label: if r.persons_per_hour == 0 {
+                        r.display_name(i)
+                    } else {
+                        format!("{}: {}", r.display_name(i), r.flow_text())
+                    },
+                    label_at: path_middle(&r.points),
+                })
+                .collect(),
+            accesses: plan
+                .accesses
+                .iter()
+                .enumerate()
+                .map(|(i, a)| SceneAccess {
+                    kind: a.kind.key(),
+                    short: a.kind.short(),
+                    label: a.display_name(i),
+                    x: a.x,
+                    z: a.z,
+                })
+                .collect(),
+            zones: plan
+                .zones
+                .iter()
+                .enumerate()
+                .filter(|(_, z)| !z.points.is_empty())
+                .map(|(i, z)| SceneZone {
+                    points: z.points.iter().map(|c| [c.x, c.z]).collect(),
+                    status: z.status().key(),
+                    active: view.active_zone == Some(i),
+                    label: match z.occupancy_text().as_str() {
+                        "–" => z.display_name(i),
+                        text => format!("{}: {text}", z.display_name(i)),
+                    },
+                    label_at: centroid(&z.points),
+                })
+                .collect(),
             drag_elements: view.drag_elements,
             drag_corners: view.drag_corners,
             measures: plan

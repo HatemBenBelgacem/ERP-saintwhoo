@@ -7,6 +7,7 @@
 use geo::{Area, Contains, Coord, LineString, Point, Polygon, Rotate, Validation};
 use serde::{Deserialize, Serialize};
 
+use super::flows::{self, Access, VisitorRoute, Zone};
 use crate::forms::FieldErrors;
 
 /// Vorgabe-Ursprung eines neuen Plans: St. Gallen (Längengrad, Breitengrad).
@@ -188,6 +189,13 @@ pub struct SitePlan {
     /// Beschriftete Messungen (Strecken und Flächen).
     #[serde(default)]
     pub measures: Vec<Measure>,
+    /// Besucherströme (ANF-028): Wege, Zugänge, Zonen.
+    #[serde(default)]
+    pub routes: Vec<VisitorRoute>,
+    #[serde(default)]
+    pub accesses: Vec<Access>,
+    #[serde(default)]
+    pub zones: Vec<Zone>,
 }
 
 impl Default for SitePlan {
@@ -199,6 +207,9 @@ impl Default for SitePlan {
             corners: Vec::new(),
             address: None,
             measures: Vec::new(),
+            routes: Vec::new(),
+            accesses: Vec::new(),
+            zones: Vec::new(),
         }
     }
 }
@@ -239,9 +250,10 @@ impl SitePlan {
     }
 
     /// Prüfregeln (auf dem Server immer ausgeführt). Schlüssel der Meldungen:
-    /// `ursprung`, `elemente`, `flaeche`.
+    /// `ursprung`, `elemente`, `flaeche`, `messungen`, `besucherstroeme`, `adresse`.
     pub fn validate(&self) -> FieldErrors {
         let mut errors = FieldErrors::new();
+        flows::validate(&self.routes, &self.accesses, &self.zones, &mut errors);
         if self
             .address
             .as_ref()
@@ -388,7 +400,7 @@ impl SitePlan {
     }
 }
 
-fn in_range(v: f64) -> bool {
+pub(super) fn in_range(v: f64) -> bool {
     v.is_finite() && v.abs() <= MAX_DISTANCE_M
 }
 

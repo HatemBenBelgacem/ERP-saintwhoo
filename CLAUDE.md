@@ -38,7 +38,7 @@ src/
   backend/<modul>/   model.rs (Datentypen + Prüfregeln), server_fns.rs (#[server]), repository.rs (SQL, nur ssr)
   components/<modul>/ Eine Datei pro Komponente bzw. Ansicht (list.rs, detail.rs, form.rs …)
                      Module: addresses (ANF-002), projects (ANF-003), purchase_orders (ANF-004), users (ANF-005), tasks (ANF-006), auth (ANF-007, ANF-026),
-                     portal (ANF-026, Seite /portal), site_plans (ANF-027, Geländeplan /projekte/<Kennung>/gelaendeplan,
+                     portal (ANF-026, Seite /portal), site_plans (ANF-027 Geländeplan /projekte/<Kennung>/gelaendeplan, ANF-028 Besucherströme,
                      mit map_bridge.js: MapLibre + Three.js als ES-Module aus dem Netz, nur im Browser),
                      system (Datenbank-Status), home, settings, company (ANF-025, Seite unter settings/company) – Details in system-design.md
   backend/finance/<teil>/  Finanzen (ANF-010), je Komponente ein Untermodul: accounts (ANF-011 Kontenplan)
