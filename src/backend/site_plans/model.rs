@@ -33,6 +33,9 @@ pub const MAX_MEASURE_POINTS: usize = 100;
 pub const MAX_MEASURE_LABEL_LEN: usize = 100;
 /// Grösste erlaubte Kantenlänge eines Elements in Metern.
 pub const MAX_SIZE_M: f64 = 200.0;
+/// Kleinste Kantenlänge (z. B. Fuss einer Gitterabsperrung) und erlaubte Höhe eines Elements in Metern.
+pub const MIN_SIZE_M: f64 = 0.1;
+pub const HEIGHT_RANGE_M: (f64, f64) = (0.1, 50.0);
 /// Grösster erlaubter Abstand vom Ursprung in Metern (Plan bleibt ein Gelände, kein Land).
 pub const MAX_DISTANCE_M: f64 = 5_000.0;
 /// Höchstlänge der Standort-Adresse bzw. -Bezeichnung.
@@ -46,13 +49,16 @@ pub enum ElementKind {
     Stage,
     FoodStall,
     Tent,
+    /// Gitterabsperrung (Absperrgitter); mit grösserer Breite eine ganze Absperrlinie.
+    Barrier,
 }
 
 impl ElementKind {
-    pub const ALL: [ElementKind; 3] = [
+    pub const ALL: [ElementKind; 4] = [
         ElementKind::FoodStall,
         ElementKind::Stage,
         ElementKind::Tent,
+        ElementKind::Barrier,
     ];
 
     /// Wert in der Datenbank (Spalte `art`).
@@ -61,6 +67,7 @@ impl ElementKind {
             ElementKind::Stage => "buehne",
             ElementKind::FoodStall => "verpflegungsstand",
             ElementKind::Tent => "festzelt",
+            ElementKind::Barrier => "gitterabsperrung",
         }
     }
 
@@ -73,6 +80,7 @@ impl ElementKind {
             ElementKind::Stage => "Bühne",
             ElementKind::FoodStall => "Verpflegungsstand",
             ElementKind::Tent => "Festzelt",
+            ElementKind::Barrier => "Gitterabsperrung",
         }
     }
 
@@ -82,15 +90,18 @@ impl ElementKind {
             ElementKind::Stage => (10.0, 8.0),
             ElementKind::FoodStall => (4.0, 2.5),
             ElementKind::Tent => (6.0, 6.0),
+            // ein Gitterelement: 2,5 m lang, Füsse 0,6 m tief
+            ElementKind::Barrier => (2.5, 0.6),
         }
     }
 
-    /// Gesamthöhe des 3D-Modells in Metern (Bühne bis Dach, Zelt bis First).
+    /// Vorgabe der Gesamthöhe des 3D-Modells in Metern (Bühne bis Dach, Zelt bis First).
     pub fn height_m(self) -> f64 {
         match self {
             ElementKind::Stage => 4.5,
             ElementKind::FoodStall => 2.8,
             ElementKind::Tent => 3.0,
+            ElementKind::Barrier => 1.1,
         }
     }
 
@@ -106,6 +117,7 @@ impl ElementKind {
             ElementKind::Stage => "inline-block size-3 shrink-0 rounded-sm bg-site-stage",
             ElementKind::FoodStall => "inline-block size-3 shrink-0 rounded-sm bg-site-food-stall",
             ElementKind::Tent => "inline-block size-3 shrink-0 rounded-sm bg-site-tent",
+            ElementKind::Barrier => "inline-block size-3 shrink-0 rounded-sm bg-site-barrier",
         }
     }
 }
@@ -127,9 +139,27 @@ pub struct SiteElement {
     pub rotation_deg: f64,
     pub width_m: f64,
     pub depth_m: f64,
+    /// Eigene Höhe in Metern; `None` = Vorgabe der Art.
+    #[serde(default)]
+    pub height_m: Option<f64>,
 }
 
 impl SiteElement {
+    /// Höhe des 3D-Modells: eigene Höhe oder Vorgabe der Art.
+    pub fn height(&self) -> f64 {
+        self.height_m.unwrap_or(self.kind.height_m())
+    }
+
+    /// Masse als Text, z. B. „4 × 2,5 × 2,8 m“ (Breite × Tiefe × Höhe).
+    pub fn size_text(&self) -> String {
+        format!(
+            "{} × {} × {} m",
+            format_m(self.width_m),
+            format_m(self.depth_m),
+            format_m(self.height())
+        )
+    }
+
     /// Neues Element mit Vorgabe-Grösse an der Stelle (x, z).
     pub fn new(kind: ElementKind, x: f64, z: f64) -> Self {
         let (width_m, depth_m) = kind.default_size();
@@ -140,6 +170,7 @@ impl SiteElement {
             rotation_deg: 0.0,
             width_m,
             depth_m,
+            height_m: None,
         }
     }
 
@@ -393,16 +424,22 @@ impl SitePlan {
                     "{name} darf höchstens {} km vom Standort entfernt sein.",
                     MAX_DISTANCE_M / 1000.0
                 ))
-            } else if !(e.width_m.is_finite()
-                && e.depth_m.is_finite()
-                && e.width_m > 0.0
-                && e.depth_m > 0.0
-                && e.width_m <= MAX_SIZE_M
-                && e.depth_m <= MAX_SIZE_M)
+            } else if ![e.width_m, e.depth_m]
+                .iter()
+                .all(|v| v.is_finite() && (MIN_SIZE_M..=MAX_SIZE_M).contains(v))
             {
                 Some(format!(
-                    "{name}: Breite und Tiefe müssen zwischen 0 und {} m liegen.",
+                    "{name}: Breite und Tiefe müssen zwischen {} und {} m liegen.",
+                    format_m(MIN_SIZE_M),
                     format_m(MAX_SIZE_M)
+                ))
+            } else if e.height_m.is_some_and(|h| {
+                !(h.is_finite() && (HEIGHT_RANGE_M.0..=HEIGHT_RANGE_M.1).contains(&h))
+            }) {
+                Some(format!(
+                    "{name}: Die Höhe muss zwischen {} und {} m liegen.",
+                    format_m(HEIGHT_RANGE_M.0),
+                    format_m(HEIGHT_RANGE_M.1)
                 ))
             } else if !(e.rotation_deg.is_finite() && (0.0..360.0).contains(&e.rotation_deg)) {
                 Some(format!(
@@ -871,5 +908,30 @@ mod tests {
         for k in [MeasureKind::Distance, MeasureKind::Area] {
             assert_eq!(MeasureKind::from_key(k.key()), Some(k));
         }
+    }
+
+    #[test]
+    fn barrier_and_custom_size() {
+        let mut e = SiteElement::new(ElementKind::Barrier, 0.0, 0.0);
+        assert_eq!(
+            ElementKind::Barrier.tool_label(),
+            "Gitterabsperrung (2,5 × 0,6 m)"
+        );
+        assert_eq!(e.height(), 1.1);
+        assert_eq!(e.size_text(), "2,5 × 0,6 × 1,1 m");
+        // eigene Masse: 20 m lange Absperrlinie, 1,2 m hoch
+        e.width_m = 20.0;
+        e.height_m = Some(1.2);
+        assert_eq!(e.size_text(), "20 × 0,6 × 1,2 m");
+        let mut plan = SitePlan {
+            elements: vec![e],
+            ..SitePlan::default()
+        };
+        assert!(plan.validate().is_empty());
+        plan.elements[0].height_m = Some(80.0);
+        assert!(plan.validate()["elemente"].contains("Höhe"));
+        plan.elements[0].height_m = None;
+        plan.elements[0].depth_m = 0.05;
+        assert!(plan.validate()["elemente"].contains("Breite und Tiefe"));
     }
 }

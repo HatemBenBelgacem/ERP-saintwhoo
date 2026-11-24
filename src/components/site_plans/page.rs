@@ -12,11 +12,11 @@ use leptos_router::hooks::{use_navigate, use_params_map, use_query_map};
 
 use super::bridge::{MapEvent, MapView, ViewState, search_address};
 use super::flows;
-use crate::backend::site_plans::flows::AccessKind;
+use crate::backend::site_plans::flows::{AccessKind, parse_decimal};
 use crate::backend::site_plans::model::{
-    AddressHit, Corner, ElementKind, MAX_MEASURE_LABEL_LEN, MAX_MEASURES, Measure, MeasureKind,
-    OriginInput, ROTATION_STEP_DEG, SiteElement, SitePlan, SitePlanPage, format_area,
-    format_distance, format_m, has_aerial_image,
+    AddressHit, Corner, ElementKind, HEIGHT_RANGE_M, MAX_MEASURE_LABEL_LEN, MAX_MEASURES,
+    MAX_SIZE_M, MIN_SIZE_M, Measure, MeasureKind, OriginInput, ROTATION_STEP_DEG, SiteElement,
+    SitePlan, SitePlanPage, format_area, format_distance, format_m, has_aerial_image,
 };
 use crate::backend::site_plans::server_fns::{DeleteSitePlan, SaveSitePlan, get_site_plan};
 use crate::forms::{
@@ -948,9 +948,8 @@ fn ElementList() -> impl IntoView {
                                                     </span>
                                                     <span class="block text-xs text-base-content/60">
                                                         {format!(
-                                                            "{} × {} m · X {} m · Z {} m · {}°",
-                                                            format_m(e.width_m),
-                                                            format_m(e.depth_m),
+                                                            "{} · X {} m · Z {} m · {}°",
+                                                            e.size_text(),
                                                             format_m(e.x),
                                                             format_m(e.z),
                                                             format_m(e.rotation_deg),
@@ -988,8 +987,96 @@ fn ElementList() -> impl IntoView {
                         </ul>
                     }.into_any()
                 }}
+                // Masse des ausgewählten Elements (nur bei Auswahl neu aufgebaut → Fokus bleibt)
+                {move || ed.selected.get().map(|i| view! { <ElementSizeEditor i/> })}
             </div>
         </div>
+    }
+}
+
+/// Eigene Masse des ausgewählten Elements: Breite, Tiefe, Höhe und Drehung. Übernommen wird beim
+/// Verlassen eines Felds; ein Element auf der Rasenfläche darf dabei nicht über den Rand wachsen.
+#[component]
+fn ElementSizeEditor(i: usize) -> impl IntoView {
+    let ed = expect_context::<Editor>();
+    let get = move || ed.plan.with(|p| p.elements.get(i).cloned());
+    // Änderung anwenden, wenn das Element danach noch (bzw. wie vorher) auf der Fläche steht
+    let change = move |f: &dyn Fn(&mut SiteElement)| {
+        let Some((changed, fitted)) = ed.plan.with_untracked(|p| {
+            p.elements.get(i).map(|e| {
+                let mut c = e.clone();
+                f(&mut c);
+                (c, p.fits(e))
+            })
+        }) else {
+            return;
+        };
+        if fitted && !ed.plan.with_untracked(|p| p.fits(&changed)) {
+            ed.notice.set(Some(
+                "Mit diesen Massen würde das Element über die Rasenfläche hinausragen.".into(),
+            ));
+            // Felder auf die bisherigen Werte zurücksetzen
+            ed.plan.update(|_| {});
+            return;
+        }
+        ed.notice.set(None);
+        ed.plan.update(|p| p.elements[i] = changed);
+    };
+    let size_field = move |label: &'static str,
+                           value: fn(&SiteElement) -> f64,
+                           range: (f64, f64),
+                           set: fn(&mut SiteElement, f64)| {
+        flows::number_field(
+            label,
+            move || get().map(|e| format_m(value(&e))).unwrap_or_default(),
+            "",
+            move |s| match parse_decimal(s).filter(|v| (range.0..=range.1).contains(v)) {
+                Some(v) => {
+                    change(&|e| set(e, v));
+                    true
+                }
+                None => false,
+            },
+        )
+    };
+    let name = move || {
+        get()
+            .map(|e| format!("{} {}", e.kind.label(), i + 1))
+            .unwrap_or_default()
+    };
+    view! {
+        <Show when=move || get().is_some()>
+            <div class="flex flex-col gap-2 rounded-box border border-base-300 p-2">
+                <h3 class="text-sm font-semibold">"Masse von " {name}</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    {size_field("Breite (m)", |e| e.width_m, (MIN_SIZE_M, MAX_SIZE_M), |e, v| e.width_m = v)}
+                    {size_field("Tiefe (m)", |e| e.depth_m, (MIN_SIZE_M, MAX_SIZE_M), |e, v| e.depth_m = v)}
+                    {size_field("Höhe (m)", SiteElement::height, HEIGHT_RANGE_M, |e, v| e.height_m = Some(v))}
+                    {size_field("Drehung (°)", |e| e.rotation_deg, (0.0, 360.0), |e, v| e.rotation_deg = v.rem_euclid(360.0))}
+                </div>
+                <p class="text-xs text-base-content/60">
+                    {format!(
+                        "Breite und Tiefe {} bis {} m, Höhe {} bis {} m. Eine längere Gitterabsperrung ist eine ganze Absperrlinie.",
+                        format_m(MIN_SIZE_M),
+                        format_m(MAX_SIZE_M),
+                        format_m(HEIGHT_RANGE_M.0),
+                        format_m(HEIGHT_RANGE_M.1)
+                    )}
+                </p>
+                <div>
+                    <button
+                        type="button"
+                        class="btn btn-xs"
+                        on:click=move |_| change(&|e| {
+                            let (w, d) = e.kind.default_size();
+                            e.width_m = w;
+                            e.depth_m = d;
+                            e.height_m = None;
+                        })
+                    >"Vorgabemasse"</button>
+                </div>
+            </div>
+        </Show>
     }
 }
 

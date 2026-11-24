@@ -785,7 +785,8 @@ function lineString(coordinates) {
 const MODELS = {
     buehne: buildStage,
     verpflegungsstand: buildFoodStall,
-    festzelt: buildTent
+    festzelt: buildTent,
+    gitterabsperrung: buildBarrier
 };
 
 function material(THREE, color, opacity) {
@@ -904,5 +905,44 @@ function buildTent(THREE, el, c, opacity) {
     box(THREE, g, [doorW, doorH, 0.02], [0, doorH / 2, d / 2 + 0.01], c.frame, opacity);
     // Firststange
     box(THREE, g, [0.08, 0.08, d], [0, h, 0], c.frame, opacity);
+    return g;
+}
+
+// Gitterabsperrung: Gitterfelder von rund 2,5 m Länge entlang der Breite, je mit Rahmen (Pfosten,
+// Ober- und Unterholm), halbdurchsichtigem Gitter und Füssen über die ganze Tiefe. Mit grösserer
+// Breite entsteht eine ganze Absperrlinie. Farbe der Art: Rahmen; Füsse dunkel (Gestell).
+function buildBarrier(THREE, el, c, opacity) {
+    const g = new THREE.Group();
+    const w = el.width_m, d = el.depth_m, h = el.height_m;
+    const panels = Math.max(1, Math.round(w / 2.5));
+    const pw = w / panels;
+    const footH = Math.min(0.12, h * 0.1);
+    const bottom = footH + 0.08;
+    const tube = Math.max(0.03, Math.min(0.06, pw * 0.02));
+
+    // Ober- und Unterholm über die ganze Länge
+    box(THREE, g, [w, tube, tube], [0, h - tube / 2, 0], c.accent, opacity);
+    box(THREE, g, [w, tube, tube], [0, bottom, 0], c.accent, opacity);
+
+    for (let i = 0; i <= panels; i++) {
+        const x = -w / 2 + i * pw;
+        // Pfosten und Fuss (über die ganze Tiefe) an jedem Feldrand
+        box(THREE, g, [tube, h - footH, tube], [x, footH + (h - footH) / 2, 0], c.accent, opacity);
+        box(THREE, g, [Math.min(0.25, pw * 0.2), footH, d], [x, footH / 2, 0], c.frame, opacity);
+    }
+
+    // Gitter: dünne Stäbe, höchstens rund 10 je Meter (bei sehr langen Linien weniger, um die Karte schnell zu halten)
+    const spacing = Math.max(0.1, w / 400);
+    const bars = Math.floor(w / spacing);
+    if (bars > 0) {
+        const geometry = new THREE.BoxGeometry(0.015, h - tube - bottom, 0.015);
+        const bar = new THREE.InstancedMesh(geometry, material(THREE, c.accent, opacity * 0.8), bars);
+        const m = new THREE.Matrix4();
+        for (let i = 0; i < bars; i++) {
+            m.makeTranslation(-w / 2 + (i + 0.5) * spacing, bottom + (h - tube - bottom) / 2, 0);
+            bar.setMatrixAt(i, m);
+        }
+        g.add(bar);
+    }
     return g;
 }
