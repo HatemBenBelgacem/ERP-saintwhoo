@@ -69,6 +69,9 @@ src/
 | `home`             | ANF-001     | – (nutzt `system`)                           | home_page                                   |
 | `finance::accounts` | ANF-011    | model, server_fns, repository (unter `backend/finance/`) | `settings/finance/accounts/`: list, form |
 | `site_plans`       | ANF-027, ANF-028 | model (Prüfregeln mit `geo`), flows (Besucherströme), bottlenecks (Engstellen), server_fns, repository | page, flows (Besucherströme), bridge (Rust ↔ `map_bridge.js`: MapLibre + Three.js) |
+| `finance::vat`     | ANF-012     | model, server_fns, repository (unter `backend/finance/`) | `settings/finance/mwst/`: list, form |
+| `finance::fiscal_year` | ANF-013 | model, server_fns, repository (unter `backend/finance/`) | `settings/finance/geschaeftsjahre/`: list, form |
+| `finance::date`    | ANF-012, ANF-013 | model-artige Datei ohne Datenbank (Datumsrechnung, `backend/finance/date.rs`) | – |
 | `company`          | ANF-025     | model, server_fns, repository, logo (Auslieferung `/firma/logo`) | `settings/company/`: page, form |
 | `settings`         | –           | –                                            | general, company, finance (Stammdaten der Finanzen) |
 

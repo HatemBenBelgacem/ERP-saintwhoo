@@ -9,9 +9,12 @@ use leptos::prelude::*;
 use super::model::{OrderDetail, OrderInput, OrderPage, OrderRow, PositionInput, SaveOutcome};
 
 #[cfg(feature = "ssr")]
-use super::repository;
+use super::{
+    model::{FieldErrors, VatSelection, VatWrite},
+    repository,
+};
 #[cfg(feature = "ssr")]
-use sqlx::PgConnection;
+use sqlx::{PgConnection, PgPool};
 
 /// Liste mit Suche, Statusfilter, Sortierung und Seiten (AK-1 bis AK-5).
 /// `status`: „offen“, „alle“ oder ein einzelner Status.
@@ -287,9 +290,13 @@ pub async fn create_position(
         Err(errors) => return Ok(SaveOutcome::Invalid(errors)),
     };
     let pool = crate::db::pool()?;
+    let vat = match resolve_vat(&pool, values.mwst, None).await? {
+        Ok(vat) => vat,
+        Err(errors) => return Ok(SaveOutcome::Invalid(errors)),
+    };
     let mut tx = pool.begin().await?;
     require_draft(&lock_order(&mut tx, auftrag_id).await?)?;
-    let id = repository::insert_position(&mut tx, auftrag_id, &input, &values).await?;
+    let id = repository::insert_position(&mut tx, auftrag_id, &input, &values, vat).await?;
     repository::touch(&mut tx, auftrag_id).await?;
     tx.commit().await?;
     redirect_to_order(auftrag_id);
@@ -308,11 +315,51 @@ pub async fn update_position(id: i64, input: PositionInput) -> Result<SaveOutcom
     let mut tx = pool.begin().await?;
     let (order_id, status) = lock_order_of_position(&mut tx, id).await?;
     require_draft(&status)?;
-    repository::update_position(&mut tx, id, &input, &values).await?;
+    let current = repository::position_vat(&mut tx, id).await?;
+    let vat = match resolve_vat(&pool, values.mwst, current).await? {
+        Ok(vat) => vat,
+        Err(errors) => return Ok(SaveOutcome::Invalid(errors)),
+    };
+    repository::update_position(&mut tx, id, &input, &values, vat).await?;
     repository::touch(&mut tx, order_id).await?;
     tx.commit().await?;
     redirect_to_order(order_id);
     Ok(SaveOutcome::Saved(id))
+}
+
+/// MWST-Auswahl in den zu speichernden Stand umsetzen (ANF-012 AK-9). `current`: Stand der bestehenden Position.
+/// Die Prüfung des Codes (gültig, Vorsteuer, aktiv) übernimmt der Modul `vat`.
+#[cfg(feature = "ssr")]
+async fn resolve_vat(
+    pool: &PgPool,
+    selection: VatSelection,
+    current: Option<VatWrite>,
+) -> Result<Result<VatWrite, FieldErrors>, ServerFnError> {
+    Ok(match selection {
+        VatSelection::Ohne => Ok(VatWrite {
+            code_id: None,
+            satz: 0,
+        }),
+        VatSelection::Keep => current
+            .ok_or_else(|| field_error("Bitte einen MWST-Code wählen oder „ohne MWST“.".into())),
+        VatSelection::Code(id) => {
+            match crate::backend::finance::vat::server_fns::purchase_code(pool, id).await {
+                Ok(code) => Ok(VatWrite {
+                    code_id: Some(code.id),
+                    satz: code.satz,
+                }),
+                Err(e) => Err(field_error(crate::forms::error_message(&e))),
+            }
+        }
+    })
+}
+
+/// Fehler an einem Feld der Auswahl „MWST-Code“.
+#[cfg(feature = "ssr")]
+fn field_error(message: String) -> FieldErrors {
+    let mut errors = FieldErrors::new();
+    errors.insert("mwst_code".into(), message);
+    errors
 }
 
 /// Position löschen (AK-13). Nur im Entwurf.

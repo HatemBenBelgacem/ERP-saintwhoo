@@ -85,6 +85,20 @@ pub const SETTINGS_FINANCE_NAV: &[NavItem] = &[
         icon: Some(Icon::Ledger),
         description: "Konten nach KMU-Kontenrahmen und Systemkonten für automatische Buchungen.",
     },
+    // ANF-012
+    NavItem {
+        title: "MWST",
+        path: "/einstellungen/finanzen/mwst",
+        icon: Some(Icon::Percent),
+        description: "MWST-Codes, MWST-Pflicht und Umsatzgrenze.",
+    },
+    // ANF-013
+    NavItem {
+        title: "Geschäftsjahre",
+        path: "/einstellungen/finanzen/geschaeftsjahre",
+        icon: Some(Icon::Calendar),
+        description: "Geschäftsjahre und Monatsperioden; gesperrte Perioden nehmen keine Buchungen mehr auf.",
+    },
 ];
 
 /// Ziel des Eintrags „Einstellungen“ in der Fusszeile der Seitenleiste.

@@ -1,6 +1,6 @@
 # Aufgaben
 
-Stand: 2026-11-24
+Stand: 2026-11-25
 
 ## In Arbeit
 
@@ -11,8 +11,13 @@ Stand: 2026-11-24
 - [ ] ANF-028: offene Fragen klären (Vorgabe der Personendichte, Besucherzahl je Zone oder Projekt, Grenzen der Ampel, Durchfluss je Meter Wegbreite); später Stufe 4 (Zeitregler)
 - [ ] ANF-027: offene Fragen klären (eigene Seite, Speichern, „Verpflegungsstand“, Bibliotheken aus dem Netz, Vorgabe-Standort) und im Browser mit Luftbild prüfen (SWISSIMAGE: Zoomstufe 20 bestätigen)
 - [ ] ANF-026: vor Inbetriebnahme klären, wie die bestehende Datenbank zum ersten Mandanten wird
-- [ ] ANF-025 Rest: Bankkonten als Verweis (mit ANF-015), MWST-Nummer nur bei MWST-Pflicht (mit ANF-012), Absender in Druckansichten und Buchungssperre ohne Firma (mit ANF-018)
-- [ ] ANF-011 Rest: Sperre von Nummer/Kontoart nach Buchungen (mit ANF-017), Vorgabe-MWST-Code (mit ANF-012)
+- [ ] ANF-025 Rest: Bankkonten als Verweis (mit ANF-015), Absender in Druckansichten und Buchungssperre ohne Firma (mit ANF-018)
+- [ ] ANF-011 Rest: Vorgabe-MWST-Code am Konto (MWST-Codes sind da, ANF-017 AK-4 braucht es), Sperre von Nummer/Kontoart nach Buchungen (mit ANF-017)
+- [ ] ANF-012 Rest: AK-11 Umsatzgrenze mit Stufen 80 % und 100 % und dem Umsatz aus dem Buchungsjournal (mit ANF-017); AK-6 und AK-10 für Belege (mit ANF-018 bis ANF-019)
+- [ ] ANF-012 offene Entscheidung: bestehende Einkaufspositionen einem Code zuordnen (Vorschlag war ja, umgesetzt nein; siehe `testszenarien.md`, Punkt 6)
+- [ ] ANF-013 Rest: Buchungsprüfung AK-5, AK-6 und AK-7 mit dem Buchungsjournal (ANF-017); die Prüffunktion `check_booking_date` ist vorbereitet
+- [ ] ANF-010 AK-1 bis AK-2: Hauptnavigation „Finanzen“ mit Reitern, folgt mit dem Buchungsjournal (ANF-017)
+- [ ] Browser-Prüfung der Szenarien TS-012-01 bis TS-012-16 und TS-013-01 bis TS-013-11 (Layout ist per Screenshot geprüft)
 - [ ] ANF-010 bis ANF-025 (Finanzen, Firma): restliche offene Fragen klären und Anforderungen freigeben (Reihenfolge siehe ANF-010)
 - [ ] Anforderung QR-Rechnung erfassen (wird benötigt, Zeitpunkt offen)
 - [ ] ANF-008: Railway einrichten – Projekt mit PostgreSQL (Region Europa), GitHub verbinden, `DATABASE_URL` und `SITZUNG_COOKIE_SECURE=1` setzen; danach AK-9, 10, 14, 16 prüfen
@@ -88,3 +93,7 @@ Stand: 2026-11-24
 - [x] Modal-Fenster auf dem Mobiltelefon von unten einblenden (daisyUI `modal-bottom`, ab `sm` mittig, Einblend-Animation nur bei Bewegung erlaubt; ANF-001 AK-10)
 - [x] Adressdetail: lange E-Mail- und Webadressen brechen auf dem Mobiltelefon um (zuvor 6 px Überlauf); alle Detailseiten mit echten Datensätzen bei 390 px geprüft
 - [x] Speichern-Button in Modal-Fenstern auf dem iPhone sichtbar: Fensterhöhe mit `dvh`, Fußzeile mit den Schaltflächen bleibt beim Blättern am unteren Rand (ANF-001 AK-10)
+- [x] ANF-012 MWST-Codes und MWST-Einstellungen umgesetzt (Codes, Pflicht mit Beginn und UID-Prüfung, Standard-Codes, Umsatzgrenze als Anzeige, Einkauf auf Codes umgestellt); Reste siehe „Offen“
+- [x] ANF-013 Geschäftsjahre und Perioden umgesetzt (Anlegen mit Lücken- und Dauerprüfung, Monatsperioden, Sperren mit Vermerk, Löschen des neuesten Jahres); Reste siehe „Offen“
+- [x] ANF-025 MWST-Nummer nur bei eingeschalteter MWST-Pflicht (AK-6)
+- [x] Gemeinsame Datumsrechnung für die Finanzen (`src/backend/finance/date.rs`) mit Modultests

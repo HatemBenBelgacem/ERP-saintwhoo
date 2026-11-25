@@ -13,7 +13,7 @@ use crate::components::{
     portal::PortalPage,
     projects::{ElementDetailPage, ProjectDetailPage, ProjectListPage},
     purchase_orders::{OrderDetailPage, OrderListPage},
-    settings::{AccountsPage, CompanyPage, GeneralSettingsPage},
+    settings::{AccountsPage, CompanyPage, FiscalYearPage, GeneralSettingsPage, VatPage},
     site_plans::SitePlanPage,
     tasks::{TaskDetailPage, TaskListPage},
     users::{UserDetailPage, UserListPage},
@@ -81,6 +81,16 @@ pub fn App() -> impl IntoView {
                     <Route
                         path=(StaticSegment("einstellungen"), StaticSegment("finanzen"), StaticSegment("kontenplan"))
                         view=AccountsPage
+                    />
+                    // ANF-012 MWST – Eingabe im Modal-Fenster (?neu=1, ?bearbeiten=…, ?einstellungen=1, ?standard=1)
+                    <Route
+                        path=(StaticSegment("einstellungen"), StaticSegment("finanzen"), StaticSegment("mwst"))
+                        view=VatPage
+                    />
+                    // ANF-013 Geschäftsjahre – Eingabe im Modal-Fenster (?neu=1, ?periode=…, ?loeschen=…)
+                    <Route
+                        path=(StaticSegment("einstellungen"), StaticSegment("finanzen"), StaticSegment("geschaeftsjahre"))
+                        view=FiscalYearPage
                     />
                     // ANF-005 Benutzer – Eingabe im Modal-Fenster (?neu=1, ?bearbeiten=1, ?passwort=1)
                     <Route

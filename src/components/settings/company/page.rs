@@ -8,6 +8,7 @@ use super::form::{CompanyModal, LogoModal};
 use crate::backend::addresses::model::country_name;
 use crate::backend::company::model::{Company, vat_number};
 use crate::backend::company::server_fns::{COMPANY_URL, get_company};
+use crate::backend::finance::vat::server_fns::get_vat_overview;
 use crate::forms::{data_version, error_message, use_base_href, with_params};
 use crate::icons::{Icon, IconView};
 
@@ -15,6 +16,8 @@ use crate::icons::{Icon, IconView};
 pub fn CompanyPage() -> impl IntoView {
     let query = use_query_map();
     let data = Resource::new(data_version, |_| get_company());
+    // AK-6: die MWST-Nummer erscheint erst, wenn die MWST-Pflicht eingeschaltet ist (ANF-012)
+    let vat = Resource::new(data_version, |_| get_vat_overview());
     let param = move |name: &str| query.read().get(name);
 
     view! {
@@ -32,7 +35,13 @@ pub fn CompanyPage() -> impl IntoView {
             <Transition fallback=|| view! { <span class="loading loading-spinner"></span> }>
                 {move || Suspend::new(async move {
                     match data.await {
-                        Ok(Some(company)) => view! { <CompanyView company/> }.into_any(),
+                        Ok(Some(company)) => {
+                            let pflichtig = vat
+                                .await
+                                .map(|overview| overview.settings.mwst_pflichtig)
+                                .unwrap_or(false);
+                            view! { <CompanyView company pflichtig/> }.into_any()
+                        }
                         Ok(None) => view! { <NoCompany/> }.into_any(),
                         Err(e) => view! {
                             <div role="alert" class="alert alert-error">{error_message(&e)}</div>
@@ -74,7 +83,7 @@ fn NoCompany() -> impl IntoView {
 
 /// Angaben der Firma (AK-2), Logo (AK-7) und Belegvorschau (AK-3).
 #[component]
-fn CompanyView(company: Company) -> impl IntoView {
+fn CompanyView(company: Company, pflichtig: bool) -> impl IntoView {
     let base = use_base_href();
     let address_href = format!("/adressen/{}", company.adresse_id);
     let place = [company.plz.clone(), company.ort.clone()]
@@ -134,8 +143,10 @@ fn CompanyView(company: Company) -> impl IntoView {
                     <h3 class="card-title text-base">"Rechtliche Angaben und Belege"</h3>
                     <dl class="space-y-2">
                         <Field label="UID" value=company.uid.clone()/>
-                        // AK-6: Anzeige als MWST-Nummer, sobald die MWST-Pflicht eingeschaltet ist (ANF-012)
-                        <Field label="MWST-Nummer (bei MWST-Pflicht)" value=company.uid.as_deref().map(vat_number)/>
+                        // AK-6: nur bei eingeschalteter MWST-Pflicht (ANF-012)
+                        {pflichtig.then(|| view! {
+                            <Field label="MWST-Nummer" value=company.uid.as_deref().map(vat_number)/>
+                        })}
                         <Field label="Handelsregistereintrag" value=company.handelsregister.clone()/>
                         <Field label="Fusszeile für Belege" value=company.fusszeile.clone()/>
                     </dl>

@@ -66,9 +66,8 @@ pub async fn ensure_erp_role(
         if let Err(e) = sqlx::query(AssertSqlSafe(format!("CREATE ROLE {role}")))
             .execute(&mut conn)
             .await
-            && !e
-                .as_database_error()
-                .is_some_and(|d| d.code().as_deref() == Some("42710"))
+            && e.as_database_error()
+                .is_none_or(|d| d.code().as_deref() != Some("42710"))
         {
             return Err(e);
         }

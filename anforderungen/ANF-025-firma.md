@@ -57,7 +57,7 @@ Die Firmenverwaltung liegt in den Einstellungen unter `/einstellungen/firma`.
   UID, Handelsregistereintrag, Logo und Fusszeile ändern und eine andere Adresse verknüpfen.
   Die Felder der Adresse selbst werden in der Adressverwaltung (ANF-002) geändert; der Verweis
   „Adresse bearbeiten“ führt dorthin.
-- [ ] **AK-6:** Gegeben eine UID, dann wird sie im Format `CHE-123.456.789` geprüft (inkl. Prüfziffer
+- [x] **AK-6:** Gegeben eine UID, dann wird sie im Format `CHE-123.456.789` geprüft (inkl. Prüfziffer
   nach Modulo 11). Die MWST-Nummer wird daraus gebildet (`CHE-123.456.789 MWST`) und angezeigt,
   sobald die MWST-Pflicht eingeschaltet ist (ANF-012).
 - [x] **AK-7:** Gegeben ein Logo, dann kann der Benutzer eine PNG-, JPG- oder SVG-Datei bis 1 MB
@@ -130,8 +130,7 @@ Ort, Land, Telefon, E-Mail, Webseite.
 
 Hinweise:
 - **AK-2:** Die Bankkonten werden mit ANF-015 als Verweis ergänzt.
-- **AK-6:** UID-Prüfung umgesetzt. Die MWST-Nummer wird vorerst immer mit dem Zusatz „bei MWST-Pflicht“ angezeigt;
-  die Bedingung „MWST-Pflicht eingeschaltet“ folgt mit ANF-012.
+- **AK-6:** UID-Prüfung und MWST-Nummer umgesetzt. Die MWST-Nummer erscheint nur bei eingeschalteter MWST-Pflicht (ANF-012).
 - **AK-9/AK-10:** Der Absenderblock (`SenderBlock`) liest die Firma zum Zeitpunkt der Anzeige und zeigt ohne Firma
   „Firma nicht erfasst“. Die Druckansichten und die Buchungssperre für Debitorenrechnungen folgen mit ANF-018 ff.
 - **AK-7:** Der Dateityp wird am Inhalt erkannt, nicht an der Endung. SVG-Logos werden mit
@@ -150,3 +149,4 @@ Geprüft: AK-1, AK-3 bis AK-8, AK-11, AK-12 im Browser (grosser Bildschirm und M
 |------------|--------------------|-----------------|
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt (Antwort auf offene Frage zu ANF-018: Absender aus Firmenverwaltung) |
 | 2026-11-18 | Hatem Ben Belgacem | Umgesetzt bis auf Bankkonten (ANF-015), MWST-Bedingung (ANF-012) und Belege (ANF-018 ff.) |
+| 2026-11-19 | Claude Code | MWST-Nummer nur bei eingeschalteter MWST-Pflicht (AK-6, mit ANF-012) |

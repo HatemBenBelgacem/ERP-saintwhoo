@@ -240,3 +240,4 @@ Geprüft: alle AK im Browser (grosser Bildschirm und Mobiltelefon) und 13 neue M
 |------------|--------------------|-----------------|
 | 2026-11-11 | Hatem Ben Belgacem | Erstellt        |
 | 2026-11-11 | Hatem Ben Belgacem | Umgesetzt (offene Fragen mit vorläufigen Annahmen) |
+| 2026-11-19 | Claude Code | MWST-Satz kommt aus den MWST-Codes (ANF-012 AK-9). Bestehende Positionen behalten ihren Satz über „Bisheriger Satz (ohne Code)“; „ohne MWST“ ist wählbar |

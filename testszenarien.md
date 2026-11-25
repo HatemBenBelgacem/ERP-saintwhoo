@@ -1,6 +1,6 @@
 # Testszenarien – uniqwork
 
-Stand: 2026-11-12 · Grundlage: Akzeptanzkriterien (AK) der Anforderungen ANF-001 bis ANF-007, ANF-011 und ANF-025
+Stand: 2026-11-19 · Grundlage: Akzeptanzkriterien (AK) der Anforderungen ANF-001 bis ANF-007, ANF-011, ANF-012, ANF-013 und ANF-025
 
 Dieses Dokument beschreibt, wie du von Hand prüfst, ob das ERP die Anforderungen erfüllt. Jedes Testszenario nennt das Akzeptanzkriterium, das es prüft.
 
@@ -327,6 +327,45 @@ Vorbereitung: leere PostgreSQL-Instanz bzw. Datenbanken `uniqwork` und `uniqwork
 | TS-011-12 | 11 | Mit den Entwicklerwerkzeugen die Anfrage beim Speichern der Systemkonten so ändern, dass Debitoren auf 3400 zeigt. | Der Server lehnt ab: „Für „Debitoren“ ist nur ein Konto der Kontoart Aktiv erlaubt.“ |
 | TS-011-13 | – | Liste und „Konto bearbeiten“ auf dem Mobiltelefon öffnen. | Keine waagrechte Verschiebung der Seite; die Tabelle lässt sich in ihrem Rahmen verschieben, das Modal-Fenster ist vollständig bedienbar. |
 
+## ANF-012 MWST
+
+Vorbereitung: Kontenrahmen übernehmen (TS-011-01) und eine Firma mit UID erfassen (TS-025-01).
+
+| Nr | AK | Schritte | Erwartet |
+|----|----|----------|----------|
+| TS-012-01 | 2 | Einstellungen › Finanzen › MWST öffnen, ohne Codes „Schweizer Standard-Codes übernehmen“ bestätigen. | Sechs Codes: UN81, UR26, UB38, VM81, VI81, UEX, gültig ab 01.01.2024. VI81 liegt auf Konto 1171, die übrigen auf 2200 bzw. 1170. Ein zweiter Aufruf wird abgelehnt. |
+| TS-012-02 | 8 | MWST-Pflicht ausgeschaltet ansehen. | Hinweis „Die MWST-Pflicht ist ausgeschaltet …“. Keine Code-Tabelle und kein Knopf „Neuer MWST-Code“. |
+| TS-012-03 | 8 | „Einstellungen“ öffnen, Pflicht einschalten, Beginndatum leer lassen, speichern. Danach mit Beginndatum 01.01.2027 versuchen. | Ohne Datum: Meldung zum Beginndatum. Mit Datum wird gespeichert, die Seite zeigt „Pflicht ab 01.01.2027“ und die MWST-Nummer „CHE-… MWST“. |
+| TS-012-04 | 8 | Wie TS-012-03, aber vorher die UID der Firma entfernen (oder mit einer Firma ohne UID). | Meldung „Ohne UID der Firma kann die MWST-Pflicht nicht eingeschaltet werden …“. Nichts wird gespeichert. |
+| TS-012-05 | 3 | „Neuer MWST-Code“: Code `vm81` (bereits vergeben). Dann Code `ABCDEFGHIJK`, Satz `101`. | Der Code wird als VM81 geprüft: „Dieser Code ist bereits vergeben.“. Für den langen Code und den Satz erscheinen die Meldungen. Nichts wird gespeichert. |
+| TS-012-06 | 3 | „Gültig ab“ 01.06.2025, „Gültig bis“ 01.05.2025 eingeben. | Meldung „Das Ende liegt vor dem Beginn der Gültigkeit.“ |
+| TS-012-07 | 4 | Art „Umsatzsteuer“ wählen, dann Konto 1170 (Vorsteuer) speichern. | Das Konto springt bei der Art-Wahl auf das passende Systemkonto (2200). Speichern mit 1170: „Für Umsatzsteuer ist ein Konto der Kontoart Passiv nötig.“ |
+| TS-012-08 | 5, 7 | Code VM81 in einem Einkaufsauftrag verwenden. Danach VM81 bearbeiten: Satz auf 7.7 ändern. Dann löschen. | Satz gesperrt: „Der Satz kann nicht mehr geändert werden …“. Löschen: „Der Code wird verwendet und kann nicht gelöscht werden …“. Deaktivieren ist erlaubt. Die Plakette „verwendet“ bleibt sichtbar. |
+| TS-012-09 | 7 | Einen unbenutzten Code (z. B. TESTX) löschen. | „MWST-Code wurde gelöscht.“ Der Code ist aus der Liste verschwunden. |
+| TS-012-10 | 9 | Neue Position in einem Einkaufsauftrag öffnen. Die Auswahl „MWST“ ansehen. | Angeboten werden nur aktive Vorsteuer-Codes (z. B. „VM81 · 8.1 %“) und „ohne MWST“. Umsatzsteuer-Codes fehlen. Standard ist der erste Code. |
+| TS-012-11 | 9 | Position ohne Code mit „ohne MWST“ speichern. | Die Position zeigt 0.00 MWST. Die Summe der MWST ändert sich entsprechend. |
+| TS-012-12 | 9 | Eine Position aus der Zeit vor ANF-012 (Satz 2.6 %, ohne Code) bearbeiten, nur den Bezeichnungstext ändern. | Die Auswahl zeigt „Bisheriger Satz (ohne Code)“. Nach dem Speichern bleibt der Satz 2.60 % erhalten. |
+| TS-012-13 | 10 | Pflicht mit Beginn 01.01.2027 eingeschaltet, heute eine Position erfassen. | Vor dem Beginn sind keine Codes wählbar. Die Position wird ohne MWST gespeichert. |
+| TS-012-14 | 6 | Code mit „Gültig bis“ von gestern setzen und in einer Position wählen. | Der Code ist nicht wählbar bzw. die Meldung „Der Code … ist heute nicht gültig.“ erscheint. |
+| TS-012-15 | 11 | MWST-Seite ansehen. | Umsatzgrenze CHF 100'000.00 steht da. Der Hinweis erklärt, dass der Umsatz erst mit dem Buchungsjournal (ANF-017) ermittelt wird. |
+| TS-012-16 | 12 | Seite am Mobiltelefon (390 px) öffnen; Modal „Neuer MWST-Code“ öffnen. | Keine seitliche Verschiebung. Das Fenster erscheint von unten. |
+
+## ANF-013 Geschäftsjahre
+
+| Nr | AK | Schritte | Erwartet |
+|----|----|----------|----------|
+| TS-013-01 | 2 | Einstellungen › Finanzen › Geschäftsjahre öffnen, „Neues Geschäftsjahr“ wählen, ohne Eingabe bestätigen. | Vorschlag: Beginn 01.01. des laufenden Jahres, Ende 31.12. des Jahres. Die Webadresse enthält `?neu=1`. |
+| TS-013-02 | 2, 4 | Mit 01.01.2026 bis 31.12.2026 speichern. | Meldung „Geschäftsjahr angelegt.“. Das Jahr „2026“ hat zwölf Monatsperioden mit Status „Offen“. Es ist aufgeklappt. |
+| TS-013-03 | 3 | Ein neues Jahr ab 01.06.2027 anlegen. | „Das Geschäftsjahr muss lückenlos anschliessen und am 01.01.2027 beginnen.“ |
+| TS-013-04 | 2 | Beginn 02.01.2027 eingeben. | „Das Geschäftsjahr beginnt am 1. eines Monats.“ (nicht die Lückenmeldung) |
+| TS-013-05 | 2 | Ende 30.06.2027 eingeben. Danach 01.01.2027 bis 31.12.2028 (24 Monate). | Ende: „Das Geschäftsjahr endet am letzten Tag eines Monats.“. Bei 24 Monaten: „… höchstens 23 Monate (hier: 24).“ |
+| TS-013-06 | 3 | Den Vorschlag für 2027 (01.01. bis 31.12.2027) unverändert speichern. | Das Jahr 2027 wird angelegt, das neueste steht oben. |
+| TS-013-07 | 5 | Periode März 2026 öffnen, „Sperren“ wählen und bestätigen. | Status „Gesperrt“. Im Vermerk stehen Benutzername und Zeitpunkt, z. B. „tester · 19.11.2026 08:14“. |
+| TS-013-08 | 5 | Dieselbe Periode mit „Entsperren“ wieder öffnen. | Status „Offen“, Vermerk aktualisiert. |
+| TS-013-09 | 7 | Das ältere Jahr 2026 ansehen, dann das neueste (2027) löschen. | Beim älteren Jahr fehlt „Geschäftsjahr löschen“. Beim neuesten erscheint die Bestätigung. Nach dem Löschen sind das Jahr und seine Perioden weg. |
+| TS-013-10 | 6 | Gesperrte Periode: Buchung mit Datum darin erfassen. | Erst mit dem Buchungsjournal (ANF-017) prüfbar. Die Prüffunktion für das Buchungsdatum ist vorbereitet. |
+| TS-013-11 | 12 | Seite am Mobiltelefon (390 px) öffnen, Perioden aufklappen. | Keine seitliche Verschiebung. Tabelle und Knöpfe sind erreichbar. |
+
 ## ANF-025 Firma
 
 | Nr | AK | Schritte | Erwartet |
@@ -343,6 +382,7 @@ Vorbereitung: leere PostgreSQL-Instanz bzw. Datenbanken `uniqwork` und `uniqwork
 | TS-025-10 | 3 | Belegvorschau ansehen. | Logo, Name, Anschrift und UID oben, Fusszeile unten. |
 | TS-025-11 | 11 | Die Adresse der Firma im Adressstamm öffnen und löschen. | Plakette „Eigene Firma“. Löschen wird verhindert: „… als eigene Firma verwendet …“. |
 | TS-025-12 | 12 | Neues Projekt: im Feld „Kunde“ nach dem Firmennamen suchen. Ebenso bei einem neuen Einkaufsauftrag (Lieferant). | Die eigene Firma wird nicht angeboten. |
+| TS-025-13 | 6 | Firma ansehen, zuerst bei ausgeschalteter, dann bei eingeschalteter MWST-Pflicht (ANF-012). | Ohne Pflicht fehlt die Zeile „MWST-Nummer“. Mit Pflicht steht dort „CHE-… MWST“.
 
 ## Offene Punkte aus der Prüfung
 
@@ -353,3 +393,5 @@ Bei der Vorbereitung der Szenarien sind diese Punkte aufgefallen. Sie sollten vo
 3. **Meldung beim Selbst-Sperren (TS-007-25).** ANF-005 AK-20 nennt eine gemeinsame Meldung für „sperren bzw. löschen“. Im Code gibt es zwei Meldungen. Zu klären: Welche Formulierung gilt?
 4. **Rundung des Fortschritts (TS-003-09).** ANF-003 AK-5 gibt keine Rundung vor. Der Code rechnet ganzzahlig ab (2 von 3 ergibt 66 %). Zu klären: Abrunden oder kaufmännisch runden?
 5. **Antwortzeit bei der Anmeldung (TS-007-15).** ANF-007 AK-12 lässt sich von Hand nur grob prüfen. Ein Modultest würde die Zeitgleichheit genauer messen.
+6. **Bestehende Einkaufspositionen (ANF-012 AK-9).** Der Vorschlag war, bestehende Positionen nach Satz einem Code zuzuordnen. Umgesetzt ist das nicht: Sie behalten ihren Satz über die Auswahl „Bisheriger Satz (ohne Code)“. Zu klären: Zuordnung per Migration nachholen?
+7. **Gültigkeit im Einkauf (ANF-012 AK-6).** Der Einkauf prüft die Gültigkeit des Codes am heutigen Datum. Das Belegdatum (Bestelldatum) wird erst mit den Rechnungen (ANF-018, ANF-019) geprüft. Zu klären: Soll schon der Einkauf das Bestelldatum nehmen?
