@@ -27,6 +27,7 @@ pub const MODAL_PARAMS: &[&str] = &[
     "standard",
     "periode",
     "loeschen",
+    "kurs",
 ];
 
 /// Zähler, der nach jedem Speichern erhöht wird. Ressourcen, die ihn lesen, laden danach neu
@@ -222,6 +223,60 @@ pub fn SelectField(
             </select>
             <ErrorText field errors/>
         </fieldset>
+    }
+}
+
+/// Auswahlfeld mit einer Liste, die erst zur Laufzeit feststeht (z. B. aus der Datenbank).
+/// Die Liste enthält Paare (Schlüssel, Beschriftung). Formularname: `input[<field>]`.
+#[component]
+pub fn OptionField(
+    field: &'static str,
+    label: &'static str,
+    options: Vec<(String, String)>,
+    value: String,
+    errors: Signal<FieldErrors>,
+) -> impl IntoView {
+    view! {
+        <fieldset class="fieldset">
+            <legend class="fieldset-legend">{label}</legend>
+            <select
+                name=format!("input[{field}]")
+                class="select w-full"
+                class:select-error=move || errors.read().contains_key(field)
+            >
+                {options
+                    .into_iter()
+                    .map(|(key, text)| {
+                        let selected = key == value;
+                        view! { <option value=key selected=selected>{text}</option> }
+                    })
+                    .collect_view()}
+            </select>
+            <ErrorText field errors/>
+        </fieldset>
+    }
+}
+
+/// Meldung über dem Formular, wenn der Server das Speichern abgelehnt hat.
+#[component]
+pub fn ServerAlert(message: Signal<Option<String>>) -> impl IntoView {
+    move || {
+        message
+            .get()
+            .map(|m| view! { <div role="alert" class="alert alert-error">{m}</div> })
+    }
+}
+
+/// Abbrechen und Speichern am Ende eines Formulars in einem Modal-Fenster.
+#[component]
+pub fn SaveButtons(cancel_href: Signal<String>, pending: Signal<bool>) -> impl IntoView {
+    view! {
+        <div class="modal-action mt-0">
+            <a href=move || cancel_href.get() class="btn btn-ghost">"Abbrechen"</a>
+            <button type="submit" class="btn btn-primary" disabled=move || pending.get()>
+                "Speichern"
+            </button>
+        </div>
     }
 }
 

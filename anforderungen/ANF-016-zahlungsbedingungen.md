@@ -3,7 +3,7 @@
 | Feld          | Wert                                              |
 |---------------|---------------------------------------------------|
 | **Nummer**    | ANF-016                                           |
-| **Status**    | Entwurf                                           |
+| **Status**    | In Umsetzung                                           |
 | **Priorität** | Muss                                              |
 | **Typ**       | Funktional                                        |
 | **Modul**     | Finanzen / Einstellungen                          |
@@ -26,23 +26,23 @@
 
 ## 3. Akzeptanzkriterien
 
-- [ ] **AK-1:** Gegeben die Einstellungsseite „Zahlungsbedingungen“, dann erscheinen alle Bedingungen mit
+- [x] **AK-1:** Gegeben die Einstellungsseite „Zahlungsbedingungen“, dann erscheinen alle Bedingungen mit
   Bezeichnung, Zahlungsfrist (Tage), Skontofrist (Tage), Skonto %, Rechnungstext und Kennzeichen
   „Standard“ und „aktiv“.
-- [ ] **AK-2:** Gegeben „Neue Zahlungsbedingung“, dann öffnet sich ein Modal-Fenster (`?neu=1`).
+- [x] **AK-2:** Gegeben „Neue Zahlungsbedingung“, dann öffnet sich ein Modal-Fenster (`?neu=1`).
   Bezeichnung und Zahlungsfrist (0–365 Tage) sind Pflicht. Skontofrist und Skonto % sind entweder beide
   leer oder beide gesetzt; die Skontofrist ist kleiner als die Zahlungsfrist, Skonto liegt über 0 und unter 100 %.
-- [ ] **AK-3:** Gegeben die Eingaben, dann schlägt das System einen Rechnungstext vor, z. B.
+- [x] **AK-3:** Gegeben die Eingaben, dann schlägt das System einen Rechnungstext vor, z. B.
   „Zahlbar innert 10 Tagen mit 2 % Skonto oder innert 30 Tagen netto“; der Text ist änderbar.
 - [ ] **AK-4:** Gegeben mehrere Bedingungen, dann ist genau eine als **Standard** markiert; sie wird bei
   neuen Rechnungen verwendet, wenn die Adresse keine Vorgabe hat.
-- [ ] **AK-5:** Gegeben eine Adresse (ANF-002), dann kann im Adressformular eine Vorgabe-Zahlungsbedingung
+- [x] **AK-5:** Gegeben eine Adresse (ANF-002), dann kann im Adressformular eine Vorgabe-Zahlungsbedingung
   gewählt werden; sie wird in neuen Rechnungen an diese Adresse vorgeschlagen.
 - [ ] **AK-6:** Gegeben eine Rechnung, dann wird **Fälligkeit = Rechnungsdatum + Zahlungsfrist** und
   **Skonto bis = Rechnungsdatum + Skontofrist** berechnet und in der Rechnung gespeichert (spätere Änderungen
   der Bedingung wirken nicht auf bestehende Rechnungen).
-- [ ] **AK-7:** Gegeben eine verwendete Bedingung, dann kann sie nicht gelöscht, nur deaktiviert werden.
-- [ ] **AK-8:** Die Tabelle wird per sqlx-Migration angelegt, mit „30 Tage netto“ als Standard.
+- [x] **AK-7:** Gegeben eine verwendete Bedingung, dann kann sie nicht gelöscht, nur deaktiviert werden.
+- [x] **AK-8:** Die Tabelle wird per sqlx-Migration angelegt, mit „30 Tage netto“ als Standard.
 
 ## 4. Daten / Felder
 
@@ -74,10 +74,29 @@ Erweiterung Tabelle `adresse`: `zahlungsbedingung_id` (Verweis, optional).
 
 ## 7. Offene Fragen
 
-- [ ] Getrennte Vorgabe-Zahlungsbedingung für Adressen als Kunde und als Lieferant? *(Vorschlag: eine gemeinsame Vorgabe)*
+- [x] Getrennte Vorgabe-Zahlungsbedingung für Adressen als Kunde und als Lieferant? **Entschieden 2026-11-25: Vorschlag übernommen** (eine gemeinsame Vorgabe)
+
+## Umsetzung
+
+| Datei | Inhalt |
+|-------|--------|
+| `migrations/20261201110000_zahlungsbedingung.sql` | Tabelle `zahlungsbedingung` mit Prüfregeln (Skontofrist und Skonto nur gemeinsam), Startwert „30 Tage netto“ als Standard; Spalte `adresse.zahlungsbedingung_id` (`ON DELETE RESTRICT`) |
+| `src/backend/finance/payment_term/` | Modell mit Prüfregeln, Rechnungstext-Vorschlag und Kurzform für Listen, SQL, Server-Funktionen |
+| `src/components/settings/finance/payment_terms/` | Seite `/einstellungen/finanzen/zahlungsbedingungen` mit Liste und Fenstern; der Rechnungstext passt sich den Eingaben an, bis er von Hand geändert wird |
+| `src/backend/addresses/`, `src/components/addresses/form.rs` (ANF-002) | Feld „Zahlungsbedingung (Vorgabe)“ im Adressformular; nur aktive Bedingungen zur Auswahl, eine bisherige Vorgabe bleibt sichtbar |
+
+Festlegungen bei der Umsetzung:
+- **Standard:** Die erste Zahlungsbedingung wird automatisch Standard. Die Standard-Bedingung bleibt aktiv und lässt sich nicht löschen.
+- **Rechnungstext:** Beispiel „Zahlbar innert 10 Tagen mit 2 % Skonto oder innert 30 Tagen netto“; bei Frist 0 „Zahlbar sofort netto“.
+- **Löschen (AK-7):** Eine von einer Adresse verwendete Bedingung lässt sich nicht löschen, nur deaktivieren.
+- **AK-4 (teilweise):** Die Standard-Regel gilt; der Vorschlag bei neuen Rechnungen folgt mit ANF-018.
+- **AK-6 (offen):** Fälligkeit und Skontofrist werden erst beim Buchen von Rechnungen berechnet (ANF-018).
+- Geprüft: 7 Modultests (Rechnungstext, Skonto-Paare, Tagesgrenzen, Pflichtfelder), Migration auf einer leeren Datenbank, Löschsperre per Fremdschlüssel.
+- Die Browser-Prüfung steht noch aus.
 
 ## 8. Änderungshistorie
 
 | Datum      | Autor              | Änderung        |
 |------------|--------------------|-----------------|
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
+| 2026-11-25 | Claude Code | Freigegeben (Umsetzung von Block 1 beauftragt); umgesetzt bis auf AK-4 (Standard bei Rechnungen) und AK-6 (Fälligkeit, mit ANF-018) |

@@ -10,7 +10,7 @@ use crate::forms::PickOption;
 
 const SELECT_ADDRESS: &str = "\
     SELECT id, nummer, anzeigename, typ, anrede, firmenname, vorname, nachname, zusatz, \
-           strasse, postfach, plz, ort, land, email, telefon, mobiltelefon, webseite, notiz, \
+           strasse, postfach, plz, ort, land, email, telefon, mobiltelefon, webseite, notiz, zahlungsbedingung_id, \
            (SELECT b.id FROM benutzer b WHERE b.adresse_id = adresse.id) AS benutzer_id, \
            (SELECT b.benutzername FROM benutzer b WHERE b.adresse_id = adresse.id) AS benutzername, \
            EXISTS (SELECT 1 FROM firma f WHERE f.adresse_id = adresse.id) AS eigene_firma, \
@@ -24,7 +24,7 @@ const SEARCH_WHERE: &str = "\
      OR ort ILIKE $2 OR plz ILIKE $2 OR email ILIKE $2)";
 
 const COLUMNS: &str = "typ, anrede, firmenname, vorname, nachname, zusatz, strasse, postfach, \
-                       plz, ort, land, email, telefon, mobiltelefon, webseite, notiz";
+                       plz, ort, land, email, telefon, mobiltelefon, webseite, notiz, zahlungsbedingung_id";
 
 /// Sortierausdruck für einen Schlüssel aus der Webadresse (nur feste Werte → kein SQL-Einschleusen).
 fn order_by(sort: &str) -> &'static str {
@@ -44,7 +44,7 @@ fn opt(s: &str) -> Option<&str> {
     (!s.is_empty()).then_some(s)
 }
 
-/// Bindet alle Eingabefelder in fester Reihenfolge ($1 … $16).
+/// Bindet alle Eingabefelder in fester Reihenfolge ($1 … $17).
 fn bind_input<'q>(
     q: Query<'q, sqlx::Postgres, PgArguments>,
     i: &'q AddressInput,
@@ -65,6 +65,7 @@ fn bind_input<'q>(
         .bind(opt(&i.mobiltelefon))
         .bind(opt(&i.webseite))
         .bind(opt(&i.notiz))
+        .bind(i.zahlungsbedingung_id.parse::<i64>().ok())
 }
 
 /// Anzahl Adressen, die zur Suche passen.
@@ -139,7 +140,7 @@ pub async fn insert<'e>(
 ) -> Result<i64, sqlx::Error> {
     let sql = format!(
         "INSERT INTO adresse ({COLUMNS}) \
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING id"
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING id"
     );
     let row = bind_input(sqlx::query(AssertSqlSafe(sql)), input)
         .fetch_one(executor)
@@ -155,7 +156,7 @@ pub async fn update(pool: &PgPool, id: i64, input: &AddressInput) -> Result<u64,
         .map(|(i, c)| format!("{} = ${}", c.trim(), i + 1))
         .collect::<Vec<_>>()
         .join(", ");
-    let query = format!("UPDATE adresse SET {sets}, geaendert_am = now() WHERE id = $17");
+    let query = format!("UPDATE adresse SET {sets}, geaendert_am = now() WHERE id = $18");
     let result = bind_input(sqlx::query(AssertSqlSafe(query)), input)
         .bind(id)
         .execute(pool)

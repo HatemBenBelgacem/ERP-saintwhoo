@@ -30,9 +30,9 @@
 | [ANF-011](anforderungen/ANF-011-kontenplan.md) | Kontenplan und Systemkonten | Finanzen / Einstellungen | Muss | Erledigt |
 | [ANF-012](anforderungen/ANF-012-mwst-codes.md) | MWST-Codes (Steuersätze) | Finanzen / Einstellungen | Muss | In Umsetzung |
 | [ANF-013](anforderungen/ANF-013-geschaeftsjahre.md) | Geschäftsjahre und Perioden | Finanzen / Einstellungen | Muss | In Umsetzung |
-| [ANF-014](anforderungen/ANF-014-waehrungen.md) | Währungen und Umrechnungskurse | Finanzen / Einstellungen | Soll | Entwurf |
-| [ANF-015](anforderungen/ANF-015-bankkonten.md) | Eigene Bankkonten | Finanzen / Einstellungen | Muss | Entwurf |
-| [ANF-016](anforderungen/ANF-016-zahlungsbedingungen.md) | Zahlungsbedingungen | Finanzen / Einstellungen | Muss | Entwurf |
+| [ANF-014](anforderungen/ANF-014-waehrungen.md) | Währungen und Umrechnungskurse | Finanzen / Einstellungen | Soll | In Umsetzung |
+| [ANF-015](anforderungen/ANF-015-bankkonten.md) | Eigene Bankkonten | Finanzen / Einstellungen | Muss | In Umsetzung |
+| [ANF-016](anforderungen/ANF-016-zahlungsbedingungen.md) | Zahlungsbedingungen | Finanzen / Einstellungen | Muss | In Umsetzung |
 | [ANF-017](anforderungen/ANF-017-buchungsjournal.md) | Buchungsjournal (Hauptbuch) | Finanzen | Muss | Entwurf |
 | [ANF-018](anforderungen/ANF-018-debitorenrechnungen.md) | Debitoren – Ausgangsrechnungen | Finanzen | Muss | Entwurf |
 | [ANF-019](anforderungen/ANF-019-kreditorenrechnungen.md) | Kreditoren – Eingangsrechnungen | Finanzen | Muss | Entwurf |

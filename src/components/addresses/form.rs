@@ -4,8 +4,10 @@ use leptos::prelude::*;
 
 use crate::backend::addresses::model::{Address, AddressInput, COUNTRIES, FieldErrors};
 use crate::backend::addresses::server_fns::{CreateAddress, UpdateAddress};
+use crate::backend::finance::payment_term::server_fns::list_payment_terms;
 use crate::forms::{
-    ErrorText, Modal, TextField, field_errors, is_saved, refresh_when, server_error, use_base_href,
+    ErrorText, Modal, OptionField, TextField, error_message, field_errors, is_saved, refresh_when,
+    server_error, use_base_href,
 };
 
 /// Modal-Fenster „Neue Adresse“ (AK-8). Nach dem Speichern öffnet sich die Detailansicht (AK-10).
@@ -54,6 +56,46 @@ pub fn AddressEditModal(address: Address) -> impl IntoView {
 }
 
 /// Felder und Schaltflächen – gemeinsam für Anlegen und Bearbeiten.
+/// Vorgabe-Zahlungsbedingung der Adresse (ANF-016 AK-5): nur aktive Bedingungen, dazu die bisherige Vorgabe.
+#[component]
+fn PaymentTermSelect(current: String, errors: Signal<FieldErrors>) -> impl IntoView {
+    let terms = Resource::new(|| (), |_| list_payment_terms());
+    view! {
+        <Transition fallback=|| view! { <span class="loading loading-spinner"></span> }>
+            {move || {
+                let current = current.clone();
+                Suspend::new(async move {
+                    match terms.await {
+                        Ok(list) => {
+                            let mut options = vec![(String::new(), "– keine Vorgabe –".to_string())];
+                            options.extend(
+                                list.into_iter()
+                                    .filter(|t| t.aktiv || t.id.to_string() == current)
+                                    .map(|t| {
+                                        let label = if t.aktiv {
+                                            t.bezeichnung.clone()
+                                        } else {
+                                            format!("{} (inaktiv)", t.bezeichnung)
+                                        };
+                                        (t.id.to_string(), label)
+                                    }),
+                            );
+                            view! {
+                                <OptionField field="zahlungsbedingung_id" label="Zahlungsbedingung (Vorgabe)" options value=current.clone() errors/>
+                            }
+                            .into_any()
+                        }
+                        Err(e) => view! {
+                            <div role="alert" class="alert alert-error">{error_message(&e)}</div>
+                        }
+                        .into_any(),
+                    }
+                })
+            }}
+        </Transition>
+    }
+}
+
 #[component]
 fn FormBody(
     initial: AddressInput,
@@ -142,6 +184,10 @@ fn FormBody(
                         </select>
                         <ErrorText field="land" errors/>
                     </fieldset>
+                </div>
+
+                <div class="grid gap-x-4 md:grid-cols-2">
+                    <PaymentTermSelect current=i.zahlungsbedingung_id.clone() errors/>
                 </div>
 
                 <div class="divider my-0">"Kontakt"</div>

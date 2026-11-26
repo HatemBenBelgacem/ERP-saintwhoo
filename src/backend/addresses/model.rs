@@ -65,6 +65,9 @@ pub struct AddressInput {
     pub webseite: String,
     #[serde(default)]
     pub notiz: String,
+    /// Vorgabe-Zahlungsbedingung (ANF-016 AK-5), als Text; leer = keine Vorgabe
+    #[serde(default)]
+    pub zahlungsbedingung_id: String,
 }
 
 impl AddressInput {
@@ -96,6 +99,7 @@ impl AddressInput {
             mobiltelefon: self.mobiltelefon.trim().into(),
             webseite: self.webseite.trim().into(),
             notiz: self.notiz.trim().into(),
+            zahlungsbedingung_id: self.zahlungsbedingung_id.trim().into(),
         };
         if n.typ == "person" {
             n.firmenname.clear();
@@ -198,6 +202,8 @@ pub struct Address {
     pub mobiltelefon: Option<String>,
     pub webseite: Option<String>,
     pub notiz: Option<String>,
+    /// Vorgabe-Zahlungsbedingung (ANF-016 AK-5)
+    pub zahlungsbedingung_id: Option<i64>,
     /// Benutzer, dem die Adresse gehört (ANF-005 AK-8)
     pub benutzer_id: Option<i64>,
     pub benutzername: Option<String>,
@@ -228,6 +234,10 @@ impl Address {
             mobiltelefon: s(&self.mobiltelefon),
             webseite: s(&self.webseite),
             notiz: s(&self.notiz),
+            zahlungsbedingung_id: self
+                .zahlungsbedingung_id
+                .map(|v| v.to_string())
+                .unwrap_or_default(),
         }
     }
 }

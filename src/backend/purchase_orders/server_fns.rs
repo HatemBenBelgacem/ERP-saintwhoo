@@ -127,6 +127,17 @@ fn db_error(e: &sqlx::Error) -> Option<(String, String)> {
     }
 }
 
+/// Meldung, wenn die Währung nicht aktiv oder unbekannt ist (ANF-014 AK-6).
+#[cfg(feature = "ssr")]
+const CURRENCY_UNUSABLE: &str =
+    "Diese Währung ist nicht (mehr) aktiv. Bitte eine aktive Währung wählen.";
+
+/// `true`, wenn die Währung existiert und aktiv ist.
+#[cfg(feature = "ssr")]
+async fn currency_usable(conn: &mut PgConnection, code: &str) -> Result<bool, sqlx::Error> {
+    crate::backend::finance::currency::repository::is_active(conn, code).await
+}
+
 /// Fehler bei Lieferant oder Projekt (gelöscht, während das Formular offen war) als Feldfehler melden.
 #[cfg(feature = "ssr")]
 fn reference_outcome(e: sqlx::Error) -> Result<SaveOutcome, ServerFnError> {
@@ -161,12 +172,15 @@ fn redirect_to_order(id: i64) {
 #[server]
 pub async fn create_order(input: OrderInput) -> Result<SaveOutcome, ServerFnError> {
     let input = input.normalized();
-    let errors = input.validate();
+    let pool = crate::db::pool()?;
+    let mut tx = pool.begin().await?;
+    let mut errors = input.validate();
+    if errors.is_empty() && !currency_usable(&mut tx, &input.waehrung).await? {
+        errors.insert("waehrung".into(), CURRENCY_UNUSABLE.into());
+    }
     if !errors.is_empty() {
         return Ok(SaveOutcome::Invalid(errors));
     }
-    let pool = crate::db::pool()?;
-    let mut tx = pool.begin().await?;
     let id = match repository::insert_order(&mut tx, &input).await {
         Ok(id) => id,
         Err(e) => return reference_outcome(e),
@@ -197,7 +211,14 @@ pub async fn update_order(id: i64, input: OrderInput) -> Result<SaveOutcome, Ser
             "Der Einkaufsauftrag ist abgeschlossen und kann nicht mehr geändert werden.",
         ));
     };
-    let errors = input.validate();
+    let mut errors = input.validate();
+    // Eine unveränderte Währung darf auch dann bleiben, wenn sie inzwischen deaktiviert ist.
+    if errors.is_empty()
+        && input.waehrung != current.waehrung
+        && !currency_usable(&mut tx, &input.waehrung).await?
+    {
+        errors.insert("waehrung".into(), CURRENCY_UNUSABLE.into());
+    }
     if !errors.is_empty() {
         return Ok(SaveOutcome::Invalid(errors));
     }
