@@ -99,6 +99,27 @@ pub const SETTINGS_FINANCE_NAV: &[NavItem] = &[
         icon: Some(Icon::Calendar),
         description: "Geschäftsjahre und Monatsperioden; gesperrte Perioden nehmen keine Buchungen mehr auf.",
     },
+    // ANF-014
+    NavItem {
+        title: "Währungen",
+        path: "/einstellungen/finanzen/waehrungen",
+        icon: Some(Icon::Coins),
+        description: "Währungen und Umrechnungskurse; Buchhaltung in Schweizer Franken.",
+    },
+    // ANF-015
+    NavItem {
+        title: "Bankkonten",
+        path: "/einstellungen/finanzen/bankkonten",
+        icon: Some(Icon::Bank),
+        description: "Eigene Bank-, Post- und Kassenkonten mit IBAN und Verknüpfung zum Kontenplan.",
+    },
+    // ANF-016
+    NavItem {
+        title: "Zahlungsbedingungen",
+        path: "/einstellungen/finanzen/zahlungsbedingungen",
+        icon: Some(Icon::Clock),
+        description: "Zahlungsfristen und Skonto für Rechnungen, mit Vorgabe je Adresse.",
+    },
 ];
 
 /// Ziel des Eintrags „Einstellungen“ in der Fusszeile der Seitenleiste.

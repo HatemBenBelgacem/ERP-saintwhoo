@@ -13,7 +13,10 @@ use crate::components::{
     portal::PortalPage,
     projects::{ElementDetailPage, ProjectDetailPage, ProjectListPage},
     purchase_orders::{OrderDetailPage, OrderListPage},
-    settings::{AccountsPage, CompanyPage, FiscalYearPage, GeneralSettingsPage, VatPage},
+    settings::{
+        AccountsPage, BankAccountsPage, CompanyPage, CurrenciesPage, FiscalYearPage,
+        GeneralSettingsPage, PaymentTermsPage, VatPage,
+    },
     site_plans::SitePlanPage,
     tasks::{TaskDetailPage, TaskListPage},
     users::{UserDetailPage, UserListPage},
@@ -91,6 +94,21 @@ pub fn App() -> impl IntoView {
                     <Route
                         path=(StaticSegment("einstellungen"), StaticSegment("finanzen"), StaticSegment("geschaeftsjahre"))
                         view=FiscalYearPage
+                    />
+                    // ANF-014 Währungen – Modal-Fenster (?neu=1, ?bearbeiten=<Code>, ?kurs=<Code>)
+                    <Route
+                        path=(StaticSegment("einstellungen"), StaticSegment("finanzen"), StaticSegment("waehrungen"))
+                        view=CurrenciesPage
+                    />
+                    // ANF-015 Bankkonten – Modal-Fenster (?neu=1, ?bearbeiten=<Kennung>)
+                    <Route
+                        path=(StaticSegment("einstellungen"), StaticSegment("finanzen"), StaticSegment("bankkonten"))
+                        view=BankAccountsPage
+                    />
+                    // ANF-016 Zahlungsbedingungen – Modal-Fenster (?neu=1, ?bearbeiten=<Kennung>)
+                    <Route
+                        path=(StaticSegment("einstellungen"), StaticSegment("finanzen"), StaticSegment("zahlungsbedingungen"))
+                        view=PaymentTermsPage
                     />
                     // ANF-005 Benutzer – Eingabe im Modal-Fenster (?neu=1, ?bearbeiten=1, ?passwort=1)
                     <Route

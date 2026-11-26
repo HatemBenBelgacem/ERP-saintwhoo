@@ -4,19 +4,20 @@
 use leptos::prelude::*;
 
 use crate::backend::addresses::server_fns::search_addresses;
+use crate::backend::finance::currency::server_fns::list_currencies;
 use crate::backend::finance::vat::model::VatCode;
 use crate::backend::finance::vat::server_fns::list_purchase_codes;
 use crate::backend::projects::server_fns::search_projects;
 use crate::backend::purchase_orders::model::{
-    ALT_VAT, CURRENCIES, FieldErrors, Order, OrderInput, PickOption, Position, PositionInput,
-    UNITS, format_trimmed, parse_fixed, unit_label,
+    ALT_VAT, FieldErrors, Order, OrderInput, PickOption, Position, PositionInput, UNITS,
+    format_trimmed, parse_fixed, unit_label,
 };
 use crate::backend::purchase_orders::server_fns::{
     CreateOrder, CreatePosition, RecordDelivery, UpdateOrder, UpdatePosition,
 };
 use crate::forms::{
-    ErrorText, Modal, SearchPicker, SelectField, TextField, error_message, field_errors, is_saved,
-    refresh_when, server_error, use_base_href,
+    ErrorText, Modal, OptionField, SearchPicker, SelectField, TextField, error_message,
+    field_errors, is_saved, refresh_when, server_error, use_base_href,
 };
 
 /// Meldungen über dem Formular (Server-Fehler, Hinweis auf markierte Felder).
@@ -107,6 +108,38 @@ pub fn OrderEditModal(order: Order) -> impl IntoView {
     }
 }
 
+/// Währung aus den Einstellungen (ANF-014 AK-6): nur aktive Währungen, dazu die bisherige des Auftrags.
+#[component]
+fn CurrencySelect(current: String, errors: Signal<FieldErrors>) -> impl IntoView {
+    let currencies = Resource::new(|| (), |_| list_currencies());
+    view! {
+        <Transition fallback=|| view! { <span class="loading loading-spinner"></span> }>
+            {move || {
+                let current = current.clone();
+                Suspend::new(async move {
+                    match currencies.await {
+                        Ok(list) => {
+                            let options = list
+                                .into_iter()
+                                .filter(|c| c.aktiv || c.code == current)
+                                .map(|c| (c.code.clone(), format!("{} – {}", c.code, c.bezeichnung)))
+                                .collect::<Vec<_>>();
+                            view! {
+                                <OptionField field="waehrung" label="Währung *" options value=current.clone() errors/>
+                            }
+                            .into_any()
+                        }
+                        Err(e) => view! {
+                            <div role="alert" class="alert alert-error">{error_message(&e)}</div>
+                        }
+                        .into_any(),
+                    }
+                })
+            }}
+        </Transition>
+    }
+}
+
 /// Felder der Kopfdaten. `restricted`: nur Liefertermin, Referenz und Bemerkung (AK-15).
 #[component]
 fn OrderFormBody(
@@ -161,7 +194,7 @@ fn OrderFormBody(
                     <div class="grid gap-x-4 md:grid-cols-3">
                         <TextField field="bestelldatum" label="Bestelldatum" kind="date" value=i.bestelldatum.clone() errors/>
                         <TextField field="liefertermin" label="Liefertermin" kind="date" value=i.liefertermin.clone() errors/>
-                        <SelectField field="waehrung" label="Währung *" options=CURRENCIES value=i.waehrung.clone() errors/>
+                        <CurrencySelect current=i.waehrung.clone() errors/>
                     </div>
                     <TextField field="referenz_lieferant" label="Referenz Lieferant" value=i.referenz_lieferant.clone() errors maxlength=100/>
                     <div class="grid gap-x-4 md:grid-cols-2">

@@ -8,6 +8,10 @@ Stand: 2026-11-25
 
 ## Offen
 
+- [ ] ANF-014 AK-4 und AK-5: Kurs am Belegdatum im Beleg vorschlagen und Löschsperre für Rechnungen und Buchungen (mit ANF-018 bis ANF-019)
+- [ ] ANF-015 AK-6: Löschsperre für Bankkonten mit Zahlungen (mit ANF-020)
+- [ ] ANF-016 AK-4 und AK-6: Standard-Bedingung und Fälligkeit bei Rechnungen (mit ANF-018)
+- [ ] Browser-Prüfung der Bankkonten, Zahlungsbedingungen und Währungen (Layout, Fenster, Speichern; noch nicht gemacht, der Serverstart gegen die Entwicklungsdatenbank ebenfalls nicht)
 - [ ] ANF-028: offene Fragen klären (Vorgabe der Personendichte, Besucherzahl je Zone oder Projekt, Grenzen der Ampel, Durchfluss je Meter Wegbreite); später Stufe 4 (Zeitregler)
 - [ ] ANF-027: offene Fragen klären (eigene Seite, Speichern, „Verpflegungsstand“, Bibliotheken aus dem Netz, Vorgabe-Standort) und im Browser mit Luftbild prüfen (SWISSIMAGE: Zoomstufe 20 bestätigen)
 - [ ] ANF-026: vor Inbetriebnahme klären, wie die bestehende Datenbank zum ersten Mandanten wird
@@ -38,6 +42,7 @@ Stand: 2026-11-25
 
 ## Erledigt
 
+- [x] Block 1 umgesetzt: ANF-015 Bankkonten, ANF-016 Zahlungsbedingungen, ANF-014 Währungen. Dazu ANF-016 AK-5 (Vorgabe je Adresse) und ANF-014 AK-6 (Einkauf wählt aktive Währungen). Migrationen `20261201100000` bis `20261201120000`; 23 neue Modultests, fmt und Clippy (Server und Browser) sauber, `cargo test` grün
 - [x] ANF-027 AK-23, AK-24: eigene Masse je Element (Breite, Tiefe, Höhe, Drehung) und Elementart Gitterabsperrung (Migration `gelaendeplan_element_masse`)
 - [x] ANF-028 Stufe 3 Engstellen: nötige Breite je Weg, freie Breite zwischen Elementen, versperrte Wege, Liste „Engstellen“ und Warnzeichen auf der Karte, Planungswert „Durchfluss je Meter Wegbreite“ (Migration `gelaendeplan_durchfluss`)
 - [x] ANF-028 Besucherströme erfasst und Stufen 1 und 2 umgesetzt: Besucherwege (Richtung, Personen pro Stunde, Breite; Linienbreite nach Menge, Pfeile), Zugänge (Eingang, Ausgang, Notausgang), Zonen mit Fassungsvermögen und Ampel; gespeichert in `gelaendeplan_besucherweg`, `gelaendeplan_zugang`, `gelaendeplan_zone`

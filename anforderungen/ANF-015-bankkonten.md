@@ -3,7 +3,7 @@
 | Feld          | Wert                                              |
 |---------------|---------------------------------------------------|
 | **Nummer**    | ANF-015                                           |
-| **Status**    | Entwurf                                           |
+| **Status**    | In Umsetzung                                           |
 | **Priorität** | Muss                                              |
 | **Typ**       | Funktional                                        |
 | **Modul**     | Finanzen / Einstellungen                          |
@@ -25,19 +25,19 @@ Zahlungsverbindung (IBAN, QR-IBAN) angegeben.
 
 ## 3. Akzeptanzkriterien
 
-- [ ] **AK-1:** Gegeben die Einstellungsseite „Bankkonten“, dann erscheinen alle Bankkonten mit
+- [x] **AK-1:** Gegeben die Einstellungsseite „Bankkonten“, dann erscheinen alle Bankkonten mit
   Bezeichnung, Art (Bank, Post, Kasse), Bank, IBAN, Konto im Kontenplan und Kennzeichen „Standard“ und „aktiv“.
-- [ ] **AK-2:** Gegeben „Neues Bankkonto“, dann öffnet sich ein Modal-Fenster (`?neu=1`). Bezeichnung, Art
+- [x] **AK-2:** Gegeben „Neues Bankkonto“, dann öffnet sich ein Modal-Fenster (`?neu=1`). Bezeichnung, Art
   und Konto im Kontenplan (Kontoart Aktiv) sind Pflicht; ein Konto im Kontenplan darf nur einem Bankkonto
   zugeordnet sein.
-- [ ] **AK-3:** Gegeben die Art „Bank“ oder „Post“, dann ist die IBAN Pflicht und wird geprüft
+- [x] **AK-3:** Gegeben die Art „Bank“ oder „Post“, dann ist die IBAN Pflicht und wird geprüft
   (Länderkennung, Länge, Prüfziffer nach ISO 13616). Die Anzeige erfolgt in Vierergruppen.
-- [ ] **AK-4:** Gegeben eine QR-IBAN, dann wird sie zusätzlich geprüft (Schweizer IBAN mit
+- [x] **AK-4:** Gegeben eine QR-IBAN, dann wird sie zusätzlich geprüft (Schweizer IBAN mit
   Institutskennung 30000–31999); sie ist optional.
-- [ ] **AK-5:** Gegeben mehrere Bankkonten, dann ist genau eines als **Standard** markiert; es wird in
+- [x] **AK-5:** Gegeben mehrere Bankkonten, dann ist genau eines als **Standard** markiert; es wird in
   Zahlungen und auf Rechnungen vorgeschlagen. Das erste angelegte Konto wird automatisch Standard.
 - [ ] **AK-6:** Gegeben ein Bankkonto mit Zahlungen, dann kann es nicht gelöscht, nur deaktiviert werden.
-- [ ] **AK-7:** Die Tabelle wird per sqlx-Migration angelegt.
+- [x] **AK-7:** Die Tabelle wird per sqlx-Migration angelegt.
 
 ## 4. Daten / Felder
 
@@ -71,8 +71,25 @@ Tabelle `bankkonto`:
 
 ## 7. Offene Fragen
 
-- [ ] Wird eine QR-IBAN (für QR-Rechnungen mit Referenz) eingesetzt? *(QR-Rechnung wird benötigt, Zeitpunkt offen;
+- [x] Wird eine QR-IBAN (für QR-Rechnungen mit Referenz) eingesetzt? **Entschieden 2026-11-25: Vorschlag übernommen** (Feld ist vorgesehen). *(QR-Rechnung wird benötigt, Zeitpunkt offen;
   Vorschlag: Feld jetzt vorsehen)*
+
+## Umsetzung
+
+| Datei | Inhalt |
+|-------|--------|
+| `migrations/20261201100000_bankkonto.sql` | Tabelle `bankkonto`: Art, Bank, IBAN, QR-IBAN, BIC, Konto im Kontenplan (eindeutig), genau ein Standard-Konto (Teilindex) |
+| `src/backend/finance/bank_account/` | Modell mit Prüfregeln (IBAN nach ISO 13616 mit Prüfsumme Modulo 97, QR-IBAN mit Institutsnummer 30000 bis 31999, BIC), Gruppierung der IBAN, SQL, Server-Funktionen |
+| `src/components/settings/finance/bank_accounts/` | Seite `/einstellungen/finanzen/bankkonten` mit Liste, Fenster „Neues Bankkonto“ und „Bankkonto bearbeiten“ |
+
+Festlegungen bei der Umsetzung:
+- **Standard:** Das erste Konto wird automatisch Standard. Das Standard-Konto lässt sich nur ersetzen, indem man ein anderes als Standard festlegt; es bleibt aktiv und lässt sich nicht löschen.
+- **Kasse:** Bank, IBAN, QR-IBAN und BIC entfallen; sie werden beim Speichern gelöscht.
+- **Speicherung:** IBAN und BIC ohne Leerzeichen, in Grossbuchstaben. Die Liste zeigt die IBAN in Vierergruppen.
+- **AK-6 (teilweise):** Ein Bankkonto lässt sich löschen, weil es noch keine Zahlungen gibt. Die Prüfung auf Zahlungen folgt mit ANF-020.
+- **Offen aus ANF-025 (AK-2):** Die Firmenseite verweist noch nicht auf die Bankkonten.
+- Geprüft: 8 Modultests (IBAN, QR-IBAN, BIC, Gruppierung, Kasse, Pflichtfelder), Migration auf einer leeren Datenbank, Regeln direkt in der Datenbank (ein Konto nur einmal, ein Standard-Konto).
+- Die Browser-Prüfung steht noch aus.
 
 ## 8. Änderungshistorie
 
@@ -80,3 +97,4 @@ Tabelle `bankkonto`:
 |------------|--------------------|-----------------|
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
 | 2026-11-18 | Hatem Ben Belgacem | QR-Rechnung wird benötigt; Bezug zu ANF-025 |
+| 2026-11-25 | Claude Code | Freigegeben (Umsetzung von Block 1 beauftragt); umgesetzt bis auf AK-6 (Prüfung auf Zahlungen mit ANF-020) und den Verweis aus ANF-025 |

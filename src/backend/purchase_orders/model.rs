@@ -35,11 +35,7 @@ pub const STATUS_FILTERS: &[(&str, &str)] = &[
     ("storniert", "Storniert"),
 ];
 
-pub const CURRENCIES: &[(&str, &str)] = &[
-    ("CHF", "CHF – Schweizer Franken"),
-    ("EUR", "EUR – Euro"),
-    ("USD", "USD – US-Dollar"),
-];
+// Währungen kommen aus den Einstellungen (ANF-014), nicht aus einer festen Liste.
 
 pub const UNITS: &[(&str, &str)] = &[
     ("stk", "Stk"),
@@ -501,7 +497,8 @@ impl OrderInput {
         if self.referenz_lieferant.chars().count() > 100 {
             err("referenz_lieferant", "Höchstens 100 Zeichen.");
         }
-        if !CURRENCIES.iter().any(|(k, _)| *k == self.waehrung) {
+        // Ob die Währung aktiv ist, prüft der Server mit der Datenbank (ANF-014 AK-6).
+        if !crate::backend::finance::currency::model::is_code(&self.waehrung) {
             err("waehrung", "Bitte eine Währung aus der Liste wählen.");
         }
         errors
@@ -882,7 +879,7 @@ mod tests {
         i.liefertermin = "2026-11-10".into();
         i.waehrung = "eur".into();
         assert!(i.normalized().validate().is_empty());
-        i.waehrung = "JPY".into();
+        i.waehrung = "US".into();
         assert!(i.normalized().validate().contains_key("waehrung"));
     }
 
