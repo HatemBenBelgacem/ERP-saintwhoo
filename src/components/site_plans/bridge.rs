@@ -50,6 +50,8 @@ struct SceneElement {
     outside: bool,
     /// Ausgewählt → hervorgehoben.
     selected: bool,
+    /// Bezeichnung als Marke über dem Modell; leer = keine.
+    label: String,
 }
 
 /// Beschriftung auf der Karte (z. B. Länge eines Messabschnitts).
@@ -315,6 +317,7 @@ impl Scene {
                     depth_m: e.depth_m,
                     height_m: e.height(),
                     outside: !plan.fits(e),
+                    label: e.label.trim().to_string(),
                 })
                 .collect(),
             corners: plan.corners.iter().map(|c| [c.x, c.z]).collect(),

@@ -147,6 +147,10 @@ Plan mit.
     dunkle Tür vorne links.
   - **Allgemeines Element** (4 m, quadratisch): Körper in Petrol mit Spitzdach (Giebel) in Anthrazit und heller Tür
     vorne. Es steht für verschiedene Zwecke.
+- [x] **AK-26:** Gegeben ein ausgewähltes Element, dann lässt sich unter „Masse von …“ eine **Bezeichnung** eintragen
+  (höchstens 100 Zeichen, z. B. „Erste Hilfe Nord“). Sie steht auf der Karte als Marke über dem 3D-Modell und in der
+  Liste „Platzierte Elemente“ hinter dem Namen. Leer = keine Beschriftung. Die Bezeichnung wird mit dem Plan gespeichert;
+  mehr als 100 Zeichen meldet der Server.
 - [x] **AK-14:** Gegeben die Karte kann nicht geladen werden (z. B. ohne Internet), dann erscheint eine
   Fehlermeldung; der Rest der Seite bleibt bedienbar.
 
@@ -171,6 +175,7 @@ Tabelle `gelaendeplan_element`:
 | `drehung_grad` | Zahl | ja | 0 ≤ Wert < 360 |
 | `breite_m`, `tiefe_m` | Zahl | ja | 0,1 … 200 m, Vorgabe je Art, änderbar |
 | `hoehe_m` | Zahl | nein | 0,1 … 50 m; leer = Vorgabe der Art |
+| `bezeichnung` | Text | nein | höchstens 100 Zeichen; leer = keine Beschriftung (AK-26) |
 
 Tabelle `gelaendeplan_eckpunkt`: `reihenfolge`, `x_m`, `z_m` (leer = keine Rasenfläche).
 
@@ -214,8 +219,8 @@ Vorläufige Annahmen, bis sie geklärt sind:
   Geländeplan nur in der Schweiz verwendet wird (genauer für Schweizer Adressen, findet auch Flurnamen).
   Der Suchbegriff geht an den Dienst.
 - [ ] Ist „Sanität“ ein Sanitätsposten (Erste Hilfe)? *Annahme: ja.* Sanitäranlagen (WC) wären ein eigenes Element.
-- [ ] Was steht auf dem allgemeinen Element? *Annahme: nichts; es ist ein Platzhalter für verschiedene Zwecke.* Eine
-  frei wählbare Bezeichnung je Element wäre ein späterer Schritt.
+- [x] Was steht auf dem allgemeinen Element? **Geklärt (2026-11-26):** Jedes Element lässt sich beschriften (AK-26).
+  Das allgemeine Element bleibt ein Platzhalter; die Bezeichnung sagt, wofür es steht.
 
 ## 8. Änderungshistorie
 
@@ -231,3 +236,4 @@ Vorläufige Annahmen, bis sie geklärt sind:
 | 2026-11-24 | Hatem Ben Belgacem | AK-18 bis AK-20: Elemente auswählen und verschieben (Ziehen mit Maus/Finger, Pfeiltasten) |
 | 2026-11-24 | Hatem Ben Belgacem | AK-12a/b: Adresssuche und Standort-Adresse; AK-15 bis AK-17: Messwerkzeuge Strecke und Fläche; AK-11: Umriss ohne Überschneidung |
 | 2026-11-26 | Hatem Ben Belgacem | AK-4: Elemente über die Auswahlliste „Element“ platzieren statt über Schaltflächen; AK-25: Elementarten Sanität und Allgemeines Element (Spitzdach); Migration `gelaendeplan_element_art` |
+| 2026-11-26 | Hatem Ben Belgacem | AK-26: Elemente lassen sich beschriften (Bezeichnung, auf der Karte und in der Liste); Migration `gelaendeplan_element_bezeichnung` |
