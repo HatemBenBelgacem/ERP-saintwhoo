@@ -1,6 +1,6 @@
 # Aufgaben
 
-Stand: 2026-11-25
+Stand: 2026-11-26
 
 ## In Arbeit
 
@@ -8,6 +8,12 @@ Stand: 2026-11-25
 
 ## Offen
 
+- [ ] Browser-Prüfung Journal und Auswertungen (ANF-017, ANF-021): Liste, Filter, Formular mit Zeilen und MWST-Vorschau, Entwurf, Buchen, Storno, Detail, Kontoauszug, Bilanz, Erfolgsrechnung, Projekte, Drucken und CSV. Dafür ist ein Mandant mit Anmeldung nötig; der Serverstart wendet die neuen Migrationen an
+- [ ] ANF-021 AK-10: Laufzeit der Auswertungen mit 100 000 Buchungszeilen messen
+- [ ] ANF-010 AK-4 und AK-5: Übersicht Finanzen mit Kennzahlen (folgt mit ANF-018 bis ANF-020; dort auch die Umsatzgrenze)
+- [ ] ANF-010 AK-9 für Adressen: Löschsperre bei Finanzbelegen (mit ANF-018)
+- [ ] ANF-017 AK-12: Verweis zum Herkunftsbeleg (mit ANF-018 bis ANF-019); Zeilentext im Formular
+- [ ] Testszenarien für ANF-017 und ANF-021 in `testszenarien.md` ergänzen
 - [ ] ANF-014 AK-4 und AK-5: Kurs am Belegdatum im Beleg vorschlagen und Löschsperre für Rechnungen und Buchungen (mit ANF-018 bis ANF-019)
 - [ ] ANF-015 AK-6: Löschsperre für Bankkonten mit Zahlungen (mit ANF-020)
 - [ ] ANF-016 AK-4 und AK-6: Standard-Bedingung und Fälligkeit bei Rechnungen (mit ANF-018)
@@ -16,11 +22,8 @@ Stand: 2026-11-25
 - [ ] ANF-027: offene Fragen klären (eigene Seite, Speichern, „Verpflegungsstand“, Bibliotheken aus dem Netz, Vorgabe-Standort) und im Browser mit Luftbild prüfen (SWISSIMAGE: Zoomstufe 20 bestätigen)
 - [ ] ANF-026: vor Inbetriebnahme klären, wie die bestehende Datenbank zum ersten Mandanten wird
 - [ ] ANF-025 Rest: Bankkonten als Verweis (mit ANF-015), Absender in Druckansichten und Buchungssperre ohne Firma (mit ANF-018)
-- [ ] ANF-011 Rest: Vorgabe-MWST-Code am Konto (MWST-Codes sind da, ANF-017 AK-4 braucht es), Sperre von Nummer/Kontoart nach Buchungen (mit ANF-017)
-- [ ] ANF-012 Rest: AK-11 Umsatzgrenze mit Stufen 80 % und 100 % und dem Umsatz aus dem Buchungsjournal (mit ANF-017); AK-6 und AK-10 für Belege (mit ANF-018 bis ANF-019)
+- [ ] ANF-012 Rest: AK-6 und AK-10 für Rechnungen (mit ANF-018 bis ANF-019); AK-11 in der Finanz-Übersicht (mit ANF-010 AK-4)
 - [ ] ANF-012 offene Entscheidung: bestehende Einkaufspositionen einem Code zuordnen (Vorschlag war ja, umgesetzt nein; siehe `testszenarien.md`, Punkt 6)
-- [ ] ANF-013 Rest: Buchungsprüfung AK-5, AK-6 und AK-7 mit dem Buchungsjournal (ANF-017); die Prüffunktion `check_booking_date` ist vorbereitet
-- [ ] ANF-010 AK-1 bis AK-2: Hauptnavigation „Finanzen“ mit Reitern, folgt mit dem Buchungsjournal (ANF-017)
 - [ ] Browser-Prüfung der Szenarien TS-012-01 bis TS-012-16 und TS-013-01 bis TS-013-11 (Layout ist per Screenshot geprüft)
 - [ ] ANF-010 bis ANF-025 (Finanzen, Firma): restliche offene Fragen klären und Anforderungen freigeben (Reihenfolge siehe ANF-010)
 - [ ] Anforderung QR-Rechnung erfassen (wird benötigt, Zeitpunkt offen)
@@ -42,6 +45,8 @@ Stand: 2026-11-25
 
 ## Erledigt
 
+- [x] ANF-017 Buchungsjournal und ANF-021 Auswertungen umgesetzt: Journal mit Zeilen, Entwurf, Buchen, Storno, Journalnummer je Geschäftsjahr, Unveränderlichkeit und Ausgleich in der Datenbank (Migrationen `20261202100000`, `20261202110000`); Kontoauszug, Saldenliste, Bilanz, Erfolgsrechnung mit Vorjahr, Projektauswertung, Drucken und CSV. Modultests 21 neu, `cargo test` grün, fmt und Clippy (Server und Browser) sauber; SQL und Trigger gegen eine Testdatenbank geprüft
+- [x] Reste: ANF-010 AK-1/2/6 bis 8 und AK-9 für Projekte, ANF-011 AK-6/7 (Vorgabe-MWST, Sperre nach Buchung), ANF-012 AK-6/10/11 (MWST-Seite mit Umsatz), ANF-013 AK-5 bis 7 (Buchungsprüfung, Löschsperre)
 - [x] Block 1 umgesetzt: ANF-015 Bankkonten, ANF-016 Zahlungsbedingungen, ANF-014 Währungen. Dazu ANF-016 AK-5 (Vorgabe je Adresse) und ANF-014 AK-6 (Einkauf wählt aktive Währungen). Migrationen `20261201100000` bis `20261201120000`; 23 neue Modultests, fmt und Clippy (Server und Browser) sauber, `cargo test` grün
 - [x] ANF-027 AK-23, AK-24: eigene Masse je Element (Breite, Tiefe, Höhe, Drehung) und Elementart Gitterabsperrung (Migration `gelaendeplan_element_masse`)
 - [x] ANF-028 Stufe 3 Engstellen: nötige Breite je Weg, freie Breite zwischen Elementen, versperrte Wege, Liste „Engstellen“ und Warnzeichen auf der Karte, Planungswert „Durchfluss je Meter Wegbreite“ (Migration `gelaendeplan_durchfluss`)

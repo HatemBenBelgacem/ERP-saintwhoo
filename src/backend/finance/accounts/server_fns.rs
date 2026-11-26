@@ -81,6 +81,7 @@ pub async fn create_account(
     let mut errors = input.validate();
     let pool = crate::db::pool()?;
     check_number(&pool, &input, None, &mut errors).await?;
+    check_vat(&pool, &input, &mut errors).await?;
     if !errors.is_empty() {
         return Ok(SaveOutcome::Invalid(errors));
     }
@@ -107,6 +108,20 @@ pub async fn update_account(
         return Err(ServerFnError::new("Konto nicht gefunden."));
     };
     check_number(&pool, &input, Some(id), &mut errors).await?;
+    check_vat(&pool, &input, &mut errors).await?;
+    // AK-6: Nach der ersten Buchung lassen sich Nummer und Kontoart nicht mehr ändern
+    if current.gebucht {
+        if current.nummer != input.nummer {
+            errors.entry("nummer".into()).or_insert_with(|| {
+                "Auf das Konto ist gebucht. Die Nummer lässt sich nicht mehr ändern.".into()
+            });
+        }
+        if current.kontoart != input.kontoart {
+            errors.entry("kontoart".into()).or_insert_with(|| {
+                "Auf das Konto ist gebucht. Die Kontoart lässt sich nicht mehr ändern.".into()
+            });
+        }
+    }
     for role in current.rollen.iter().filter_map(|r| system_role(r)) {
         if !input.is_active() {
             errors.entry("aktiv".into()).or_insert_with(|| {
@@ -145,6 +160,7 @@ pub async fn delete_account(id: i64, zurueck: String) -> Result<(), ServerFnErro
         // 23503 = Fremdschlüssel verletzt: Systemkonto (später auch Buchungen, Bankkonten …)
         Err(sqlx::Error::Database(db)) if db.code().as_deref() == Some("23503") => {
             let usage = match db.table() {
+                Some("buchungszeile") => "in Buchungen".to_string(),
                 Some("systemkonto") => {
                     let roles = repository::find(&pool, id)
                         .await?
@@ -278,4 +294,27 @@ fn redirect_back(zurueck: &str, param: &str, value: &str) {
         base,
         &[(param, value.to_string())],
     ));
+}
+
+/// Vorgabe-MWST prüfen: der Code muss existieren und aktiv sein (ANF-011 AK-7).
+#[cfg(feature = "ssr")]
+async fn check_vat(
+    pool: &sqlx::PgPool,
+    input: &AccountInput,
+    errors: &mut FieldErrors,
+) -> Result<(), ServerFnError> {
+    if input.mwst_code_id.is_empty() || errors.contains_key("mwst_code_id") {
+        return Ok(());
+    }
+    let aktiv = match input.mwst_id() {
+        Some(id) => repository::mwst_code_active(pool, id).await?,
+        None => false,
+    };
+    if !aktiv {
+        errors.insert(
+            "mwst_code_id".into(),
+            "Dieser MWST-Code gibt es nicht oder er ist inaktiv.".into(),
+        );
+    }
+    Ok(())
 }

@@ -312,6 +312,13 @@ fn Header(title: String, subtitle: String, status: String, level: Level, id: i64
                         "Geländeplan"
                     </a>
                 })}
+                // ANF-021 AK-7: Projektauswertung mit Erlösen, Aufwand und offenen Einkaufsaufträgen
+                {(level == Level::Project).then(|| view! {
+                    <a href=format!("/finanzen/auswertungen?art=projekte&projekt_id={id}") class="btn">
+                        <IconView icon=Icon::Coins/>
+                        "Finanzauswertung"
+                    </a>
+                })}
                 <a href=edit class="btn btn-primary">
                     <IconView icon=Icon::Pencil/>
                     "Bearbeiten"

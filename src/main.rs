@@ -51,6 +51,20 @@ async fn main() {
                 >| uniqwork::backend::company::logo::logo_response(pool),
             ),
         )
+        // ANF-021 AK-8: CSV-Download einer Auswertung (Pool der Mandanten-Datenbank wie beim Firmenlogo)
+        .route(
+            "/finanzen/auswertungen/csv",
+            axum::routing::get(
+                |axum::Extension(uniqwork::db::TenantPool(pool)): axum::Extension<
+                    uniqwork::db::TenantPool,
+                >,
+                 axum::extract::Query(query): axum::extract::Query<
+                    uniqwork::backend::finance::reports::model::ReportQuery,
+                >| {
+                    uniqwork::backend::finance::reports::csv::csv_response(pool, query)
+                },
+            ),
+        )
         .fallback(leptos_axum::file_and_error_handler(shell))
         // ANF-007/ANF-026: Zugangsschutz für alle Seiten und Server-Funktionen (auch die Rückfallroute);
         // Sitzungen liegen in der Portal-Datenbank

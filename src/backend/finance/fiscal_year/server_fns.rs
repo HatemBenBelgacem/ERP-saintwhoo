@@ -90,9 +90,18 @@ pub async fn delete_fiscal_year(id: i64, zurueck: String) -> Result<(), ServerFn
         }
         None => return Err(ServerFnError::new("Geschäftsjahr nicht gefunden.")),
     }
-    // AK-7: Ein Geschäftsjahr mit Buchungen darf nicht gelöscht werden. Die Tabelle `buchung`
-    // kommt mit ANF-017; dann wird hier vorher geprüft.
-    repository::delete_year(&mut tx, id).await?;
+    // AK-7: Ein Geschäftsjahr mit Buchungen darf nicht gelöscht werden. Die Fremdschlüssel von
+    // `buchung` und `journal_nummer` verhindern das (Fehler 23503); die Transaktion wird verworfen.
+    if let Err(e) = repository::delete_year(&mut tx, id).await {
+        return match e {
+            sqlx::Error::Database(db) if db.code().as_deref() == Some("23503") => {
+                Err(ServerFnError::new(
+                    "Das Geschäftsjahr hat Buchungen und kann nicht gelöscht werden.",
+                ))
+            }
+            other => Err(other.into()),
+        };
+    }
     tx.commit().await?;
     redirect_back(&zurueck, "geloescht", "geschaeftsjahr");
     Ok(())

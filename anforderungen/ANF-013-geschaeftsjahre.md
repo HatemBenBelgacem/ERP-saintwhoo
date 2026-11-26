@@ -3,7 +3,7 @@
 | Feld          | Wert                                              |
 |---------------|---------------------------------------------------|
 | **Nummer**    | ANF-013                                           |
-| **Status**    | In Umsetzung                                      |
+| **Status**    | Erledigt                                          |
 | **Priorität** | Muss                                              |
 | **Typ**       | Funktional                                        |
 | **Modul**     | Finanzen / Einstellungen                          |
@@ -40,12 +40,12 @@ Periode:        Offen ◄─► Gesperrt
   muss lückenlos an das vorherige anschliessen; sonst wird das Speichern mit Meldung abgelehnt.
 - [x] **AK-4:** Gegeben ein gespeichertes Geschäftsjahr, dann werden automatisch die Monatsperioden
   angelegt (Status „Offen“).
-- [ ] **AK-5:** Gegeben eine offene Periode, wenn der Benutzer „Sperren“ wählt und bestätigt, dann ist sie
+- [x] **AK-5:** Gegeben eine offene Periode, wenn der Benutzer „Sperren“ wählt und bestätigt, dann ist sie
   gesperrt; Buchungen mit Datum in dieser Periode werden abgelehnt (ANF-010 AK-8). „Entsperren“ ist
   möglich, solange das Geschäftsjahr nicht abgeschlossen ist, und wird mit Benutzer und Zeitpunkt vermerkt.
-- [ ] **AK-6:** Gegeben ein Buchungsdatum, für das kein offenes Geschäftsjahr existiert, dann wird das
+- [x] **AK-6:** Gegeben ein Buchungsdatum, für das kein offenes Geschäftsjahr existiert, dann wird das
   Buchen mit der Meldung „Kein offenes Geschäftsjahr für dieses Datum“ verhindert.
-- [ ] **AK-7:** Gegeben ein Geschäftsjahr ohne Buchungen, dann kann es gelöscht werden (mit Perioden).
+- [x] **AK-7:** Gegeben ein Geschäftsjahr ohne Buchungen, dann kann es gelöscht werden (mit Perioden).
   Ein Geschäftsjahr mit Buchungen kann nicht gelöscht werden.
 - [x] **AK-8:** Die Tabellen werden per sqlx-Migration angelegt.
 
@@ -113,3 +113,4 @@ Geprüft: 6 Modultests (Vorschlag, Dauer, Monatsgrenzen, Anschluss, Bezeichnung,
 |------------|--------------------|-----------------|
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
 | 2026-11-19 | Claude Code | Umgesetzt: Geschäftsjahre mit Monatsperioden, Lückenprüfung, Sperren mit Vermerk, Löschen des neuesten Jahres. Offen: AK-5, AK-6, AK-7 (Buchungsprüfung mit ANF-017) |
+| 2026-11-26 | Claude Code | Nachtrag: AK-5 bis AK-7 mit ANF-017. Buchungen in gesperrten Perioden und ohne offenes Geschäftsjahr werden abgelehnt; ein Geschäftsjahr mit Buchungen lässt sich nicht löschen. |

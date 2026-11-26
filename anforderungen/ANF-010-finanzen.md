@@ -3,7 +3,7 @@
 | Feld          | Wert                                              |
 |---------------|---------------------------------------------------|
 | **Nummer**    | ANF-010                                           |
-| **Status**    | Entwurf                                           |
+| **Status**    | In Umsetzung                                      |
 | **Priorität** | Muss                                              |
 | **Typ**       | Funktional                                        |
 | **Modul**     | Finanzen                                          |
@@ -86,9 +86,9 @@ Grundsätze für alle Komponenten:
 ## 3. Akzeptanzkriterien
 
 **Navigation**
-- [ ] **AK-1:** Gegeben die Hauptnavigation (ANF-001), dann gibt es einen Eintrag **„Finanzen“** mit Pfad
+- [x] **AK-1:** Gegeben die Hauptnavigation (ANF-001), dann gibt es einen Eintrag **„Finanzen“** mit Pfad
   `/finanzen`; er erscheint auch als Karte auf der Startseite.
-- [ ] **AK-2:** Gegeben eine Seite unter `/finanzen/…`, dann zeigt sie oben **Reiter** für Übersicht,
+- [x] **AK-2:** Gegeben eine Seite unter `/finanzen/…`, dann zeigt sie oben **Reiter** für Übersicht,
   Journal, Debitoren, Kreditoren, Zahlungen, Auswertungen sowie – sobald umgesetzt – MWST-Abrechnung,
   Abschluss und Mahnungen. Der aktive Reiter ist markiert; der Eintrag „Finanzen“ in der Seitenleiste
   bleibt für alle Unterseiten aktiv.
@@ -106,11 +106,11 @@ Grundsätze für alle Komponenten:
   statt Buchungen zuzulassen.
 
 **Grundsätze (gelten für alle Finanz-Komponenten)**
-- [ ] **AK-6:** Gegeben eine Buchung, deren Soll- und Habensumme nicht übereinstimmen, dann wird sie auf
+- [x] **AK-6:** Gegeben eine Buchung, deren Soll- und Habensumme nicht übereinstimmen, dann wird sie auf
   dem Server abgelehnt (Prüfung in `model.rs` und zusätzlich in der Datenbank bzw. Transaktion).
-- [ ] **AK-7:** Gegeben ein gebuchter Beleg (Rechnung, Zahlung, Buchung), dann ist er nicht mehr
+- [x] **AK-7:** Gegeben ein gebuchter Beleg (Rechnung, Zahlung, Buchung), dann ist er nicht mehr
   bearbeitbar oder löschbar; Korrekturen erfolgen über „Stornieren“, das eine Gegenbuchung erzeugt.
-- [ ] **AK-8:** Gegeben eine gesperrte Periode oder ein abgeschlossenes Geschäftsjahr, wenn ein Benutzer
+- [x] **AK-8:** Gegeben eine gesperrte Periode oder ein abgeschlossenes Geschäftsjahr, wenn ein Benutzer
   mit Datum darin buchen will, dann wird das Buchen mit einer Meldung verhindert.
 - [ ] **AK-9:** Gegeben eine Adresse oder ein Projekt mit Finanzbelegen, wenn der Benutzer sie löschen
   will, dann wird das Löschen verhindert und die Meldung nennt die Belege (wie ANF-002 AK-16).
@@ -161,9 +161,20 @@ für die Bewegungsdaten, Stammdaten-Ansichten unter `src/components/settings/fin
 - [ ] Gruppierte Einstellungsnavigation (Abschnitt „Finanzen“) oder einfache flache Einträge? *(Vorschlag: Abschnitt)*
 - [ ] Braucht es eine Anbindung an E-Banking schon in der ersten Ausbaustufe? *(Vorschlag: nein)*
 
+## Umsetzung
+
+Umgesetzt mit ANF-017 und ANF-021:
+- **AK-1, AK-2:** Hauptnavigation „Finanzen“ (`/finanzen`) mit den Reitern. Noch nicht gebaute Reiter (Übersicht, Debitoren, Kreditoren, Zahlungen) sind ausgegraut.
+- **AK-6:** Unausgeglichene Buchungen lehnt der Server ab; die Datenbank prüft den Ausgleich am Ende der Transaktion.
+- **AK-7:** Gebuchte Belege lassen sich nicht ändern oder löschen. Die Datenbank erzwingt das; Korrektur über Storno.
+- **AK-8:** Buchungen in gesperrten Perioden und in abgeschlossenen Geschäftsjahren werden abgelehnt (`check_booking_date`).
+- **AK-9:** Projekte mit Buchungen lassen sich nicht löschen; die Meldung nennt die Buchungen. Adressen folgen mit ANF-018, wenn es Rechnungen gibt.
+- **Offen:** AK-4 (Übersicht mit Kennzahlen) und AK-5 (Hinweis bei fehlenden Stammdaten) folgen mit ANF-018 bis ANF-021.
+
 ## 8. Änderungshistorie
 
 | Datum      | Autor              | Änderung        |
 |------------|--------------------|-----------------|
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
 | 2026-11-18 | Hatem Ben Belgacem | Offene Fragen geklärt: führende Buchhaltung, MWST-Pflicht ab 100 000, QR-Rechnung offen, Firmenverwaltung ANF-025 ergänzt |
+| 2026-11-26 | Claude Code | Umgesetzt: Navigation und Reiter, Grundsätze für Buchungen (Ausgleich, Unveränderlichkeit, gesperrte Perioden), Löschprüfung für Projekte. Übersicht offen. |

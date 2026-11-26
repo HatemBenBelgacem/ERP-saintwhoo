@@ -3,7 +3,7 @@
 | Feld          | Wert                                              |
 |---------------|---------------------------------------------------|
 | **Nummer**    | ANF-021                                           |
-| **Status**    | Entwurf                                           |
+| **Status**    | In Umsetzung                                      |
 | **Priorität** | Muss                                              |
 | **Typ**       | Funktional                                        |
 | **Modul**     | Finanzen                                          |
@@ -35,29 +35,29 @@ Finanzbuchhaltung. Alle Auswertungen lesen ausschliesslich **gebuchte** Buchunge
 
 ## 3. Akzeptanzkriterien
 
-- [ ] **AK-1:** Gegeben der Reiter „Auswertungen“, dann wählt der Benutzer die Auswertung, das
+- [x] **AK-1:** Gegeben der Reiter „Auswertungen“, dann wählt der Benutzer die Auswertung, das
   Geschäftsjahr und den Zeitraum (Vorgabe: Beginn des Geschäftsjahres bis heute). Auswahl und Zeitraum
   stehen in der Webadresse.
-- [ ] **AK-2:** Gegeben der **Kontoauszug** eines Kontos, dann zeigt er Anfangssaldo, jede Buchung mit
+- [x] **AK-2:** Gegeben der **Kontoauszug** eines Kontos, dann zeigt er Anfangssaldo, jede Buchung mit
   Datum, Beleg, Text, Gegenkonto, Soll, Haben und laufendem Saldo sowie Summen und Endsaldo. Ein Klick auf
   eine Buchung öffnet sie im Journal. Aus jeder anderen Auswertung führt ein Klick auf ein Konto zum
   Kontoauszug.
-- [ ] **AK-3:** Gegeben die **Saldenliste**, dann zeigt sie alle Konten mit Bewegung oder Saldo ≠ 0,
+- [x] **AK-3:** Gegeben die **Saldenliste**, dann zeigt sie alle Konten mit Bewegung oder Saldo ≠ 0,
   gruppiert nach Kontenklasse mit Zwischensummen; die Summe aller Soll ist gleich der Summe aller Haben.
-- [ ] **AK-4:** Gegeben die **Bilanz** zum Stichtag, dann zeigt sie Aktiven und Passiven nach
+- [x] **AK-4:** Gegeben die **Bilanz** zum Stichtag, dann zeigt sie Aktiven und Passiven nach
   Kontengruppen mit Summen; das noch nicht verbuchte Ergebnis des laufenden Jahres erscheint als eigene
   Zeile in den Passiven, sodass Aktiven = Passiven.
-- [ ] **AK-5:** Gegeben die **Erfolgsrechnung**, dann zeigt sie Ertrag und Aufwand nach Kontengruppen mit
+- [x] **AK-5:** Gegeben die **Erfolgsrechnung**, dann zeigt sie Ertrag und Aufwand nach Kontengruppen mit
   Zwischenergebnissen (Bruttogewinn, Betriebsergebnis vor Abschreibungen, Jahresergebnis); das Ergebnis
   stimmt mit der Bilanzzeile aus AK-4 überein.
-- [ ] **AK-6:** Gegeben Bilanz oder Erfolgsrechnung, wenn der Benutzer „Vorjahr vergleichen“ wählt, dann
+- [x] **AK-6:** Gegeben Bilanz oder Erfolgsrechnung, wenn der Benutzer „Vorjahr vergleichen“ wählt, dann
   erscheint eine zusätzliche Spalte mit dem gleichen Zeitraum des Vorjahres und der Abweichung.
-- [ ] **AK-7:** Gegeben die **Projektauswertung**, dann zeigt sie je Projekt (bzw. für ein gewähltes
+- [x] **AK-7:** Gegeben die **Projektauswertung**, dann zeigt sie je Projekt (bzw. für ein gewähltes
   Projekt) Erlöse, Aufwand und Ergebnis sowie offene Einkaufsaufträge (ANF-004) als zugesagte Kosten;
   die Projekt-Detailansicht verweist darauf.
-- [ ] **AK-8:** Gegeben eine Auswertung, dann kann sie gedruckt (Druckansicht A4) und als CSV-Datei
+- [x] **AK-8:** Gegeben eine Auswertung, dann kann sie gedruckt (Druckansicht A4) und als CSV-Datei
   heruntergeladen werden.
-- [ ] **AK-9:** Gegeben Entwürfe oder stornierte Buchungen, dann zählen Entwürfe nicht; stornierte
+- [x] **AK-9:** Gegeben Entwürfe oder stornierte Buchungen, dann zählen Entwürfe nicht; stornierte
   Buchungen und ihre Gegenbuchungen heben sich auf und erscheinen nur im Kontoauszug.
 - [ ] **AK-10:** Die Auswertungen laufen auch bei 100 000 Buchungszeilen in unter 2 Sekunden
   (Indizes auf Konto und Datum).
@@ -81,11 +81,32 @@ Keine neuen Tabellen; Auswertungen werden aus `buchung`, `buchungszeile`, `konto
 
 ## 7. Offene Fragen
 
-- [ ] Soll die Bilanz nach OR 959a/959b gegliedert werden (gesetzliche Mindestgliederung)? *(Vorschlag: Gliederung nach Kontengruppen des KMU-Kontenrahmens, die OR-konform ist)*
-- [ ] Braucht es Diagramme in der Übersicht? *(Vorschlag: später)*
+- [x] Soll die Bilanz nach OR 959a/959b gegliedert werden (gesetzliche Mindestgliederung)? *(Vorschlag: Gliederung nach Kontengruppen des KMU-Kontenrahmens, die OR-konform ist)*
+- [x] Braucht es Diagramme in der Übersicht? *(Vorschlag: später)*
+
+## Umsetzung
+
+| Datei | Inhalt |
+|-------|--------|
+| `src/backend/finance/reports/model.rs` | Rechenregeln für Kontoauszug, Saldenliste, Bilanz, Erfolgsrechnung und Projektauswertung, CSV-Ausgabe, Modultests |
+| `src/backend/finance/reports/repository.rs`, `service.rs`, `server_fns.rs` | Salden aus dem Journal ohne Entwürfe, Zeitraum im Geschäftsjahr, Vorjahr, Projekte mit offenen Einkaufsaufträgen |
+| `src/backend/finance/reports/csv.rs`, `src/main.rs` | CSV-Download unter `/finanzen/auswertungen/csv` |
+| `src/components/finance/reports/page.rs` | Seite mit Auswahl, Zeitraum, Vorjahresvergleich, Drucken und CSV |
+| `src/components/projects/detail.rs` | Link „Finanzauswertung“ auf der Projektseite (AK-7) |
+
+Festlegungen bei der Umsetzung:
+- **Freigabe:** Der Auftrag „Umsetzen“ gilt als Freigabe; der Status steht auf „In Umsetzung“.
+- **Offene Fragen (Vorschläge übernommen):** Die Bilanz ist nach den Kontengruppen des KMU-Kontenrahmens gegliedert. Diagramme folgen später.
+- **AK-4:** Das Ergebnis früherer Jahre steht als eigene Zeile, bis der Jahresabschluss (ANF-023) vorliegt. Das laufende Ergebnis ist der Rest. So sind Aktiven und Passiven immer gleich.
+- **AK-5:** Ertrag steht positiv, Aufwand negativ. Zwischenergebnisse: Bruttogewinn 1 und 2, Betriebsergebnis vor und nach Abschreibungen (Konten 68xx), Jahresergebnis. Es stimmt mit der Bilanzzeile überein.
+- **AK-6:** Der Vergleich nimmt denselben Zeitraum ein Jahr früher; der 29. Februar wird zum 28. Februar.
+- **AK-8:** Drucken über den Browser mit ausgeblendeter Seitenleiste. Die Seitengröße A4 setzt der Browser; sie ist nicht festgelegt.
+- **AK-9:** Entwürfe zählen nie. Stornos und Gegenbuchungen stehen beide im Journal und heben sich in den Salden auf.
+- **Offen:** AK-10 (Laufzeit bei 100 000 Zeilen) ist nicht gemessen. Die Indizes auf `buchung(datum)`, `buchung(status)` und `buchungszeile(konto_id)` sind angelegt.
 
 ## 8. Änderungshistorie
 
 | Datum      | Autor              | Änderung        |
 |------------|--------------------|-----------------|
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
+| 2026-11-26 | Claude Code | Umgesetzt: Kontoauszug, Saldenliste, Bilanz, Erfolgsrechnung mit Vorjahr, Projektauswertung, Drucken und CSV. |

@@ -11,6 +11,8 @@ use crate::backend::finance::accounts::server_fns::{
     ApplyTemplate, CreateAccount, DeleteAccount, SaveSystemAccounts, UpdateAccount, get_account,
     get_chart_summary, list_accounts,
 };
+use crate::backend::finance::vat::model::percent_label;
+use crate::backend::finance::vat::server_fns::get_vat_overview;
 use crate::forms::{
     ErrorText, Modal, TextField, data_version, error_message, field_errors, is_saved, refresh_when,
     server_error, use_base_href,
@@ -111,7 +113,7 @@ fn AccountEditForm(account: Account) -> impl IntoView {
                         "Systemkonto: " {roles.join(", ")} ". Es muss aktiv bleiben und eine passende Kontoart haben."
                     </div>
                 })}
-                <AccountFields initial=account.to_input() errors/>
+                <AccountFields initial=account.to_input() errors gebucht=account.gebucht/>
                 <Buttons cancel_href=close.into() pending=action.pending().into()>
                     // AK-9: Löschen mit Bestätigung
                     <button type="button" class="btn btn-outline btn-error mr-auto" on:click=move |_| confirm.set(true)>
@@ -146,7 +148,14 @@ fn AccountEditForm(account: Account) -> impl IntoView {
 /// Felder eines Kontos. Die Kontoart folgt der Nummer, solange der Benutzer sie nicht selbst
 /// gewählt hat (AK-5).
 #[component]
-fn AccountFields(initial: AccountInput, errors: Signal<FieldErrors>) -> impl IntoView {
+fn AccountFields(
+    initial: AccountInput,
+    errors: Signal<FieldErrors>,
+    #[prop(optional)] gebucht: bool,
+) -> impl IntoView {
+    // Vorgabe-MWST-Codes für die Auswahl (ANF-011 AK-7)
+    let codes = Resource::new(|| (), |_| get_vat_overview());
+    let mwst_vorgabe = initial.mwst_code_id.clone();
     let kind = RwSignal::new(initial.kontoart.clone());
     let kind_touched = RwSignal::new(!initial.kontoart.is_empty());
     let has_error = move |f: &'static str| move || errors.read().contains_key(f);
@@ -160,6 +169,7 @@ fn AccountFields(initial: AccountInput, errors: Signal<FieldErrors>) -> impl Int
                     name="input[nummer]"
                     value=initial.nummer.clone()
                     maxlength=NUMBER_MAX_LEN
+                    readonly=gebucht
                     inputmode="numeric"
                     autocomplete="off"
                     class="input w-full tabular-nums"
@@ -183,9 +193,11 @@ fn AccountFields(initial: AccountInput, errors: Signal<FieldErrors>) -> impl Int
         <div class="grid gap-x-4 md:grid-cols-3">
             <fieldset class="fieldset">
                 <legend class="fieldset-legend">"Kontoart *"</legend>
+                {gebucht.then(|| view! { <input type="hidden" name="input[kontoart]" value=initial.kontoart.clone()/> })}
                 <select
                     name="input[kontoart]"
                     class="select w-full"
+                    disabled=gebucht
                     class:select-error=has_error("kontoart")
                     prop:value=move || kind.get()
                     on:change=move |ev| {
@@ -205,6 +217,36 @@ fn AccountFields(initial: AccountInput, errors: Signal<FieldErrors>) -> impl Int
                 <TextField field="kontengruppe" label="Kontengruppe" value=initial.kontengruppe.clone() errors maxlength=GROUP_MAX/>
             </div>
         </div>
+        <fieldset class="fieldset">
+            <legend class="fieldset-legend">"Vorgabe-MWST-Code"</legend>
+            <Suspense fallback=|| ()>
+                {move || {
+                    let vorgabe = mwst_vorgabe.clone();
+                    Suspend::new(async move {
+                    let codes = codes.await.map(|o| o.codes).unwrap_or_default();
+                    view! {
+                        <select name="input[mwst_code_id]" class="select w-full" aria-label="Vorgabe-MWST-Code">
+                            <option value="" selected=vorgabe.is_empty()>"– keiner –"</option>
+                            {codes
+                                .into_iter()
+                                .filter(|c| c.aktiv)
+                                .map(|c| {
+                                    let sel = vorgabe == c.id.to_string();
+                                    view! {
+                                        <option value=c.id.to_string() selected=sel>
+                                            {format!("{} · {}", c.code, percent_label(c.satz))}
+                                        </option>
+                                    }
+                                })
+                                .collect_view()}
+                        </select>
+                    }
+                    })
+                }}
+            </Suspense>
+            <ErrorText field="mwst_code_id" errors/>
+            <p class="label">"Beim Erfassen einer Buchung auf diesem Konto wird der Code vorgeschlagen."</p>
+        </fieldset>
         <fieldset class="fieldset">
             <legend class="fieldset-legend">"Bemerkung"</legend>
             <textarea name="input[bemerkung]" rows="2" class="textarea w-full">{initial.bemerkung.clone()}</textarea>

@@ -8,8 +8,8 @@ use super::form::{CodeModal, SettingsModal, StandardModal};
 use crate::backend::company::model::vat_number;
 use crate::backend::finance::fiscal_year::model::german_date;
 use crate::backend::finance::vat::model::{
-    VatCode, VatOverview, VatSettings, accounting_label, kind_label, method_label, percent_label,
-    period_label,
+    LimitStage, Umsatz, VatCode, VatOverview, VatSettings, accounting_label, kind_label,
+    limit_stage, method_label, percent_label, period_label,
 };
 use crate::backend::finance::vat::server_fns::get_vat_overview;
 use crate::backend::purchase_orders::model::format_amount;
@@ -80,6 +80,7 @@ fn VatContent(overview: VatOverview, base: Memo<String>) -> impl IntoView {
         settings,
         codes,
         uid,
+        umsatz,
     } = overview;
     let pflichtig = settings.mwst_pflichtig;
     let limit = settings.umsatzgrenze;
@@ -100,7 +101,7 @@ fn VatContent(overview: VatOverview, base: Memo<String>) -> impl IntoView {
 
     view! {
         <SettingsCard settings uid base/>
-        <LimitCard limit/>
+        <LimitCard limit umsatz/>
         {codes_section}
     }
 }
@@ -160,9 +161,28 @@ fn SettingsCard(settings: VatSettings, uid: Option<String>, base: Memo<String>) 
     }
 }
 
-/// Umsatzgrenze (AK-11). Der Umsatz kommt aus dem Buchungsjournal (ANF-017), das noch fehlt.
+/// Umsatzgrenze (AK-11): Umsatz aus dem Buchungsjournal, Stufen ab 80 % (Hinweis) und 100 % (Warnung).
 #[component]
-fn LimitCard(limit: i64) -> impl IntoView {
+fn LimitCard(limit: i64, umsatz: Umsatz) -> impl IntoView {
+    let massgebend = umsatz.massgebend();
+    let stufe = limit_stage(massgebend, limit);
+    let prozent = |betrag: i64| -> i64 {
+        if limit > 0 {
+            i64::try_from(i128::from(betrag) * 100 / i128::from(limit)).unwrap_or(0)
+        } else {
+            0
+        }
+    };
+    let zeile = |text: &'static str, betrag: i64| {
+        view! {
+            <li class="flex justify-between gap-4">
+                <span>{text}</span>
+                <span class="tabular-nums">
+                    "CHF " {format_amount(betrag)} " (" {prozent(betrag)} " %)"
+                </span>
+            </li>
+        }
+    };
     view! {
         <div class="card bg-base-100 shadow">
             <div class="card-body gap-2">
@@ -171,12 +191,31 @@ fn LimitCard(limit: i64) -> impl IntoView {
                     "Grenze: CHF " <span class="font-medium tabular-nums">{format_amount(limit)}</span>
                     ". Ab 80 % der Grenze erscheint ein Hinweis, ab 100 % eine Warnung."
                 </p>
-                <div role="status" class="alert alert-info alert-soft">
-                    <span>
-                        "Der Umsatz des laufenden Geschäftsjahrs und der letzten 12 Monate lässt sich erst "
-                        "ermitteln, wenn das Buchungsjournal (ANF-017) vorhanden ist."
-                    </span>
-                </div>
+                <ul class="text-sm space-y-1">
+                    {zeile("Gebuchte Erlöse im laufenden Geschäftsjahr", umsatz.geschaeftsjahr)}
+                    {zeile("Gebuchte Erlöse in den letzten 12 Monaten", umsatz.letzte_12_monate)}
+                </ul>
+                <p class="text-xs text-base-content/70">
+                    "Massgebend ist der höhere der beiden Werte (Kontenklasse 3 aus dem Buchungsjournal)."
+                </p>
+                {match stufe {
+                    LimitStage::Erreicht => view! {
+                        <div role="alert" class="alert alert-error">
+                            <span>
+                                "Umsatzgrenze erreicht – MWST-Pflicht prüfen und bei der ESTV anmelden. "
+                                "Die Grenze lässt sich in den MWST-Einstellungen oben auf dieser Seite ändern."
+                            </span>
+                        </div>
+                    }
+                    .into_any(),
+                    LimitStage::Hinweis => view! {
+                        <div role="status" class="alert alert-warning alert-soft">
+                            <span>"Ab 80 % der Umsatzgrenze: Umsatz im Blick behalten."</span>
+                        </div>
+                    }
+                    .into_any(),
+                    LimitStage::Unauffaellig => ().into_any(),
+                }}
             </div>
         </div>
     }
