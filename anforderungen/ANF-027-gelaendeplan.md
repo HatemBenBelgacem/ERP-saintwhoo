@@ -9,13 +9,13 @@
 | **Modul**     | Projekte                                          |
 | **Autor**     | Hatem Ben Belgacem                                |
 | **Erstellt**  | 2026-11-23                                        |
-| **Geändert**  | 2026-11-24                                        |
+| **Geändert**  | 2026-11-26                                        |
 
 ## 1. Beschreibung
 
 Zu einem Projekt (ANF-003) lässt sich ein **Geländeplan** erstellen – z. B. für ein Fest oder eine
 Veranstaltung. Der Plan zeigt das Gelände als **Satellitenbild in einer geneigten 3D-Karte**. Darauf
-werden **Bühnen, Verpflegungsstände und Festzelte** als 3D-Quader platziert, gedreht und gelöscht. Optional
+werden **Bühnen, Verpflegungsstände, Festzelte, Gitterabsperrungen, Sanität und allgemeine Elemente** als 3D-Modelle platziert, gedreht und gelöscht. Optional
 wird die **Rasenfläche abgesteckt**: Ihre Grösse in m² wird laufend angezeigt, und Elemente lassen sich nur
 platzieren, wenn sie ganz auf der Fläche stehen.
 
@@ -52,8 +52,8 @@ Plan mit.
   Karte einen neutralen Hintergrund; im Fenster „Standort“ weist ein Hinweis darauf hin.
 - [x] **AK-3:** Gegeben die Karte, wenn ich sie mit der rechten Maustaste bzw. Strg + Ziehen kippe und drehe,
   dann bleiben alle 3D-Elemente an ihrer Stelle auf dem Boden.
-- [x] **AK-4:** Gegeben ein gewähltes Werkzeug „Bühne (10 × 8 m)“, „Verpflegungsstand (4 × 2,5 m)“ oder
-  „Festzelt (6 × 6 m)“, wenn ich auf die Karte klicke, dann erscheint dort ein 3D-Modell der Art und ein
+- [x] **AK-4:** Gegeben die Auswahlliste „Element“ mit einer gewählten Art, z. B. „Bühne (10 × 8 m)“,
+  „Verpflegungsstand (4 × 2,5 m)“ oder „Festzelt (6 × 6 m)“, wenn ich auf die Karte klicke, dann erscheint dort ein 3D-Modell der Art und ein
   Eintrag in der Liste „Platzierte Elemente“ mit Grösse, Lage und Drehung. Die Modelle bestehen aus
   Grundformen von Three.js und bleiben innerhalb ihrer Grundfläche:
   - **Bühne** (4,5 m): rote Podestverkleidung, Bühnenboden, Rückwand, vier Stützen, rotes Dach, zwei Lautsprecher.
@@ -140,6 +140,13 @@ Plan mit.
   dann steht dort ein Gitterelement von 1,1 m Höhe. Mit eigener Breite (AK-23) wird daraus eine Absperrlinie,
   z. B. 20 m; Pfosten und Füsse stehen rund alle 2,5 m. Gitterabsperrungen lassen sich wie alle Elemente
   verschieben und drehen und engen Besucherwege ein bzw. versperren sie (ANF-028).
+- [x] **AK-25:** Gegeben die Auswahlliste „Element“, wenn ich „Sanität (6 × 2,5 m)“ oder „Allgemeines Element (4 × 4 m)“
+  wähle und auf die Karte klicke, dann erscheint dort das 3D-Modell der Art und ein Eintrag in der Liste „Platzierte
+  Elemente“ wie bei AK-4. Die Modelle bestehen aus Grundformen von Three.js und bleiben innerhalb ihrer Grundfläche:
+  - **Sanität** (2,8 m): weisse Kabine mit dunklem Flachdach, rotes Kreuz auf dem Dach und an beiden Längsseiten,
+    dunkle Tür vorne links.
+  - **Allgemeines Element** (4 m, quadratisch): Körper in Petrol mit Spitzdach (Giebel) in Anthrazit und heller Tür
+    vorne. Es steht für verschiedene Zwecke.
 - [x] **AK-14:** Gegeben die Karte kann nicht geladen werden (z. B. ohne Internet), dann erscheint eine
   Fehlermeldung; der Rest der Seite bleibt bedienbar.
 
@@ -159,7 +166,7 @@ Tabelle `gelaendeplan_element`:
 | Feld | Typ | Pflicht | Bemerkung |
 |------|-----|---------|-----------|
 | `reihenfolge` | Zahl | ja | Reihenfolge in der Liste |
-| `art` | Text | ja | `buehne`, `verpflegungsstand`, `festzelt`, `gitterabsperrung` |
+| `art` | Text | ja | `buehne`, `verpflegungsstand`, `festzelt`, `gitterabsperrung`, `sanitaet`, `allgemein` |
 | `x_m`, `z_m` | Zahl | ja | Mittelpunkt in Metern relativ zum Standort |
 | `drehung_grad` | Zahl | ja | 0 ≤ Wert < 360 |
 | `breite_m`, `tiefe_m` | Zahl | ja | 0,1 … 200 m, Vorgabe je Art, änderbar |
@@ -206,6 +213,9 @@ Vorläufige Annahmen, bis sie geklärt sind:
 - [x] Adresssuche: Nominatim oder der Suchdienst von swisstopo? **Geklärt (2026-11-24):** swisstopo, da der
   Geländeplan nur in der Schweiz verwendet wird (genauer für Schweizer Adressen, findet auch Flurnamen).
   Der Suchbegriff geht an den Dienst.
+- [ ] Ist „Sanität“ ein Sanitätsposten (Erste Hilfe)? *Annahme: ja.* Sanitäranlagen (WC) wären ein eigenes Element.
+- [ ] Was steht auf dem allgemeinen Element? *Annahme: nichts; es ist ein Platzhalter für verschiedene Zwecke.* Eine
+  frei wählbare Bezeichnung je Element wäre ein späterer Schritt.
 
 ## 8. Änderungshistorie
 
@@ -220,3 +230,4 @@ Vorläufige Annahmen, bis sie geklärt sind:
 | 2026-11-24 | Hatem Ben Belgacem | AK-5, AK-21: Drehen um die eigene Achse (Drehgriff, Taste R, 15°-Schritte); AK-6, AK-22: Rasenfläche lila, Eckpunkte ziehbar |
 | 2026-11-24 | Hatem Ben Belgacem | AK-18 bis AK-20: Elemente auswählen und verschieben (Ziehen mit Maus/Finger, Pfeiltasten) |
 | 2026-11-24 | Hatem Ben Belgacem | AK-12a/b: Adresssuche und Standort-Adresse; AK-15 bis AK-17: Messwerkzeuge Strecke und Fläche; AK-11: Umriss ohne Überschneidung |
+| 2026-11-26 | Hatem Ben Belgacem | AK-4: Elemente über die Auswahlliste „Element“ platzieren statt über Schaltflächen; AK-25: Elementarten Sanität und Allgemeines Element (Spitzdach); Migration `gelaendeplan_element_art` |

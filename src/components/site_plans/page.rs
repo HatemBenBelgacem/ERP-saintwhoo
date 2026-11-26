@@ -555,7 +555,7 @@ fn ToolCard() -> impl IntoView {
             <div class="card-body gap-3">
                 <h2 class="card-title text-base">"Werkzeug"</h2>
                 <p class="text-sm text-base-content/70">
-                    "Element wählen und auf die Karte klicken, um es dort zu platzieren. Platzierte Elemente "
+                    "Element in der Auswahlliste wählen und auf die Karte klicken, um es dort zu platzieren. Platzierte Elemente "
                     "anfassen und ziehen, um sie zu verschieben. Am weissen Griff des ausgewählten Elements "
                     "ziehen, um es um die eigene Achse zu drehen (mit Umschalt in 15°-Schritten). "
                     "Eckpunkte der Rasenfläche lassen sich ebenfalls ziehen."
@@ -572,25 +572,32 @@ fn ToolCard() -> impl IntoView {
                         <IconView icon=Icon::Move/>
                         "Auswählen und verschieben"
                     </button>
-                    {ElementKind::ALL
-                        .into_iter()
-                        .map(|kind| {
-                            let tool = Tool::Place(kind);
-                            view! {
-                                <button
-                                    type="button"
-                                    class="btn justify-start"
-                                    class:btn-primary=move || ed.tool.get() == tool
-                                    class:btn-outline=move || ed.tool.get() != tool
-                                    aria-pressed=move || (ed.tool.get() == tool).to_string()
-                                    on:click=move |_| ed.tool.set(tool)
-                                >
-                                    <span class=kind.swatch_class()></span>
-                                    {kind.tool_label()}
-                                </button>
+                    // Elemente werden aus einer Auswahlliste gewählt; danach platziert ein Klick auf die Karte
+                    <fieldset class="fieldset">
+                        <legend class="fieldset-legend">"Element platzieren"</legend>
+                        <select
+                            class="select w-full"
+                            class:select-primary=move || matches!(ed.tool.get(), Tool::Place(_))
+                            aria-label="Element zum Platzieren wählen"
+                            prop:value=move || match ed.tool.get() {
+                                Tool::Place(kind) => kind.key(),
+                                _ => "",
                             }
-                        })
-                        .collect_view()}
+                            on:change=move |ev| {
+                                // Leerer Eintrag: zurück zum Auswählen und Verschieben
+                                ed.tool.set(match ElementKind::from_key(&event_target_value(&ev)) {
+                                    Some(kind) => Tool::Place(kind),
+                                    None => Tool::Select,
+                                });
+                            }
+                        >
+                            <option value="">"Element wählen …"</option>
+                            {ElementKind::ALL
+                                .into_iter()
+                                .map(|kind| view! { <option value=kind.key()>{kind.tool_label()}</option> })
+                                .collect_view()}
+                        </select>
+                    </fieldset>
                     <button
                         type="button"
                         class="btn justify-start"

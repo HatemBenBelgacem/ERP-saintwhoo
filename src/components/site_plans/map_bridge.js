@@ -786,7 +786,9 @@ const MODELS = {
     buehne: buildStage,
     verpflegungsstand: buildFoodStall,
     festzelt: buildTent,
-    gitterabsperrung: buildBarrier
+    gitterabsperrung: buildBarrier,
+    sanitaet: buildMedical,
+    allgemein: buildGeneral
 };
 
 function material(THREE, color, opacity) {
@@ -878,6 +880,21 @@ function buildFoodStall(THREE, el, c, opacity) {
     return g;
 }
 
+// Giebeldach (Spitzdach): Dreieck als Querschnitt, entlang der Tiefe ausgezogen, auf der Höhe y
+function gableRoof(THREE, group, w, roofH, d, y, color, opacity) {
+    const shape = new THREE.Shape([
+        new THREE.Vector2(-w / 2, 0),
+        new THREE.Vector2(w / 2, 0),
+        new THREE.Vector2(0, roofH)
+    ]);
+    const geometry = new THREE.ExtrudeGeometry(shape, { depth: d, bevelEnabled: false });
+    geometry.translate(0, 0, -d / 2);
+    const roof = new THREE.Mesh(geometry, material(THREE, color, opacity));
+    roof.position.y = y;
+    group.add(roof);
+    return roof;
+}
+
 // Festzelt: helle Zeltwände, Giebeldach in der Farbe der Art und dunkler Eingang vorne
 function buildTent(THREE, el, c, opacity) {
     const g = new THREE.Group();
@@ -887,17 +904,7 @@ function buildTent(THREE, el, c, opacity) {
 
     box(THREE, g, [w, wallH, d], [0, wallH / 2, 0], c.canvas, opacity); // Zeltwände
 
-    // Giebeldach: Dreieck (Querschnitt) entlang der Tiefe ausgezogen
-    const shape = new THREE.Shape([
-        new THREE.Vector2(-w / 2, 0),
-        new THREE.Vector2(w / 2, 0),
-        new THREE.Vector2(0, roofH)
-    ]);
-    const roofGeometry = new THREE.ExtrudeGeometry(shape, { depth: d, bevelEnabled: false });
-    roofGeometry.translate(0, 0, -d / 2);
-    const roof = new THREE.Mesh(roofGeometry, material(THREE, c.accent, opacity));
-    roof.position.y = wallH;
-    g.add(roof);
+    gableRoof(THREE, g, w, roofH, d, wallH, c.accent, opacity);
 
     // Eingang vorne
     const doorW = Math.min(1.6, w * 0.4);
@@ -944,5 +951,56 @@ function buildBarrier(THREE, el, c, opacity) {
         }
         g.add(bar);
     }
+    return g;
+}
+
+// Sanität: weisse Kabine mit dunklem Flachdach, rotes Kreuz auf dem Dach und an beiden Längsseiten,
+// dunkle Tür vorne links. Das Kreuz wächst nur bis zu einer festen Grösse.
+function buildMedical(THREE, el, c, opacity) {
+    const g = new THREE.Group();
+    const w = el.width_m, d = el.depth_m, h = el.height_m;
+    const roofT = 0.1;
+    const arm = Math.min(1.2, Math.min(w, h) * 0.35); // Länge eines Kreuzarms
+    const bar = arm * 0.3; // Breite eines Kreuzarms
+
+    box(THREE, g, [w, h - roofT, d], [0, (h - roofT) / 2, 0], c.canvas, opacity); // Kabine
+    box(THREE, g, [w, roofT, d], [0, h - roofT / 2, 0], c.frame, opacity); // Flachdach
+
+    // Tür vorne links
+    const doorW = Math.min(0.9, w * 0.2);
+    const doorH = Math.min(2.0, (h - roofT) * 0.75);
+    box(THREE, g, [doorW, doorH, 0.03], [-w * 0.2, doorH / 2, d / 2 + 0.015], c.frame, opacity);
+
+    // Rotes Kreuz: ein Kreuz aus zwei Balken, in der Ebene x-y; (rotX, rotY) dreht es auf die Fläche
+    const cross = (x, y, z, rotX, rotY) => {
+        const k = new THREE.Group();
+        box(THREE, k, [arm, bar, 0.04], [0, 0, 0], c.accent, opacity);
+        box(THREE, k, [bar, arm, 0.04], [0, 0, 0], c.accent, opacity);
+        k.position.set(x, y, z);
+        k.rotation.set(rotX, rotY, 0);
+        g.add(k);
+    };
+    const sideY = (h - roofT) * 0.55;
+    cross(0, h + 0.02, 0, -Math.PI / 2, 0); // auf dem Dach
+    cross(w / 2 + 0.02, sideY, 0, 0, Math.PI / 2); // rechte Längsseite
+    cross(-w / 2 - 0.02, sideY, 0, 0, -Math.PI / 2); // linke Längsseite
+    return g;
+}
+
+// Allgemeines Element: quadratischer Körper in der Farbe der Art, Spitzdach (Giebel) in Anthrazit und
+// helle Tür vorne. Das Haus-Zeichen steht für verschiedene Zwecke.
+function buildGeneral(THREE, el, c, opacity) {
+    const g = new THREE.Group();
+    const w = el.width_m, d = el.depth_m, h = el.height_m;
+    const wallH = h * 0.6;
+    const roofH = h - wallH;
+
+    box(THREE, g, [w, wallH, d], [0, wallH / 2, 0], c.accent, opacity); // Körper
+    gableRoof(THREE, g, w, roofH, d, wallH, c.frame, opacity); // Spitzdach
+
+    // Tür vorne, mittig
+    const doorW = Math.min(1.0, w * 0.25);
+    const doorH = Math.min(1.9, wallH * 0.75);
+    box(THREE, g, [doorW, doorH, 0.03], [0, doorH / 2, d / 2 + 0.015], c.canvas, opacity);
     return g;
 }

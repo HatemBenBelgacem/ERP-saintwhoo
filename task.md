@@ -45,6 +45,7 @@ Stand: 2026-11-26
 
 ## Erledigt
 
+- [x] ANF-027: Elemente über die Auswahlliste „Element“ platzieren (statt Schaltflächen); neue Elementarten Sanität (weisse Kabine mit rotem Kreuz) und Allgemeines Element (quadratisch mit Spitzdach); Migration `20261203100000_gelaendeplan_element_art`; AK-4 und AK-25 in ANF-027. `cargo fmt`, Clippy (Server und Browser) sauber, `cargo test` grün (180 Tests). Im Browser geprüft: Sanität (weisse Kabine, rotes Kreuz, dunkle Tür vorne links), Allgemeines Element (petrol Körper, anthrazit Spitzdach, helle Tür) und Festzelt (Giebel unverändert)
 - [x] ANF-017 Buchungsjournal und ANF-021 Auswertungen umgesetzt: Journal mit Zeilen, Entwurf, Buchen, Storno, Journalnummer je Geschäftsjahr, Unveränderlichkeit und Ausgleich in der Datenbank (Migrationen `20261202100000`, `20261202110000`); Kontoauszug, Saldenliste, Bilanz, Erfolgsrechnung mit Vorjahr, Projektauswertung, Drucken und CSV. Modultests 21 neu, `cargo test` grün, fmt und Clippy (Server und Browser) sauber; SQL und Trigger gegen eine Testdatenbank geprüft
 - [x] Reste: ANF-010 AK-1/2/6 bis 8 und AK-9 für Projekte, ANF-011 AK-6/7 (Vorgabe-MWST, Sperre nach Buchung), ANF-012 AK-6/10/11 (MWST-Seite mit Umsatz), ANF-013 AK-5 bis 7 (Buchungsprüfung, Löschsperre)
 - [x] Block 1 umgesetzt: ANF-015 Bankkonten, ANF-016 Zahlungsbedingungen, ANF-014 Währungen. Dazu ANF-016 AK-5 (Vorgabe je Adresse) und ANF-014 AK-6 (Einkauf wählt aktive Währungen). Migrationen `20261201100000` bis `20261201120000`; 23 neue Modultests, fmt und Clippy (Server und Browser) sauber, `cargo test` grün
