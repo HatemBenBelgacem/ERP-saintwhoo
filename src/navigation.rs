@@ -37,6 +37,13 @@ pub const MAIN_NAV: &[NavItem] = &[
         icon: Some(Icon::Projects),
         description: "Projekte mit Teilprojekten, Vorgängen und Aufgaben planen und den Fortschritt verfolgen.",
     },
+    // ANF-010: Bereich Finanzen (Reiter Journal, Auswertungen)
+    NavItem {
+        title: "Finanzen",
+        path: "/finanzen",
+        icon: Some(Icon::Coins),
+        description: "Buchhaltung: Buchungsjournal, Auswertungen und Stammdaten der Finanzen.",
+    },
     // ANF-006
     NavItem {
         title: "Aufgaben",

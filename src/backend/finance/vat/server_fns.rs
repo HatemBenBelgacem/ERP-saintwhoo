@@ -10,7 +10,7 @@ use super::model::{SaveOutcome, VatCode, VatCodeInput, VatOverview, VatSettingsI
 #[cfg(feature = "ssr")]
 use super::{
     model::{
-        CodeValues, FieldErrors, STANDARD_CODES, STANDARD_VALID_FROM, konto_error,
+        CodeValues, FieldErrors, STANDARD_CODES, STANDARD_VALID_FROM, Umsatz, konto_error,
         locked_change_errors, pflicht_gilt_am, system_role_for,
     },
     repository,
@@ -26,10 +26,36 @@ pub async fn get_vat_overview() -> Result<VatOverview, ServerFnError> {
     let settings = repository::settings(&pool).await?.unwrap_or_default();
     let codes = repository::list_codes(&pool).await?;
     let uid = repository::uid(&pool).await?;
+    let umsatz = umsatz_stand(&pool).await?;
     Ok(VatOverview {
         settings,
         codes,
         uid,
+        umsatz,
+    })
+}
+
+/// Umsatz aus dem Buchungsjournal: laufendes Geschäftsjahr (bis heute) und letzte 12 Monate (AK-11).
+#[cfg(feature = "ssr")]
+async fn umsatz_stand(pool: &sqlx::PgPool) -> Result<Umsatz, sqlx::Error> {
+    use crate::backend::finance::fiscal_year::repository as fiscal;
+    use crate::backend::finance::reports::{model::shift_years, repository as reports};
+    let heute = repository::today(pool).await?;
+    let jahr = fiscal::list_years(pool)
+        .await?
+        .into_iter()
+        .find(|y| y.beginn <= heute && heute <= y.ende);
+    let geschaeftsjahr = match jahr {
+        Some(y) => reports::revenue(pool, &y.beginn, &heute).await?,
+        None => 0,
+    };
+    let von_12 = shift_years(&heute, -1)
+        .and_then(|d| crate::backend::finance::date::next_day(&d))
+        .unwrap_or_else(|| heute.clone());
+    let letzte_12_monate = reports::revenue(pool, &von_12, &heute).await?;
+    Ok(Umsatz {
+        geschaeftsjahr,
+        letzte_12_monate,
     })
 }
 

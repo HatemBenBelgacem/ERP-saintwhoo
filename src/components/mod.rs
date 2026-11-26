@@ -4,6 +4,7 @@
 
 pub mod addresses;
 pub mod auth;
+pub mod finance;
 pub mod home;
 pub mod portal;
 pub mod projects;

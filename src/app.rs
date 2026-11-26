@@ -9,6 +9,7 @@ use crate::backend::projects::model::Level;
 use crate::components::{
     addresses::{AddressDetailPage, AddressListPage},
     auth::{LoginPage, RegisterPage},
+    finance::{BookingDetailPage, JournalListPage, ReportsPage},
     home::HomePage,
     portal::PortalPage,
     projects::{ElementDetailPage, ProjectDetailPage, ProjectListPage},
@@ -59,6 +60,26 @@ pub fn App() -> impl IntoView {
                 <Route path=StaticSegment("portal") view=PortalPage/>
                 <ParentRoute path=StaticSegment("") view=AppLayout>
                     <Route path=StaticSegment("") view=HomePage/>
+                    // ANF-010 Finanzen: Übersicht folgt (AK-4); bis dahin führt der Bereich ins Journal
+                    <Route
+                        path=StaticSegment("finanzen")
+                        view=|| view! { <Redirect path="/finanzen/journal"/> }
+                        ssr=SsrMode::Async
+                    />
+                    // ANF-017 Buchungsjournal – Eingabe im Modal-Fenster (?neu=1, ?bearbeiten=, ?kopieren=, ?storno=, ?loeschen=)
+                    <Route
+                        path=(StaticSegment("finanzen"), StaticSegment("journal"))
+                        view=JournalListPage
+                    />
+                    <Route
+                        path=(StaticSegment("finanzen"), StaticSegment("journal"), ParamSegment("id"))
+                        view=BookingDetailPage
+                    />
+                    // ANF-021 Auswertungen (?art=, ?geschaeftsjahr_id=, ?von=, ?bis=, ?konto_id=, ?projekt_id=, ?vorjahr=)
+                    <Route
+                        path=(StaticSegment("finanzen"), StaticSegment("auswertungen"))
+                        view=ReportsPage
+                    />
                     // ANF-002 Adressen – Eingabe im Modal-Fenster (?neu=1, ?bearbeiten=1)
                     <Route path=StaticSegment("adressen") view=AddressListPage/>
                     <Route

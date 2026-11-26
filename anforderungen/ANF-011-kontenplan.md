@@ -54,9 +54,9 @@ Der Kontenplan wird in den Einstellungen unter `/einstellungen/finanzen/kontenpl
 - [x] **AK-5:** Gegeben eine Kontonummer, dann schlägt das System die Kontoart aus der ersten Ziffer vor
   (1 → Aktiv, 2 → Passiv, 3 → Ertrag, 4–6 → Aufwand; bei 7, 8 und 9 kein Vorschlag, da diese Klassen
   Aufwand und Ertrag enthalten); der Benutzer kann sie ändern.
-- [ ] **AK-6:** Gegeben ein Konto, dann kann der Benutzer es bearbeiten (`?bearbeiten=<kennung>`).
+- [x] **AK-6:** Gegeben ein Konto, dann kann der Benutzer es bearbeiten (`?bearbeiten=<kennung>`).
   Nummer und Kontoart sind nicht mehr änderbar, sobald auf das Konto gebucht wurde.
-- [ ] **AK-7:** Gegeben ein Konto, dann kann ein Vorgabe-MWST-Code (ANF-012) hinterlegt werden, der beim
+- [x] **AK-7:** Gegeben ein Konto, dann kann ein Vorgabe-MWST-Code (ANF-012) hinterlegt werden, der beim
   Erfassen einer Buchung oder Rechnungsposition auf diesem Konto vorgeschlagen wird.
 - [x] **AK-8:** Gegeben ungültige Eingaben, dann wird nichts gespeichert und die Felder sind mit einer
   verständlichen Meldung markiert (Prüfung auf dem Server).
@@ -131,9 +131,8 @@ Tabelle `systemkonto`:
 | `src/navigation.rs`, `src/layout.rs`, `src/app.rs`, `src/icons.rs`, `src/forms.rs` | Abschnitt „Finanzen“ in der Einstellungsnavigation (`SETTINGS_FINANCE_NAV`, ANF-010 AK-3), Route, Symbol, Fenster-Parameter |
 
 Hinweise:
-- **AK-6:** Nummer und Kontoart lassen sich vorerst immer ändern; die Sperre nach der ersten Buchung folgt mit
-  dem Buchungsjournal (ANF-017). Schon jetzt: Ein Systemkonto behält eine zur Rolle passende Kontoart und bleibt aktiv.
-- **AK-7:** Der Vorgabe-MWST-Code folgt mit den MWST-Codes (ANF-012), da es die Tabelle `mwst_code` noch nicht gibt.
+- **AK-6:** Die Sperre nach der ersten Buchung ist mit ANF-017 umgesetzt (Nummer und Kontoart gesperrt, Kennzeichen „gebucht“). Schon jetzt: Ein Systemkonto behält eine zur Rolle passende Kontoart und bleibt aktiv.
+- **AK-7:** Der Vorgabe-MWST-Code ist mit ANF-017 umgesetzt (Spalte `konto.mwst_code_id`, Auswahl im Kontoformular, Vorschlag beim Erfassen).
 - **AK-9/AK-10:** Gelöscht werden kann jedes Konto ohne Verweis; Verweise (heute Systemkonten, später Buchungen,
   Bankkonten) verhindern das Löschen über den Fremdschlüssel, die Meldung schlägt Deaktivieren vor.
   Inaktive Konten werden in „Systemkonten bearbeiten“ nicht angeboten; die Auswahl bei Buchungen folgt mit ANF-017.
@@ -153,3 +152,4 @@ Prüfung der Systemkonten auf dem Server mit veränderter Anfrage, 8 neue Modult
 |------------|--------------------|-----------------|
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
 | 2026-11-18 | Hatem Ben Belgacem | Umgesetzt (AK-6 Sperre nach Buchung mit ANF-017, AK-7 mit ANF-012) |
+| 2026-11-26 | Claude Code | Nachtrag: AK-6 (Sperre nach Buchung) und AK-7 (Vorgabe-MWST-Code am Konto) mit ANF-017 umgesetzt (Migration `20261202110000_konto_vorgabe_mwst.sql`). |

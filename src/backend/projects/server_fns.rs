@@ -219,10 +219,18 @@ pub async fn delete_element(level: Level, id: i64) -> Result<(), ServerFnError> 
             // 23503: noch Einkaufsaufträge zugeordnet (ANF-004 AK-23)
             Err(sqlx::Error::Database(db)) if db.code().as_deref() == Some("23503") => {
                 let orders = repository::order_numbers_of_project(&pool, id).await?;
-                let list = if orders.is_empty() {
+                // ANF-010 AK-9: Buchungszeilen mit diesem Projekt nennen
+                let mut verwendet = Vec::new();
+                if !orders.is_empty() {
+                    verwendet.push(format!("Einkaufsaufträgen ({})", orders.join(", ")));
+                }
+                if db.table() == Some("buchungszeile") {
+                    verwendet.push("Buchungen".to_string());
+                }
+                let list = if verwendet.is_empty() {
                     "anderen Datensätzen".to_string()
                 } else {
-                    format!("Einkaufsaufträgen ({})", orders.join(", "))
+                    verwendet.join(" und ")
                 };
                 return Err(ServerFnError::new(format!(
                     "Das Projekt wird noch in {list} verwendet und kann nicht gelöscht werden."

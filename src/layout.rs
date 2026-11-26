@@ -84,7 +84,7 @@ pub fn AppLayout() -> impl IntoView {
 fn Header(me: Resource<Result<Option<CurrentUser>, ServerFnError>>) -> impl IntoView {
     view! {
         // Neutrale Kopfzeile in dunklem Anthrazit (daisyUI `neutral`)
-        <header class="z-10 flex min-h-16 items-center gap-2 bg-neutral px-2 py-2 text-neutral-content sm:px-4">
+        <header class="z-10 flex min-h-16 print:hidden items-center gap-2 bg-neutral px-2 py-2 text-neutral-content sm:px-4">
             // AK-10: Menü-Symbol nur auf kleinen Bildschirmen
             <label for=DRAWER_ID aria-label="Seitenleiste öffnen" class="btn btn-square btn-ghost text-neutral-content lg:invisible">
                 <IconView icon=Icon::Menu/>
@@ -134,7 +134,7 @@ fn Sidebar(pathname: Memo<String>) -> impl IntoView {
     let in_settings = Memo::new(move |_| is_settings_path(&pathname.get()));
 
     view! {
-        <aside class="flex h-full min-h-full w-64 flex-col border-r border-base-300 bg-base-100">
+        <aside class="flex h-full min-h-full w-64 print:hidden flex-col border-r border-base-300 bg-base-100">
             <nav class="flex-1 overflow-y-auto" aria-label="Navigation">
                 {move || {
                     if in_settings.get() {

@@ -114,6 +114,11 @@ pub struct Account {
     pub bemerkung: Option<String>,
     /// Schlüssel aus `SYSTEM_ROLES`
     pub rollen: Vec<String>,
+    /// Vorgabe-MWST-Code (ANF-011 AK-7) und seine Kennung
+    pub mwst_code_id: Option<i64>,
+    pub mwst_code: Option<String>,
+    /// Auf das Konto ist gebucht: Nummer und Kontoart sind gesperrt (AK-6)
+    pub gebucht: bool,
 }
 
 impl Account {
@@ -134,6 +139,10 @@ impl Account {
             } else {
                 String::new()
             },
+            mwst_code_id: self
+                .mwst_code_id
+                .map(|id| id.to_string())
+                .unwrap_or_default(),
         }
     }
 }
@@ -149,6 +158,8 @@ pub struct AccountInput {
     pub bemerkung: String,
     /// Kontrollkästchen: nicht leer = aktiv
     pub aktiv: String,
+    /// Vorgabe-MWST-Code als Kennung; leer = keiner
+    pub mwst_code_id: String,
 }
 
 impl AccountInput {
@@ -167,6 +178,7 @@ impl AccountInput {
             kontengruppe: self.kontengruppe.trim().into(),
             bemerkung: self.bemerkung.trim().into(),
             aktiv: self.aktiv.trim().into(),
+            mwst_code_id: self.mwst_code_id.trim().into(),
         }
     }
 
@@ -206,6 +218,11 @@ impl AccountInput {
 
     pub fn is_active(&self) -> bool {
         !self.aktiv.is_empty()
+    }
+
+    /// Kennung des Vorgabe-MWST-Codes (`None` = keiner oder keine gültige Zahl).
+    pub fn mwst_id(&self) -> Option<i64> {
+        self.mwst_code_id.parse().ok()
     }
 
     pub fn group(&self) -> Option<&str> {
@@ -808,6 +825,9 @@ mod tests {
             aktiv: true,
             bemerkung: None,
             rollen: vec!["debitoren".into()],
+            mwst_code_id: None,
+            mwst_code: None,
+            gebucht: false,
         };
         let summary = ChartSummary {
             anzahl: 1,

@@ -3,7 +3,7 @@
 | Feld          | Wert                                              |
 |---------------|---------------------------------------------------|
 | **Nummer**    | ANF-017                                           |
-| **Status**    | Entwurf                                           |
+| **Status**    | In Umsetzung                                      |
 | **Priorität** | Muss                                              |
 | **Typ**       | Funktional                                        |
 | **Modul**     | Finanzen                                          |
@@ -40,56 +40,56 @@ Das Journal liegt im Reiter „Journal“ unter `/finanzen/journal`.
 ## 3. Akzeptanzkriterien
 
 **Liste (Anzeigen)**
-- [ ] **AK-1:** Gegeben der Reiter „Journal“, dann erscheint eine Tabelle aller Buchungen des gewählten
+- [x] **AK-1:** Gegeben der Reiter „Journal“, dann erscheint eine Tabelle aller Buchungen des gewählten
   Geschäftsjahres mit Datum, Belegnummer, Text, Soll-Konto, Haben-Konto, Betrag, Herkunft und Status;
   Sammelbuchungen (mehr als zwei Zeilen) zeigen „Diverse“ und lassen sich aufklappen.
-- [ ] **AK-2:** Gegeben die Liste, dann kann der Benutzer nach Text, Belegnummer, Konto und Betrag suchen,
+- [x] **AK-2:** Gegeben die Liste, dann kann der Benutzer nach Text, Belegnummer, Konto und Betrag suchen,
   nach Zeitraum, Herkunft (manuell, Debitoren, Kreditoren, Zahlung, MWST, Abschluss) und Status filtern
   und sortieren. Standard: laufendes Geschäftsjahr, nach Datum absteigend. Filter und Seite stehen in der
   Webadresse; ab 50 Einträgen seitenweise.
 
 **Anlegen**
-- [ ] **AK-3:** Gegeben „Neue Buchung“, dann öffnet sich ein Modal-Fenster (`?neu=1`) mit Datum (Vorgabe
+- [x] **AK-3:** Gegeben „Neue Buchung“, dann öffnet sich ein Modal-Fenster (`?neu=1`) mit Datum (Vorgabe
   heute), Belegnummer (Vorschlag: nächste freie Nummer), Text und einer Zeilentabelle. Für die einfache
   Buchung genügen Soll-Konto, Haben-Konto, Betrag und optional MWST-Code; „Weitere Zeile“ wandelt sie in
   eine Sammelbuchung um.
-- [ ] **AK-4:** Gegeben die Kontoauswahl, dann sucht sie nach Nummer und Bezeichnung und bietet nur
+- [x] **AK-4:** Gegeben die Kontoauswahl, dann sucht sie nach Nummer und Bezeichnung und bietet nur
   aktive Konten an (ANF-011 AK-10). Wählt der Benutzer ein Konto mit Vorgabe-MWST-Code, wird dieser
   vorgeschlagen.
-- [ ] **AK-5:** Gegeben eine Zeile mit MWST-Code, dann berechnet das System die Steuer (auf 0.01 gerundet)
+- [x] **AK-5:** Gegeben eine Zeile mit MWST-Code, dann berechnet das System die Steuer (auf 0.01 gerundet)
   und zeigt die zusätzliche Zeile auf dem MWST-Konto des Codes an, bevor gespeichert wird. Ob der
   eingegebene Betrag netto oder brutto ist, wählt der Benutzer pro Buchung (Vorgabe: brutto für manuelle Buchungen).
-- [ ] **AK-6:** Gegeben die Zeilen, dann zeigt das Formular laufend Summe Soll, Summe Haben und Differenz;
+- [x] **AK-6:** Gegeben die Zeilen, dann zeigt das Formular laufend Summe Soll, Summe Haben und Differenz;
   „Buchen“ ist nur möglich, wenn die Differenz 0.00 ist und jede Zeile ein Konto und einen Betrag > 0 hat.
-- [ ] **AK-7:** Gegeben ein Buchungsdatum, dann muss es in einem offenen Geschäftsjahr und einer offenen
+- [x] **AK-7:** Gegeben ein Buchungsdatum, dann muss es in einem offenen Geschäftsjahr und einer offenen
   Periode liegen (ANF-013); sonst wird mit Meldung abgelehnt. Alle Prüfungen laufen auf dem Server.
-- [ ] **AK-8:** Gegeben eine Buchungszeile, dann kann optional ein Projekt (ANF-003) zugeordnet werden;
+- [x] **AK-8:** Gegeben eine Buchungszeile, dann kann optional ein Projekt (ANF-003) zugeordnet werden;
   diese Zuordnung wird in der Projektauswertung (ANF-021) verwendet.
-- [ ] **AK-9:** Gegeben eine gespeicherte Buchung, dann erhält sie eine fortlaufende, lückenlose
+- [x] **AK-9:** Gegeben eine gespeicherte Buchung, dann erhält sie eine fortlaufende, lückenlose
   Journalnummer je Geschäftsjahr und speichert erfassenden Benutzer und Zeitpunkt.
 
 **Entwurf, Bearbeiten, Stornieren**
-- [ ] **AK-10:** Gegeben das Formular, wenn der Benutzer „Als Entwurf speichern“ wählt, dann wird die
+- [x] **AK-10:** Gegeben das Formular, wenn der Benutzer „Als Entwurf speichern“ wählt, dann wird die
   Buchung ohne Ausgleichsprüfung gespeichert, ist als Entwurf markiert und zählt in keiner Auswertung.
   Entwürfe können bearbeitet, gebucht oder gelöscht werden.
-- [ ] **AK-11:** Gegeben eine gebuchte manuelle Buchung, wenn der Benutzer „Stornieren“ wählt und
+- [x] **AK-11:** Gegeben eine gebuchte manuelle Buchung, wenn der Benutzer „Stornieren“ wählt und
   bestätigt (mit Datum, Vorgabe: Originaldatum bzw. heute, falls die Periode gesperrt ist), dann entsteht
   eine Gegenbuchung mit vertauschtem Soll/Haben; beide Buchungen sind als storniert bzw. Storno markiert
   und verweisen aufeinander.
-- [ ] **AK-12:** Gegeben eine automatisch erzeugte Buchung, dann ist sie im Journal nicht stornierbar;
+- [x] **AK-12:** Gegeben eine automatisch erzeugte Buchung, dann ist sie im Journal nicht stornierbar;
   der Verweis führt zum Beleg, der dort storniert wird.
 
 **Detail**
-- [ ] **AK-13:** Gegeben ein Klick auf eine Buchung, dann öffnet sich die Detailansicht
+- [x] **AK-13:** Gegeben ein Klick auf eine Buchung, dann öffnet sich die Detailansicht
   (`/finanzen/journal/<kennung>`) mit allen Zeilen, Herkunft, Benutzer, Zeitpunkt und Stornoverweis.
   Eine nicht existierende Kennung zeigt „Buchung nicht gefunden“.
 
 **Vorlagen**
-- [ ] **AK-14:** Gegeben eine Buchung, wenn der Benutzer „Kopieren“ wählt, dann öffnet sich das
+- [x] **AK-14:** Gegeben eine Buchung, wenn der Benutzer „Kopieren“ wählt, dann öffnet sich das
   Erfassungsfenster mit denselben Zeilen und dem heutigen Datum.
 
 **Allgemein**
-- [ ] **AK-15:** Die Tabellen werden per sqlx-Migration angelegt; die Datenbank verhindert gebuchte
+- [x] **AK-15:** Die Tabellen werden per sqlx-Migration angelegt; die Datenbank verhindert gebuchte
   Buchungen mit Soll ≠ Haben (Prüfung in der Transaktion vor dem Abschluss).
 
 ## 4. Daten / Felder
@@ -141,12 +141,31 @@ Tabelle `buchungszeile`:
 
 ## 7. Offene Fragen
 
-- [ ] Format der Belegnummer für manuelle Buchungen? *(Vorschlag: frei, Vorschlag `M-JJJJ-NNNN`)*
-- [ ] Dürfen Entwürfe von allen Benutzern gesehen und gebucht werden? *(Vorschlag: ja)*
-- [ ] Wird eine Eröffnungsbilanz für das erste Jahr manuell gebucht? *(Vorschlag: ja, Herkunft `eroeffnung` über Konto Eröffnungsbilanz)*
+- [x] Format der Belegnummer für manuelle Buchungen? *(Vorschlag: frei, Vorschlag `M-JJJJ-NNNN`)*
+- [x] Dürfen Entwürfe von allen Benutzern gesehen und gebucht werden? *(Vorschlag: ja)*
+- [x] Wird eine Eröffnungsbilanz für das erste Jahr manuell gebucht? *(Vorschlag: ja, Herkunft `eroeffnung` über Konto Eröffnungsbilanz)*
+
+## Umsetzung
+
+| Datei | Inhalt |
+|-------|--------|
+| `migrations/20261202100000_buchung.sql` | Tabellen `buchung`, `buchungszeile`, `journal_nummer`; Trigger machen gebuchte Belege unveränderlich und prüfen den Ausgleich am Ende der Transaktion (AK-15) |
+| `src/backend/finance/journal/model.rs` | Datentypen, Prüfregeln, MWST-Aufteilung (`tax_split`, `expand`), Modultests |
+| `src/backend/finance/journal/repository.rs`, `server_fns.rs` | Liste mit Filter und Seiten, Detail, Entwurf speichern und buchen, Löschen, Storno |
+| `src/components/finance/journal/` | Liste (Sammelbuchungen klappen auf), Formular mit Zeilen und MWST-Vorschau, Detailseite, Storno- und Löschfenster |
+
+Festlegungen bei der Umsetzung:
+- **Freigabe:** Der Auftrag „Umsetzen“ gilt als Freigabe; der Status steht auf „In Umsetzung“.
+- **Offene Fragen (Vorschläge übernommen):** Belegnummer `M-JJJJ-NNNN` als Vorschlag, frei änderbar. Entwürfe sehen und buchen alle angemeldeten Benutzer. Die Eröffnungsbilanz wird manuell mit Herkunft „Eröffnung“ gebucht.
+- **AK-5:** Die Vorgabe ist brutto. Die MWST-Zeile liegt auf derselben Seite wie die Zeile, die sie berechnet. Netto oder brutto gilt für alle Zeilen einer Buchung.
+- **AK-9:** Die Journalnummer kommt aus einem Zähler je Geschäftsjahr, der in der Buchungstransaktion gesperrt wird. Bricht eine Buchung ab, entsteht keine Lücke.
+- **AK-11:** Die Gegenbuchung bekommt eine eigene Journalnummer. Das Original wird „storniert“; ein zweiter Storno ist durch einen eindeutigen Index ausgeschlossen.
+- **AK-12:** Der Verweis zum Herkunftsbeleg folgt mit ANF-018 und ANF-019. Bis dahin gibt es nur den Hinweis, dass automatische Buchungen über ihren Beleg storniert werden.
+- **Offen:** Der Zeilentext (`buchungszeile.text`) ist im Schema, aber noch nicht im Formular. Die Browser-Prüfung steht aus, siehe `task.md`.
 
 ## 8. Änderungshistorie
 
 | Datum      | Autor              | Änderung        |
 |------------|--------------------|-----------------|
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
+| 2026-11-26 | Claude Code | Umgesetzt: Journal mit Zeilen, Entwurf, Buchen, Storno, Journalnummer je Geschäftsjahr, Unveränderlichkeit und Ausgleich in der Datenbank. Reste aus ANF-010, ANF-011, ANF-012, ANF-013 mit umgesetzt. |

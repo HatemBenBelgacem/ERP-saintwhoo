@@ -9,6 +9,8 @@ use super::model::{Account, AccountInput, TemplateAccount};
 /// Konto mit seinen Systemkonto-Rollen; muss mit `GROUP BY k.id` abgeschlossen werden.
 const SELECT_ACCOUNT: &str = "\
     SELECT k.id, k.nummer, k.bezeichnung, k.kontoart, k.kontengruppe, k.aktiv, k.bemerkung, \
+           k.mwst_code_id, (SELECT m.code FROM mwst_code m WHERE m.id = k.mwst_code_id) AS mwst_code, \
+           EXISTS (SELECT 1 FROM buchungszeile z WHERE z.konto_id = k.id) AS gebucht, \
            COALESCE(array_agg(s.rolle::text ORDER BY s.rolle) FILTER (WHERE s.rolle IS NOT NULL), \
                     '{}'::text[]) AS rollen \
     FROM konto k LEFT JOIN systemkonto s ON s.konto_id = k.id";
@@ -80,8 +82,8 @@ pub async fn number_taken(
 
 pub async fn insert(pool: &PgPool, input: &AccountInput) -> Result<i64, sqlx::Error> {
     sqlx::query_scalar(
-        "INSERT INTO konto (nummer, bezeichnung, kontoart, kontengruppe, bemerkung, aktiv) \
-         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+        "INSERT INTO konto (nummer, bezeichnung, kontoart, kontengruppe, bemerkung, aktiv, mwst_code_id) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
     )
     .bind(&input.nummer)
     .bind(&input.bezeichnung)
@@ -89,6 +91,7 @@ pub async fn insert(pool: &PgPool, input: &AccountInput) -> Result<i64, sqlx::Er
     .bind(input.group())
     .bind(input.remark())
     .bind(input.is_active())
+    .bind(input.mwst_id())
     .fetch_one(pool)
     .await
 }
@@ -97,7 +100,7 @@ pub async fn insert(pool: &PgPool, input: &AccountInput) -> Result<i64, sqlx::Er
 pub async fn update(pool: &PgPool, id: i64, input: &AccountInput) -> Result<u64, sqlx::Error> {
     sqlx::query(
         "UPDATE konto SET nummer = $2, bezeichnung = $3, kontoart = $4, kontengruppe = $5, \
-                bemerkung = $6, aktiv = $7, geaendert_am = now() \
+                bemerkung = $6, aktiv = $7, mwst_code_id = $8, geaendert_am = now() \
          WHERE id = $1",
     )
     .bind(id)
@@ -107,6 +110,7 @@ pub async fn update(pool: &PgPool, id: i64, input: &AccountInput) -> Result<u64,
     .bind(input.group())
     .bind(input.remark())
     .bind(input.is_active())
+    .bind(input.mwst_id())
     .execute(pool)
     .await
     .map(|r| r.rows_affected())
@@ -184,5 +188,13 @@ pub async fn id_by_number(
     sqlx::query_scalar("SELECT id FROM konto WHERE nummer = $1")
         .bind(nummer)
         .fetch_optional(&mut *conn)
+        .await
+}
+
+/// `true`, wenn der MWST-Code existiert und aktiv ist (ANF-011 AK-7).
+pub async fn mwst_code_active(pool: &PgPool, id: i64) -> Result<bool, sqlx::Error> {
+    sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM mwst_code WHERE id = $1 AND aktiv)")
+        .bind(id)
+        .fetch_one(pool)
         .await
 }

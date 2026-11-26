@@ -28,6 +28,8 @@ pub const MODAL_PARAMS: &[&str] = &[
     "periode",
     "loeschen",
     "kurs",
+    "kopieren",
+    "storno",
 ];
 
 /// Zähler, der nach jedem Speichern erhöht wird. Ressourcen, die ihn lesen, laden danach neu

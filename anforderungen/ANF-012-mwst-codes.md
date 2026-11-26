@@ -49,7 +49,7 @@ Sie werden unter `/einstellungen/finanzen/mwst` gepflegt.
   Systemkonto (ANF-011) vorgeschlagen; ein anderes Konto ist wählbar.
 - [x] **AK-5:** Gegeben ein Code, der bereits in Buchungen oder Rechnungen verwendet wird, dann sind Satz
   und Art nicht mehr änderbar; der Code kann nur mit „gültig bis“ beendet und durch einen neuen ersetzt werden.
-- [ ] **AK-6:** Gegeben ein Belegdatum ausserhalb der Gültigkeit eines Codes, dann ist der Code für diesen
+- [x] **AK-6:** Gegeben ein Belegdatum ausserhalb der Gültigkeit eines Codes, dann ist der Code für diesen
   Beleg nicht wählbar bzw. die Speicherung wird mit Meldung abgelehnt.
 - [x] **AK-7:** Gegeben ein unbenutzter Code, dann kann er gelöscht werden; ein benutzter Code nur deaktiviert.
 - [x] **AK-8:** Gegeben der Abschnitt „MWST-Einstellungen“, dann kann der Benutzer die MWST-Pflicht mit
@@ -60,7 +60,7 @@ Sie werden unter `/einstellungen/finanzen/mwst` gepflegt.
   ohne MWST erfasst.
 - [x] **AK-9:** Gegeben die MWST-Codes, dann verwendet der Einkauf (ANF-004) für neue Positionen die
   Codes statt der fest hinterlegten Sätze; bestehende Positionen behalten ihren Satz.
-- [ ] **AK-10:** Gegeben die eingeschaltete MWST-Pflicht, dann gelten MWST-Codes für Belege ab dem
+- [x] **AK-10:** Gegeben die eingeschaltete MWST-Pflicht, dann gelten MWST-Codes für Belege ab dem
   Beginndatum; Belege mit früherem Datum bleiben ohne MWST und werden nicht geändert.
 - [ ] **AK-11:** Gegeben ein nicht MWST-pflichtiges Unternehmen, dann berechnet das System den
   massgebenden Umsatz (gebuchte Erlöse der Kontenklasse 3 im laufenden Geschäftsjahr und in den letzten
@@ -132,7 +132,7 @@ Festlegungen bei der Umsetzung:
 - **AK-8:** Ohne Pflicht sind die Codes ausgeblendet. Die Pflicht kann mit einem Beginndatum in der Zukunft eingeschaltet werden.
 - **AK-9:** Einkauf ohne Code bleibt möglich („ohne MWST“, Satz 0). Die Formularziffern der Standard-Codes bleiben leer, weil sie anhand des aktuellen ESTV-Formulars ergänzt werden sollen.
 - **AK-10 (teilweise):** Der Einkauf wählt Codes erst ab dem Beginndatum. Für Belege gilt die Regel mit ANF-018 ff.
-- **AK-11 (teilweise):** Die Grenze und die Stufen sind vorhanden und in der Seite angezeigt. Den Umsatz liefert das Buchungsjournal (ANF-017), das noch fehlt. Die Übersicht „Finanzen“ (ANF-010 AK-4) gibt es noch nicht.
+- **AK-11 (teilweise):** Die Seite zeigt den Umsatz aus dem Buchungsjournal (laufendes Geschäftsjahr und letzte 12 Monate, massgebend der höhere Wert) und die Stufen 80 % und 100 %. Die Übersicht „Finanzen“ (ANF-010 AK-4) folgt noch.
 
 Geprüft: 11 Modultests (Code-Prüfung, Gültigkeit, Konto-Zuordnung, Sperre verwendeter Codes, Pflicht und UID, Umsatzgrenze, Standard-Codes, Pflichtbeginn) und HTTP-Aufrufe der Server-Funktionen (Anlegen, Fehlerfälle, Sperre, Einkauf mit Code, „ohne MWST“, Bestandsposition). Layout auf grossem Bildschirm und Mobiltelefon per Screenshot geprüft. Die Szenarien TS-012-01 bis TS-012-16 sind noch nicht vollständig von Hand durchgeklickt.
 
@@ -143,3 +143,4 @@ Geprüft: 11 Modultests (Code-Prüfung, Gültigkeit, Konto-Zuordnung, Sperre ver
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
 | 2026-11-18 | Hatem Ben Belgacem | MWST-Pflicht ab CHF 100 000: Einschalten mit Beginndatum, Überwachung der Umsatzgrenze (AK-10, AK-11); MWST-Nummer aus UID der Firma |
 | 2026-11-19 | Claude Code | Umgesetzt: MWST-Codes, MWST-Pflicht mit Beginn und UID-Prüfung, Standard-Codes, Umsatzgrenze (Anzeige), Einkauf auf Codes umgestellt (AK-9). Offen: AK-6, AK-10, AK-11 (Teile mit ANF-017 bis ANF-019) |
+| 2026-11-26 | Claude Code | Nachtrag: AK-6 und AK-10 für Buchungen mit ANF-017 (Gültigkeit am Belegdatum, MWST erst ab Beginndatum). AK-11 auf der MWST-Seite mit dem Umsatz aus dem Journal; Übersicht offen. |

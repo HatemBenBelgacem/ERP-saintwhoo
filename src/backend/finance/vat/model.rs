@@ -248,6 +248,22 @@ pub struct VatOverview {
     pub codes: Vec<VatCode>,
     /// UID der Firma (ANF-025); ohne UID kann die Pflicht nicht eingeschaltet werden (AK-8)
     pub uid: Option<String>,
+    /// Massgebender Umsatz aus dem Buchungsjournal (AK-11)
+    pub umsatz: Umsatz,
+}
+
+/// Gebuchte Erlöse (Kontenklasse 3) in Rappen: im laufenden Geschäftsjahr und in den letzten 12 Monaten.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct Umsatz {
+    pub geschaeftsjahr: i64,
+    pub letzte_12_monate: i64,
+}
+
+impl Umsatz {
+    /// Massgebend ist der höhere der beiden Werte (ANF-012 AK-11).
+    pub fn massgebend(&self) -> i64 {
+        self.geschaeftsjahr.max(self.letzte_12_monate)
+    }
 }
 
 /// Formulareingabe für einen MWST-Code (AK-3).
