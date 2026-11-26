@@ -51,14 +51,20 @@ pub enum ElementKind {
     Tent,
     /// Gitterabsperrung (Absperrgitter); mit grösserer Breite eine ganze Absperrlinie.
     Barrier,
+    /// Sanität: Sanitätsposten als weisse Kabine mit rotem Kreuz.
+    Medical,
+    /// Allgemeines Element für verschiedene Zwecke: quadratischer Körper mit Spitzdach.
+    General,
 }
 
 impl ElementKind {
-    pub const ALL: [ElementKind; 4] = [
+    pub const ALL: [ElementKind; 6] = [
         ElementKind::FoodStall,
         ElementKind::Stage,
         ElementKind::Tent,
         ElementKind::Barrier,
+        ElementKind::Medical,
+        ElementKind::General,
     ];
 
     /// Wert in der Datenbank (Spalte `art`).
@@ -68,6 +74,8 @@ impl ElementKind {
             ElementKind::FoodStall => "verpflegungsstand",
             ElementKind::Tent => "festzelt",
             ElementKind::Barrier => "gitterabsperrung",
+            ElementKind::Medical => "sanitaet",
+            ElementKind::General => "allgemein",
         }
     }
 
@@ -81,6 +89,8 @@ impl ElementKind {
             ElementKind::FoodStall => "Verpflegungsstand",
             ElementKind::Tent => "Festzelt",
             ElementKind::Barrier => "Gitterabsperrung",
+            ElementKind::Medical => "Sanität",
+            ElementKind::General => "Allgemeines Element",
         }
     }
 
@@ -92,6 +102,10 @@ impl ElementKind {
             ElementKind::Tent => (6.0, 6.0),
             // ein Gitterelement: 2,5 m lang, Füsse 0,6 m tief
             ElementKind::Barrier => (2.5, 0.6),
+            // Kabine etwa so gross wie ein Container
+            ElementKind::Medical => (6.0, 2.5),
+            // quadratisch, wie das Haus-Zeichen
+            ElementKind::General => (4.0, 4.0),
         }
     }
 
@@ -102,6 +116,8 @@ impl ElementKind {
             ElementKind::FoodStall => 2.8,
             ElementKind::Tent => 3.0,
             ElementKind::Barrier => 1.1,
+            ElementKind::Medical => 2.8,
+            ElementKind::General => 4.0,
         }
     }
 
@@ -118,6 +134,8 @@ impl ElementKind {
             ElementKind::FoodStall => "inline-block size-3 shrink-0 rounded-sm bg-site-food-stall",
             ElementKind::Tent => "inline-block size-3 shrink-0 rounded-sm bg-site-tent",
             ElementKind::Barrier => "inline-block size-3 shrink-0 rounded-sm bg-site-barrier",
+            ElementKind::Medical => "inline-block size-3 shrink-0 rounded-sm bg-site-medical",
+            ElementKind::General => "inline-block size-3 shrink-0 rounded-sm bg-site-general",
         }
     }
 }
@@ -863,6 +881,14 @@ mod tests {
             "Verpflegungsstand (4 × 2,5 m)"
         );
         assert_eq!(ElementKind::Stage.tool_label(), "Bühne (10 × 8 m)");
+        assert_eq!(ElementKind::Medical.tool_label(), "Sanität (6 × 2,5 m)");
+        assert_eq!(
+            ElementKind::General.tool_label(),
+            "Allgemeines Element (4 × 4 m)"
+        );
+        // das allgemeine Element ist quadratisch
+        let (w, d) = ElementKind::General.default_size();
+        assert_eq!(w, d);
     }
 
     #[test]

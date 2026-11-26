@@ -29,6 +29,9 @@
   --gelaende-eingang: #2563eb; /* Blau: Eingang */
   --gelaende-ausgang: #ea580c; /* Orange: Ausgang */
   --gelaende-notausgang: #16a34a; /* Grün wie das Rettungszeichen: Notausgang */
+  /* Elementarten Sanität und Allgemeines Element (ANF-027) */
+  --gelaende-sanitaet: #dc2626; /* Rot: Kreuz der Sanität auf weissem Grund */
+  --gelaende-allgemein: #0d9488; /* Petrol: allgemeines Element mit Spitzdach */
 }
 
 /* daisyUI-Farbschema „light“ (ANF-009). Alle daisyUI-Bausteine nutzen diese Farben automatisch:
@@ -93,6 +96,8 @@
   --color-site-food-stall: var(--gelaende-verpflegungsstand);
   --color-site-tent: var(--gelaende-festzelt);
   --color-site-barrier: var(--gelaende-gitterabsperrung);
+  --color-site-medical: var(--gelaende-sanitaet);
+  --color-site-general: var(--gelaende-allgemein);
   --color-site-area: var(--gelaende-flaeche);
   --color-site-measure: var(--gelaende-messung);
   --color-site-route: var(--gelaende-besucherweg);
