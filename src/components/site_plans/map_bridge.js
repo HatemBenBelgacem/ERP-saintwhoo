@@ -65,6 +65,7 @@ export class SitePlanMap {
         this.drag = null; // laufendes Ziehen eines Elements
         this.suppressClick = false; // Klick nach dem Anfassen eines Elements nicht als Platzieren werten
         this.elementModels = [];
+        this.elementLabels = []; // Beschriftungen der Elemente: { marker, height_m }
         this.scene = null; // zuletzt gemeldeter Inhalt aus Rust
         this.destroyed = false;
         this.map = null;
@@ -163,6 +164,10 @@ export class SitePlanMap {
                 self.renderer.render(self.world, self.camera);
             }
         };
+
+        // Beschriftungen der Elemente beim Zoomen und Kippen neu über die Modelle heben
+        map.on('zoom', () => this.#positionElementLabels());
+        map.on('pitch', () => this.#positionElementLabels());
 
         // Reihenfolge der Ebenen: Rasenfläche (unter den Modellen), 3D-Modelle, Eckpunkte, Messung, Drehgriff
         map.on('style.load', () => {
@@ -611,7 +616,7 @@ export class SitePlanMap {
 
     // Inhalt aus Rust: { drag_elements,  // Elemente lassen sich anfassen, ziehen und drehen
     //                    drag_corners,   // Eckpunkte der Rasenfläche lassen sich ziehen
-    //                    elements: [{ kind, x, z, rotation_deg, width_m, depth_m, height_m, outside, selected }],
+    //                    elements: [{ kind, x, z, rotation_deg, width_m, depth_m, height_m, outside, selected, label }],
     //                    corners: [[x, z], …],
     //                    measures: [{ points: [[x, z], …], closed, active, labels: [{ x, z, text, main }] }],
     //                    routes: [{ points, flow, one_way, active, label, label_at }],     (ANF-028)
@@ -689,8 +694,41 @@ export class SitePlanMap {
         });
 
         // Rasenfläche, Drehgriff und Messung zeichnet MapLibre (siehe #updateOverlays)
+        this.#addElementLabels();
         if (this.map) this.#updateOverlays();
         this.map?.triggerRepaint();
+    }
+
+    // Bezeichnungen der Elemente als HTML-Marken auf dem Boden in der Mitte des Elements. Klicks gehen
+    // an die Karte durch. Die Marke wird danach über das Modell gehoben (#positionElementLabels).
+    #addElementLabels() {
+        for (const { marker } of this.elementLabels ?? []) marker.remove();
+        this.elementLabels = [];
+        if (!this.map) return;
+        for (const el of this.scene?.elements ?? []) {
+            if (!el.label) continue;
+            const badge = document.createElement('div');
+            badge.className = 'badge badge-sm pointer-events-none border-base-300 bg-base-100/90 font-semibold text-base-content shadow-sm';
+            badge.textContent = el.label;
+            const marker = new this.maplibregl.Marker({ element: badge, anchor: 'bottom' })
+                .setLngLat(this.#toLngLat(el.x, el.z))
+                .addTo(this.map);
+            this.elementLabels.push({ marker, height_m: el.height_m });
+        }
+        this.#positionElementLabels();
+    }
+
+    // Marken so verschieben, dass sie über dem Modell stehen: Die Höhe erscheint bei geneigter Kamera
+    // nur mit dem Sinus der Neigung auf dem Bildschirm; ein Meter ist dabei rund so viele Bildpunkte.
+    #positionElementLabels() {
+        if (!this.map || !this.elementLabels?.length) return;
+        const pitch = this.map.getPitch() * Math.PI / 180;
+        const [, lat] = this.origin;
+        // Meter je Bildpunkt auf dieser Breite und Zoomstufe (Kacheln mit 512 Bildpunkten)
+        const metersPerPixel = 40075016.686 * Math.cos(lat * Math.PI / 180) / (512 * 2 ** this.map.getZoom());
+        for (const { marker, height_m } of this.elementLabels) {
+            marker.setOffset([0, -(height_m * Math.sin(pitch) / metersPerPixel + 6)]);
+        }
     }
 }
 

@@ -57,8 +57,8 @@ pub async fn find(
     };
 
     #[allow(clippy::type_complexity)]
-    let rows: Vec<(String, f64, f64, f64, f64, f64, Option<f64>)> = sqlx::query_as(
-        "SELECT art, x_m, z_m, drehung_grad, breite_m, tiefe_m, hoehe_m \
+    let rows: Vec<(String, f64, f64, f64, f64, f64, Option<f64>, Option<String>)> = sqlx::query_as(
+        "SELECT art, x_m, z_m, drehung_grad, breite_m, tiefe_m, hoehe_m, bezeichnung \
          FROM gelaendeplan_element WHERE gelaendeplan_id = $1 ORDER BY reihenfolge",
     )
     .bind(id)
@@ -66,17 +66,20 @@ pub async fn find(
     .await?;
     let elements = rows
         .into_iter()
-        .filter_map(|(art, x, z, rotation_deg, width_m, depth_m, height_m)| {
-            ElementKind::from_key(&art).map(|kind| SiteElement {
-                kind,
-                x,
-                z,
-                rotation_deg,
-                width_m,
-                depth_m,
-                height_m,
-            })
-        })
+        .filter_map(
+            |(art, x, z, rotation_deg, width_m, depth_m, height_m, label)| {
+                ElementKind::from_key(&art).map(|kind| SiteElement {
+                    kind,
+                    x,
+                    z,
+                    rotation_deg,
+                    width_m,
+                    depth_m,
+                    height_m,
+                    label: label.unwrap_or_default(),
+                })
+            },
+        )
         .collect();
 
     let corners: Vec<(f64, f64)> = sqlx::query_as(
@@ -144,11 +147,11 @@ pub async fn save(
     let e = &plan.elements;
     sqlx::query(
         "INSERT INTO gelaendeplan_element \
-             (gelaendeplan_id, reihenfolge, art, x_m, z_m, drehung_grad, breite_m, tiefe_m, hoehe_m) \
-         SELECT $1, t.nr, t.art, t.x, t.z, t.drehung, t.breite, t.tiefe, t.hoehe \
+             (gelaendeplan_id, reihenfolge, art, x_m, z_m, drehung_grad, breite_m, tiefe_m, hoehe_m, bezeichnung) \
+         SELECT $1, t.nr, t.art, t.x, t.z, t.drehung, t.breite, t.tiefe, t.hoehe, t.bez \
          FROM unnest($2::int[], $3::text[], $4::float8[], $5::float8[], $6::float8[], $7::float8[], \
-                     $8::float8[], $9::float8[]) \
-              AS t(nr, art, x, z, drehung, breite, tiefe, hoehe)",
+                     $8::float8[], $9::float8[], $10::text[]) \
+              AS t(nr, art, x, z, drehung, breite, tiefe, hoehe, bez)",
     )
     .bind(id)
     .bind((1..=e.len() as i32).collect::<Vec<i32>>())
@@ -159,6 +162,11 @@ pub async fn save(
     .bind(e.iter().map(|e| e.width_m).collect::<Vec<_>>())
     .bind(e.iter().map(|e| e.depth_m).collect::<Vec<_>>())
     .bind(e.iter().map(|e| e.height_m).collect::<Vec<Option<f64>>>())
+    .bind(
+        e.iter()
+            .map(|e| opt_label(&e.label).map(str::to_string))
+            .collect::<Vec<Option<String>>>(),
+    )
     .execute(&mut *conn)
     .await?;
 

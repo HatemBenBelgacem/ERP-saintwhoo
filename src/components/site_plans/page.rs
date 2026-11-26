@@ -14,9 +14,9 @@ use super::bridge::{MapEvent, MapView, ViewState, search_address};
 use super::flows;
 use crate::backend::site_plans::flows::{AccessKind, parse_decimal};
 use crate::backend::site_plans::model::{
-    AddressHit, Corner, ElementKind, HEIGHT_RANGE_M, MAX_MEASURE_LABEL_LEN, MAX_MEASURES,
-    MAX_SIZE_M, MIN_SIZE_M, Measure, MeasureKind, OriginInput, ROTATION_STEP_DEG, SiteElement,
-    SitePlan, SitePlanPage, format_area, format_distance, format_m, has_aerial_image,
+    AddressHit, Corner, ElementKind, HEIGHT_RANGE_M, MAX_ELEMENT_LABEL_LEN, MAX_MEASURE_LABEL_LEN,
+    MAX_MEASURES, MAX_SIZE_M, MIN_SIZE_M, Measure, MeasureKind, OriginInput, ROTATION_STEP_DEG,
+    SiteElement, SitePlan, SitePlanPage, format_area, format_distance, format_m, has_aerial_image,
 };
 use crate::backend::site_plans::server_fns::{DeleteSitePlan, SaveSitePlan, get_site_plan};
 use crate::forms::{
@@ -932,6 +932,7 @@ fn ElementList() -> impl IntoView {
                                 .map(|(i, e)| {
                                     let fits = plan.fits(e);
                                     let name = format!("{} {}", e.kind.label(), i + 1);
+                                    let bezeichnung = e.label.trim().to_string();
                                     view! {
                                         <li
                                             class="flex items-center justify-between gap-2 rounded-box p-2 text-sm"
@@ -949,10 +950,14 @@ fn ElementList() -> impl IntoView {
                                             >
                                                 <span class=e.kind.swatch_class()></span>
                                                 <span class="block min-w-0">
-                                                    <span class="flex items-center gap-2 font-semibold">
+                                                    <span class="flex min-w-0 items-center gap-2 font-semibold">
                                                         {name.clone()}
                                                         {(!fits).then(|| view! { <span class="badge badge-warning badge-sm">"ausserhalb"</span> })}
                                                     </span>
+                                                    // Bezeichnung in eigener Zeile, damit sie nicht abgeschnitten wird
+                                                    {(!bezeichnung.is_empty()).then(move || view! {
+                                                        <span class="block truncate text-sm">{bezeichnung}</span>
+                                                    })}
                                                     <span class="block text-xs text-base-content/60">
                                                         {format!(
                                                             "{} · X {} m · Z {} m · {}°",
@@ -1051,10 +1056,28 @@ fn ElementSizeEditor(i: usize) -> impl IntoView {
             .map(|e| format!("{} {}", e.kind.label(), i + 1))
             .unwrap_or_default()
     };
+    let bezeichnung = move || get().map(|e| e.label).unwrap_or_default();
     view! {
         <Show when=move || get().is_some()>
             <div class="flex flex-col gap-2 rounded-box border border-base-300 p-2">
                 <h3 class="text-sm font-semibold">"Masse von " {name}</h3>
+                // Bezeichnung: wird auf der Karte über dem Element und in der Liste gezeigt
+                <input
+                    type="text"
+                    class="input input-sm w-full"
+                    maxlength=MAX_ELEMENT_LABEL_LEN
+                    placeholder="Bezeichnung, z. B. Erste Hilfe Nord"
+                    aria-label=move || format!("Bezeichnung von {}", name())
+                    prop:value=bezeichnung
+                    on:input=move |ev| {
+                        let v = event_target_value(&ev);
+                        ed.plan.update(|p| {
+                            if let Some(e) = p.elements.get_mut(i) {
+                                e.label = v;
+                            }
+                        });
+                    }
+                />
                 <div class="grid grid-cols-2 gap-2">
                     {size_field("Breite (m)", |e| e.width_m, (MIN_SIZE_M, MAX_SIZE_M), |e, v| e.width_m = v)}
                     {size_field("Tiefe (m)", |e| e.depth_m, (MIN_SIZE_M, MAX_SIZE_M), |e, v| e.depth_m = v)}

@@ -31,6 +31,8 @@ pub const MAX_MEASURES: usize = 50;
 pub const MAX_MEASURE_POINTS: usize = 100;
 /// Höchstlänge der Bezeichnung einer Messung.
 pub const MAX_MEASURE_LABEL_LEN: usize = 100;
+/// Höchstlänge der Bezeichnung (Beschriftung) eines Elements.
+pub const MAX_ELEMENT_LABEL_LEN: usize = 100;
 /// Grösste erlaubte Kantenlänge eines Elements in Metern.
 pub const MAX_SIZE_M: f64 = 200.0;
 /// Kleinste Kantenlänge (z. B. Fuss einer Gitterabsperrung) und erlaubte Höhe eines Elements in Metern.
@@ -160,6 +162,9 @@ pub struct SiteElement {
     /// Eigene Höhe in Metern; `None` = Vorgabe der Art.
     #[serde(default)]
     pub height_m: Option<f64>,
+    /// Bezeichnung (Beschriftung) auf der Karte und in der Liste; leer = keine.
+    #[serde(default)]
+    pub label: String,
 }
 
 impl SiteElement {
@@ -189,6 +194,7 @@ impl SiteElement {
             width_m,
             depth_m,
             height_m: None,
+            label: String::new(),
         }
     }
 
@@ -441,6 +447,10 @@ impl SitePlan {
                 Some(format!(
                     "{name} darf höchstens {} km vom Standort entfernt sein.",
                     MAX_DISTANCE_M / 1000.0
+                ))
+            } else if e.label.chars().count() > MAX_ELEMENT_LABEL_LEN {
+                Some(format!(
+                    "{name}: Die Bezeichnung darf höchstens {MAX_ELEMENT_LABEL_LEN} Zeichen lang sein."
                 ))
             } else if ![e.width_m, e.depth_m]
                 .iter()
@@ -959,5 +969,17 @@ mod tests {
         plan.elements[0].height_m = None;
         plan.elements[0].depth_m = 0.05;
         assert!(plan.validate()["elemente"].contains("Breite und Tiefe"));
+    }
+
+    #[test]
+    fn element_label_is_limited() {
+        let mut plan = SitePlan {
+            elements: vec![SiteElement::new(ElementKind::General, 0.0, 0.0)],
+            ..SitePlan::default()
+        };
+        plan.elements[0].label = "x".repeat(MAX_ELEMENT_LABEL_LEN);
+        assert!(plan.validate().is_empty());
+        plan.elements[0].label = "x".repeat(MAX_ELEMENT_LABEL_LEN + 1);
+        assert!(plan.validate()["elemente"].contains("Bezeichnung"));
     }
 }
