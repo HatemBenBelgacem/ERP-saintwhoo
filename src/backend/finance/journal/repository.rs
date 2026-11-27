@@ -169,6 +169,51 @@ pub async fn storniert_durch<'e>(
     .await
 }
 
+/// Ausgangsrechnung bzw. Gutschrift, aus der die Buchung stammt (AK-12, ANF-018); die Kennung ist die des Belegs.
+pub async fn debtor_document<'e>(
+    exec: impl PgExecutor<'e>,
+    id: i64,
+) -> Result<Option<BookingRef>, sqlx::Error> {
+    sqlx::query_as(
+        "SELECT r.id, CASE r.art WHEN 'gutschrift' THEN 'Gutschrift ' ELSE 'Rechnung ' END \
+                || COALESCE(r.nummer, '') AS label \
+         FROM debitorenrechnung r WHERE r.buchung_id = $1",
+    )
+    .bind(id)
+    .fetch_optional(exec)
+    .await
+}
+
+/// Eingangsrechnung bzw. Lieferantengutschrift, aus der die Buchung stammt (AK-12, ANF-019).
+pub async fn creditor_document<'e>(
+    exec: impl PgExecutor<'e>,
+    id: i64,
+) -> Result<Option<BookingRef>, sqlx::Error> {
+    sqlx::query_as(
+        "SELECT r.id, CASE r.art WHEN 'gutschrift' THEN 'Lieferantengutschrift ' ELSE 'Eingangsrechnung ' END \
+                || COALESCE(r.nummer, '') AS label \
+         FROM kreditorenrechnung r WHERE r.buchung_id = $1",
+    )
+    .bind(id)
+    .fetch_optional(exec)
+    .await
+}
+
+/// Zahlung, aus der die Buchung stammt (AK-12, ANF-020).
+pub async fn payment_document<'e>(
+    exec: impl PgExecutor<'e>,
+    id: i64,
+) -> Result<Option<BookingRef>, sqlx::Error> {
+    sqlx::query_as(
+        "SELECT z.id, CASE z.art WHEN 'ausgang' THEN 'Zahlungsausgang ' ELSE 'Zahlungseingang ' END \
+                || to_char(z.datum, 'DD.MM.YYYY') AS label \
+         FROM zahlung z WHERE z.buchung_id = $1",
+    )
+    .bind(id)
+    .fetch_optional(exec)
+    .await
+}
+
 /// Geschäftsjahr zu einem Datum mit Status des Jahrs und der Periode (ANF-013 AK-5, AK-6).
 /// `None`, wenn kein Geschäftsjahr das Datum enthält.
 pub async fn year_for_date<'e>(

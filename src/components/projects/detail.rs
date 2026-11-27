@@ -10,6 +10,8 @@ use crate::backend::projects::model::{
     status_badge, status_label, task_stats,
 };
 use crate::backend::projects::server_fns::{DeleteElement, MoveElement, ToggleTask, get_tree};
+use crate::components::finance::creditors::ProjectCreditors;
+use crate::components::finance::debtors::ProjectInvoices;
 use crate::components::purchase_orders::ProjectOrders;
 use crate::forms::{Breadcrumbs, data_version, error_message, use_base_href, with_params};
 use crate::icons::{Icon, IconView};
@@ -174,6 +176,10 @@ fn ProjectView(tree: ProjectTree) -> impl IntoView {
             </div>
             <Structure level=Level::Project id=p.id nodes=tree.children.clone()/>
             <ProjectOrders project_id=p.id/>
+            // ANF-018 AK-15: Ausgangsrechnungen des Projekts
+            <ProjectInvoices project_id=p.id/>
+            // ANF-019 AK-15: Eingangsrechnungen des Projekts
+            <ProjectCreditors project_id=p.id/>
             <p class="text-sm text-base-content/60">
                 "Erstellt am " {p.erstellt_am.clone()} " · Geändert am " {p.geaendert_am.clone()}
             </p>

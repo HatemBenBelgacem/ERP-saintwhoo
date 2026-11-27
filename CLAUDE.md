@@ -41,7 +41,9 @@ src/
                      portal (ANF-026, Seite /portal), site_plans (ANF-027 Geländeplan /projekte/<Kennung>/gelaendeplan, ANF-028 Besucherströme,
                      mit map_bridge.js: MapLibre + Three.js als ES-Module aus dem Netz, nur im Browser),
                      system (Datenbank-Status), home, settings, company (ANF-025, Seite unter settings/company) – Details in system-design.md
-  backend/finance/<teil>/  Finanzen (ANF-010), je Komponente ein Untermodul: accounts (ANF-011 Kontenplan)
+  backend/finance/<teil>/  Finanzen (ANF-010), je Komponente ein Untermodul: accounts (ANF-011 Kontenplan),
+                     journal (ANF-017), debtors (ANF-018 Debitoren, Druckansicht /finanzen/debitoren/<Kennung>/druck),
+                     creditors (ANF-019 Kreditoren /finanzen/kreditoren), payments (ANF-020 Zahlungen /finanzen/zahlungen) …
   components/settings/finance/<teil>/  Stammdaten-Seiten der Finanzen unter /einstellungen/finanzen/…
   db.rs              Verbindungspools (ERP und Portal) + Migrationen (nur ssr)
 migrations/          SQL-Migrationen der ERP- bzw. Mandanten-Datenbank (sqlx), laufen beim Serverstart automatisch

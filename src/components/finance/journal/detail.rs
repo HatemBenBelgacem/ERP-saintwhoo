@@ -7,7 +7,8 @@ use leptos_router::hooks::use_params_map;
 
 use crate::backend::finance::fiscal_year::model::german_date;
 use crate::backend::finance::journal::model::{
-    BookingDetail, amount_cell, herkunft_label, status_badge, status_label, storno_hint,
+    BookingDetail, amount_cell, document_url, herkunft_label, status_badge, status_label,
+    storno_hint,
 };
 use crate::backend::finance::journal::server_fns::{JOURNAL_URL, get_booking};
 use crate::backend::purchase_orders::model::format_amount;
@@ -127,6 +128,14 @@ fn BookingCard(booking: BookingDetail) -> impl IntoView {
                     <p class="alert alert-info alert-soft text-sm">
                         "Storno der Buchung "
                         <a href=format!("/finanzen/journal/{}", r.id) class="link link-hover">{r.label.clone()}</a>
+                    </p>
+                })}
+                // AK-12: Verweis zum Herkunftsbeleg (Ausgangs- bzw. Eingangsrechnung, ANF-018, ANF-019)
+                {booking.herkunftsbeleg.clone().map(|r| view! {
+                    <p class="alert alert-info alert-soft text-sm">
+                        "Automatische Buchung aus "
+                        <a href=document_url(&head.herkunft, r.id) class="link link-hover">{r.label.clone()}</a>
+                        ". Storniert wird sie über den Beleg."
                     </p>
                 })}
                 {booking.storniert_durch.clone().map(|r| view! {

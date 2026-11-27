@@ -127,11 +127,11 @@ Periodizität (`quartal`, `halbjahr`).
 
 Festlegungen bei der Umsetzung:
 - **AK-2:** Die Standard-Codes gelten ab 01.01.2024. Die Konten kommen aus dem Kontenplan: VI81 auf 1171, die übrigen auf das Systemkonto der Art.
-- **AK-5 / AK-7:** „Verwendet“ heisst heute: in einer Einkaufsposition. Rechnungen und Buchungen kommen mit ANF-018 bis ANF-019 und ANF-017 dazu.
+- **AK-5 / AK-7:** „Verwendet“ heisst: in einer Einkaufsposition, Buchungszeile oder Position einer Aus- oder Eingangsrechnung (ANF-018, ANF-019).
 - **AK-6 (teilweise):** Der Einkauf prüft die Gültigkeit am heutigen Datum. Das Belegdatum prüfen Rechnungen und Buchungen.
 - **AK-8:** Ohne Pflicht sind die Codes ausgeblendet. Die Pflicht kann mit einem Beginndatum in der Zukunft eingeschaltet werden.
 - **AK-9:** Einkauf ohne Code bleibt möglich („ohne MWST“, Satz 0). Die Formularziffern der Standard-Codes bleiben leer, weil sie anhand des aktuellen ESTV-Formulars ergänzt werden sollen.
-- **AK-10 (teilweise):** Der Einkauf wählt Codes erst ab dem Beginndatum. Für Belege gilt die Regel mit ANF-018 ff.
+- **AK-10 (teilweise):** Der Einkauf wählt Codes erst ab dem Beginndatum. Ausgangsrechnungen (ANF-018) prüfen die Pflicht am Rechnungsdatum beim Speichern einer Position und beim Buchen; Eingangsrechnungen (ANF-019) ebenso mit Vorsteuer-Codes.
 - **AK-11 (teilweise):** Die Seite zeigt den Umsatz aus dem Buchungsjournal (laufendes Geschäftsjahr und letzte 12 Monate, massgebend der höhere Wert) und die Stufen 80 % und 100 %. Die Übersicht „Finanzen“ (ANF-010 AK-4) folgt noch.
 
 Geprüft: 11 Modultests (Code-Prüfung, Gültigkeit, Konto-Zuordnung, Sperre verwendeter Codes, Pflicht und UID, Umsatzgrenze, Standard-Codes, Pflichtbeginn) und HTTP-Aufrufe der Server-Funktionen (Anlegen, Fehlerfälle, Sperre, Einkauf mit Code, „ohne MWST“, Bestandsposition). Layout auf grossem Bildschirm und Mobiltelefon per Screenshot geprüft. Die Szenarien TS-012-01 bis TS-012-16 sind noch nicht vollständig von Hand durchgeklickt.
@@ -144,3 +144,5 @@ Geprüft: 11 Modultests (Code-Prüfung, Gültigkeit, Konto-Zuordnung, Sperre ver
 | 2026-11-18 | Hatem Ben Belgacem | MWST-Pflicht ab CHF 100 000: Einschalten mit Beginndatum, Überwachung der Umsatzgrenze (AK-10, AK-11); MWST-Nummer aus UID der Firma |
 | 2026-11-19 | Claude Code | Umgesetzt: MWST-Codes, MWST-Pflicht mit Beginn und UID-Prüfung, Standard-Codes, Umsatzgrenze (Anzeige), Einkauf auf Codes umgestellt (AK-9). Offen: AK-6, AK-10, AK-11 (Teile mit ANF-017 bis ANF-019) |
 | 2026-11-26 | Claude Code | Nachtrag: AK-6 und AK-10 für Buchungen mit ANF-017 (Gültigkeit am Belegdatum, MWST erst ab Beginndatum). AK-11 auf der MWST-Seite mit dem Umsatz aus dem Journal; Übersicht offen. |
+| 2026-11-27 | Claude Code | AK-10 für Ausgangsrechnungen (ANF-018) |
+| 2026-11-27 | Claude Code | AK-10 für Eingangsrechnungen (ANF-019) |

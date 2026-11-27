@@ -481,6 +481,19 @@ pub async fn order_numbers_of_project(
         .await
 }
 
+/// Nummern der Ausgangsrechnungen eines Projekts (ANF-018 AK-16); Entwürfe ohne Nummer als „Entwurf“.
+pub async fn invoice_numbers_of_project(
+    pool: &PgPool,
+    project_id: i64,
+) -> Result<Vec<String>, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT coalesce(nummer, 'Entwurf') FROM debitorenrechnung WHERE projekt_id = $1 ORDER BY id",
+    )
+    .bind(project_id)
+    .fetch_all(pool)
+    .await
+}
+
 /// Teilprojekt, Vorgang oder Aufgabe löschen (alles darunter über ON DELETE CASCADE).
 /// Liefert (Kennung des übergeordneten Elements, Name) oder `None`.
 pub async fn delete_child(

@@ -110,11 +110,18 @@ pub async fn get_booking(id: i64) -> Result<Option<BookingDetail>, ServerFnError
     let summe = zeilen.iter().map(|l| l.soll).sum();
     let storno_von = repository::storno_original(&pool, id).await?;
     let storniert_durch = repository::storniert_durch(&pool, id).await?;
+    let herkunftsbeleg = match head.herkunft.as_str() {
+        "debitor" => repository::debtor_document(&pool, id).await?,
+        "kreditor" => repository::creditor_document(&pool, id).await?,
+        "zahlung" => repository::payment_document(&pool, id).await?,
+        _ => None,
+    };
     Ok(Some(BookingDetail {
         head,
         zeilen,
         storno_von,
         storniert_durch,
+        herkunftsbeleg,
         summe,
     }))
 }
@@ -269,25 +276,45 @@ pub async fn storno_booking(
         return Ok(datum_error(message));
     }
 
-    let lines: Vec<LineView> = repository::lines_for(&mut *tx, &[id]).await?;
+    let (neu, nummer) = write_reversal(&mut tx, &orig, gj_id, datum, user).await?;
+    tx.commit().await?;
+    redirect_back(&zurueck, "gespeichert", &format!("storno-{nummer}"));
+    Ok(SaveOutcome::Saved(neu))
+}
+
+// ---------------------------------------------------------------------------------------------
+// Hilfsfunktionen (nur Server)
+// ---------------------------------------------------------------------------------------------
+
+/// Gegenbuchung zu einer gebuchten Buchung schreiben und buchen: Soll und Haben vertauscht, MWST-Zeilen
+/// bleiben Steuerzeilen, das Original wird „storniert“ (AK-11). Auch für den Storno von Belegen
+/// (ANF-018 AK-13). Liefert die Kennung und die Journalnummer der Gegenbuchung.
+#[cfg(feature = "ssr")]
+pub async fn write_reversal(
+    tx: &mut sqlx::PgConnection,
+    orig: &super::model::BookingHead,
+    geschaeftsjahr_id: i64,
+    datum: String,
+    erfasst_von: Option<i64>,
+) -> Result<(i64, i32), sqlx::Error> {
+    let lines: Vec<LineView> = repository::lines_for(&mut *tx, &[orig.id]).await?;
     let text = format!("Storno: {}", orig.text)
         .chars()
         .take(TEXT_MAX)
         .collect::<String>();
     let neu = repository::insert_draft(
-        &mut tx,
+        &mut *tx,
         &NewHead {
-            geschaeftsjahr_id: gj_id,
+            geschaeftsjahr_id,
             datum,
             belegnummer: orig.belegnummer.clone(),
             text,
             herkunft: "manuell".into(),
-            storno_von_id: Some(id),
-            erfasst_von: user,
+            storno_von_id: Some(orig.id),
+            erfasst_von,
         },
     )
     .await?;
-    // Soll und Haben vertauschen; MWST-Zeilen bleiben als Steuerzeilen erhalten
     for (i, z) in lines.iter().enumerate() {
         let (soll, betrag) = if z.soll > 0 {
             (false, z.soll)
@@ -303,19 +330,13 @@ pub async fn storno_booking(
             ist_mwst_zeile: z.ist_mwst_zeile,
             projekt_id: z.projekt_id,
         };
-        repository::insert_line(&mut tx, neu, reihenfolge(i), &line).await?;
+        repository::insert_line(&mut *tx, neu, reihenfolge(i), &line).await?;
     }
-    let nummer = repository::next_journal_number(&mut tx, gj_id).await?;
-    repository::book(&mut tx, neu, nummer).await?;
-    repository::mark_storniert(&mut tx, id).await?;
-    tx.commit().await?;
-    redirect_back(&zurueck, "gespeichert", &format!("storno-{nummer}"));
-    Ok(SaveOutcome::Saved(neu))
+    let nummer = repository::next_journal_number(&mut *tx, geschaeftsjahr_id).await?;
+    repository::book(&mut *tx, neu, nummer).await?;
+    repository::mark_storniert(&mut *tx, orig.id).await?;
+    Ok((neu, nummer))
 }
-
-// ---------------------------------------------------------------------------------------------
-// Hilfsfunktionen (nur Server)
-// ---------------------------------------------------------------------------------------------
 
 /// Stammdaten für das Formular und die Prüfung: aktive Konten, Codes, Projekte, MWST-Pflicht.
 #[cfg(feature = "ssr")]

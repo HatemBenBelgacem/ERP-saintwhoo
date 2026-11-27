@@ -32,6 +32,10 @@ Schlägt ein Szenario fehl, trage es in [task.md](task.md) als offene Aufgabe ei
 | ANF-006 | Aufgaben | 21 | Bedienung im Browser noch nicht von Hand geprüft |
 | ANF-007 | Anmeldung | 29 | Seit ANF-026 mit E-Mail statt Benutzername; TS-007-26/27 entfallen |
 | ANF-026 | Registrierung, Datenbank, Mandant | 32 | Alle Schritte (Portal-Datenbank, Registrierung, Anmeldung, Datenbank erstellen, Mandant definieren, Passwort im Portal) |
+| ANF-021 | Auswertungen | 14 | Bedienung im Browser noch nicht von Hand geprüft |
+| ANF-018 | Debitoren | 20 | Bedienung im Browser noch nicht von Hand geprüft |
+| ANF-019 | Kreditoren | 18 | Bedienung im Browser noch nicht von Hand geprüft |
+| ANF-020 | Zahlungen | 16 | Bedienung im Browser noch nicht von Hand geprüft |
 
 Die Anforderungen ANF-005 bis ANF-007 haben bisher keine Prüfung im Browser. Mit diesen Szenarien starten.
 
@@ -365,6 +369,107 @@ Vorbereitung: Kontenrahmen übernehmen (TS-011-01) und eine Firma mit UID erfass
 | TS-013-09 | 7 | Das ältere Jahr 2026 ansehen, dann das neueste (2027) löschen. | Beim älteren Jahr fehlt „Geschäftsjahr löschen“. Beim neuesten erscheint die Bestätigung. Nach dem Löschen sind das Jahr und seine Perioden weg. |
 | TS-013-10 | 6 | Gesperrte Periode: Buchung mit Datum darin erfassen. | Erst mit dem Buchungsjournal (ANF-017) prüfbar. Die Prüffunktion für das Buchungsdatum ist vorbereitet. |
 | TS-013-11 | 12 | Seite am Mobiltelefon (390 px) öffnen, Perioden aufklappen. | Keine seitliche Verschiebung. Tabelle und Knöpfe sind erreichbar. |
+
+## ANF-021 Auswertungen
+
+Vorbereitung: Mandant mit Kontenplan aus der KMU-Vorlage, Geschäftsjahre 2025 und 2026, einige gebuchte Buchungen
+in beiden Jahren (darunter eine mit Projekt), ein Entwurf, eine stornierte Buchung mit Gegenbuchung und ein
+bestellter Einkaufsauftrag für das Projekt.
+
+| Nr | AK | Schritte | Erwartet |
+|----|----|----------|----------|
+| TS-021-01 | 1 | Finanzen › Reiter „Auswertungen“ öffnen. | Auswahl der Auswertung, Geschäftsjahr (laufendes) und Zeitraum 01.01. bis heute; die Auswahl steht in der Webadresse und bleibt beim Neuladen. |
+| TS-021-02 | 3 | „Saldenliste“ wählen. | Alle Konten mit Bewegung oder Saldo, gruppiert nach Kontenklasse mit Zwischensummen; Hinweis „Soll und Haben stimmen überein.“ |
+| TS-021-03 | 2 | In der Saldenliste auf ein Konto klicken. | Kontoauszug des Kontos: Anfangssaldo, Zeilen mit Datum, Beleg, Text, Gegenkonto, Soll, Haben, laufendem Saldo, Summen und Endsaldo. |
+| TS-021-04 | 2 | Im Kontoauszug auf eine Buchung klicken. | Die Buchung öffnet sich im Journal. |
+| TS-021-05 | 2, 1 | Zeitraum auf März einschränken. | Anfangssaldo = Saldo bis Ende Februar; nur Buchungen im März. |
+| TS-021-06 | 4 | „Bilanz“ wählen. | Aktiven und Passiven nach Kontengruppen; Zeile mit dem Ergebnis des laufenden Jahres; „Aktiven und Passiven stimmen überein.“ |
+| TS-021-07 | 5 | „Erfolgsrechnung“ wählen. | Ertrag positiv, Aufwand negativ, Bruttogewinn, Betriebsergebnis, Jahresergebnis; gleich der Ergebniszeile der Bilanz. |
+| TS-021-08 | 6 | Bei Bilanz bzw. Erfolgsrechnung „Vorjahr vergleichen“. | Spalten Vorjahr (gleicher Zeitraum 2025) und Abweichung. |
+| TS-021-09 | 7 | „Projektauswertung“, dann ein Projekt wählen. | Erlöse, Aufwand, Ergebnis und offene Einkaufsaufträge je Projekt bzw. für das gewählte Projekt. Auf der Projektseite führt „Finanzauswertung“ hierher. |
+| TS-021-10 | 9 | Saldenliste mit einem Entwurf und einer stornierten Buchung ansehen. | Der Entwurf zählt nicht; Original und Gegenbuchung heben sich auf. Im Kontoauszug stehen beide. |
+| TS-021-11 | 8 | „Drucken“ wählen. | Druckvorschau A4 ohne Seitenleiste, Auswahl und Knöpfe. |
+| TS-021-12 | 8 | „CSV herunterladen“ bei Saldenliste und Kontoauszug. | Datei mit denselben Zahlen; öffnet sich in einer Tabellenkalkulation mit Umlauten. |
+| TS-021-13 | 10 | Testdatenbank mit 100 000 Buchungszeilen, alle Auswertungen aufrufen. | Jede Auswertung erscheint in unter 2 Sekunden (gemessen 2026-11-27: höchstens 0.62 s). |
+| TS-021-14 | — | Auswertungen am Mobiltelefon (390 px). | Keine seitliche Verschiebung der Seite; Tabellen lassen sich seitlich wischen. |
+
+## ANF-018 Debitoren
+
+Vorbereitung: Mandant mit Firma, Kontenplan aus der KMU-Vorlage (mit Systemkonten), Geschäftsjahr 2026, MWST-Pflicht
+ab 01.01.2024 mit Standard-Codes, Standard-Bankkonto, Adresse „Muster AG“ und Projekt mit Kunde „Muster AG“.
+
+| Nr | AK | Schritte | Erwartet |
+|----|----|----------|----------|
+| TS-018-01 | 1, 2 | Finanzen › Reiter „Debitoren“ öffnen. | Tabelle mit Nummer, Art, Kunde, Projekt, Rechnungsdatum, Fälligkeit, Gesamtbetrag, Offen, Währung, Status. Filter „Offen und teilweise bezahlt“, sortiert nach Fälligkeit. Ohne Belege: „Keine offenen Rechnungen.“ |
+| TS-018-02 | 4 | „Neue Rechnung“ wählen, ohne Kunde speichern. | Webadresse `?neu=rechnung`. Meldung „Bitte einen Kunden wählen.“; Rechnungsdatum ist heute vorbelegt. |
+| TS-018-03 | 7 | Im neuen Fenster zuerst das Projekt wählen. | Der Kunde des Projekts („Muster AG“) erscheint im Feld Kunde. |
+| TS-018-04 | 4 | Mit Kunde, Zahlungsbedingung „Vorgabe“ speichern. | Detailansicht „Entwurf Rechnung“, Zahlungsbedingung der Adresse bzw. „30 Tage netto“, Fälligkeit „wird beim Buchen berechnet“. |
+| TS-018-05 | 5 | „Neue Position“: Beratung, 3 h, 33.33, ohne Rabatt. | Ertragskonto 3400 und Code UN81 sind vorgeschlagen. Nach dem Speichern: Betrag 99.99. |
+| TS-018-06 | 6 | Summen ansehen. | Zwischensumme 99.99, MWST UN81 8.1 % 8.10, Rundung 0.01, Gesamtbetrag CHF 108.10. |
+| TS-018-07 | 5 | Zweite Position anlegen, mit ▲ nach oben schieben, bearbeiten, löschen. | Reihenfolge, Änderung und Löschen wirken sofort. Menge 0 oder Rabatt 101 ergeben Feldmeldungen. |
+| TS-018-08 | 8 | „Buchen“ wählen und bestätigen. | Nummer R-2026-0001, Status „Offen“, Fälligkeit = Rechnungsdatum + 30 Tage. „Im Journal anzeigen“ führt zur Buchung mit Herkunft „Debitoren“: Soll 1100 108.10, Haben 3400 99.99 (Basis), Haben 2200 8.10, Haben 6990 0.01. |
+| TS-018-09 | 10 | Gebuchte Rechnung bearbeiten. | Nur Referenz, Einleitungs-, Schlusstext und Bemerkung sind änderbar; Positionen ohne Knöpfe. |
+| TS-018-10 | 9 | Entwurf mit Datum in einer gesperrten Periode buchen. | Meldung „Die Periode für das Datum … ist gesperrt.“; der Entwurf bleibt unverändert, keine Nummer verbraucht. |
+| TS-018-11 | 9 | Systemkonto „Debitoren“ entfernen, Entwurf buchen. Danach Firma fehlt (neuer Mandant). | „Das Systemkonto „Debitoren“ fehlt …“ bzw. „Die eigene Firma ist nicht erfasst …“. Nichts wird gebucht. |
+| TS-018-12 | 8 | Entwurf in EUR ohne Kurs buchen, danach Kurs 0.95 erfassen und erneut buchen. | Erst „Für EUR gibt es keinen Kurs …“. Dann gebucht; Kurs 0.95 und Gesamtbetrag in CHF in der Detailansicht. |
+| TS-018-13 | 3 | Rechnung mit Rechnungsdatum vor über 30 Tagen buchen, Liste öffnen. | Fälligkeit rot mit „überfällig · N Tage“. |
+| TS-018-14 | 11 | „Drucken“ wählen. | Neues Fenster `/finanzen/debitoren/<Kennung>/druck` mit Absender, Kundenadresse, Nummer, Datum, MWST-Nr., Positionen, MWST je Satz, Gesamtbetrag, Zahlungstext, IBAN. Ein Entwurf zeigt „Entwurf“. Druckvorschau auf A4. |
+| TS-018-15 | 12 | Entwurf löschen und bestätigen. | Zur Liste mit „Der Entwurf (Rechnung) wurde gelöscht.“ |
+| TS-018-16 | 13 | Offene Rechnung „Stornieren“ und bestätigen. | Status „Storniert“, offen 0. Im Journal: Gegenbuchung „Storno: Rechnung …“, Original „Storniert“. |
+| TS-018-17 | 14 | Bei einer gebuchten Rechnung „Gutschrift erstellen“. | Entwurf Gutschrift mit denselben Positionen und „Bezug auf Rechnung“. Gebucht als G-2026-0001; im Journal Debitoren im Haben. In der Liste mit Minus. |
+| TS-018-18 | 15 | Projekt-Detailansicht öffnen. | Abschnitt „Ausgangsrechnungen“ mit den Belegen des Projekts. |
+| TS-018-19 | 16 | Adresse „Muster AG“ öffnen, dann löschen. | Abschnitt „Debitoren“ mit offenen Rechnungen und „Offen gesamt“. Löschen: „… in Ausgangsrechnungen (als Kunde) verwendet …“. |
+| TS-018-20 | 17 | `/finanzen/debitoren/999999` öffnen. | „Rechnung nicht gefunden“ mit Verweis zur Liste. |
+
+## ANF-019 Kreditoren
+
+Vorbereitung wie ANF-018, dazu Vorsteuer-Code VM81, Lieferant „Lieferant AG“ und ein gelieferter Einkaufsauftrag
+mit zwei Positionen (eine davon mit MWST-Code, eine nur mit Satz 8.1 %) und einer nicht gelieferten Position.
+
+| Nr | AK | Schritte | Erwartet |
+|----|----|----------|----------|
+| TS-019-01 | 1, 2 | Finanzen › Reiter „Kreditoren“ öffnen. | Tabelle mit Nummer, Rechnungs-Nr., Lieferant, Einkaufsauftrag, Projekt, Rechnungsdatum, Fälligkeit, Skonto bis, Gesamtbetrag, Offen, Währung, Status. Filter „Offen …“, sortiert nach Fälligkeit; Feld „fällig bis“. |
+| TS-019-02 | 4 | „Neue Eingangsrechnung“ ohne Eingaben speichern. | `?neu=rechnung`. Meldungen bei Lieferant, Rechnungsnummer und Betrag gemäss Rechnung. |
+| TS-019-03 | 4, 5 | Lieferant AG, Nummer RE-1, Betrag 100 speichern; dann eine zweite mit „re-1“. | Erste wird Entwurf. Zweite: „Rechnung bereits erfasst …“. |
+| TS-019-04 | 6 | Position „Material“, Konto 4000, VM81, Betrag 108.10 „Brutto“. | Vorschau „Netto 100.00 · MWST 8.10 · Brutto 108.10“; nach dem Speichern dieselben Werte in der Tabelle. |
+| TS-019-05 | 6 | Position mit Konto 3400 speichern. | „Bitte ein aktives Aufwandskonto wählen.“ |
+| TS-019-06 | 7 | Betrag gemäss Rechnung 100 lassen. | Differenz -8.10 rot, „Buchen“ deaktiviert mit Hinweis. |
+| TS-019-07 | 7 | Betrag gemäss Rechnung auf 108.15 ändern (im Fenster erscheint die Differenz sofort). | „Rundung ausgleichen (0.05)“ erscheint; danach Differenz 0.00 und „Buchen“ aktiv. |
+| TS-019-08 | 10 | „Buchen“ bestätigen. | Nummer K-2026-0001, Status „Offen“, Fälligkeit aus der Zahlungsbedingung. Journal: Soll 4000 100.00, Soll 1170 8.10, Soll 6990 0.05, Haben 2000 108.15, Herkunft „Kreditoren“, Verweis zurück zum Beleg. |
+| TS-019-09 | 12 | Gebuchten Beleg bearbeiten. | Nur Fälligkeit und Bemerkung; Positionen ohne Knöpfe. |
+| TS-019-10 | 11 | Entwurf in gesperrter Periode bzw. ohne Systemkonto „Kreditoren“ buchen. | Meldung, nichts gebucht, keine Nummer verbraucht. |
+| TS-019-11 | 8 | Einkaufsauftrag öffnen, „Eingangsrechnung erfassen“. | Entwurf mit Lieferant, Projekt, Währung, Verweis auf den Auftrag; nur gelieferte Positionen, Konto 4000, Code VM81 auch für die Position ohne Code; Bearbeiten-Fenster offen. |
+| TS-019-12 | 9 | Einkaufsauftrag erneut öffnen. | Abschnitt „Eingangsrechnungen“ mit „Bestellt … / verrechnet …“; übersteigt verrechnet den Auftrag, erscheint ein Hinweis. |
+| TS-019-13 | 4 | Neue Eingangsrechnung eines anderen Lieferanten mit diesem Auftrag. | „Der Einkaufsauftrag gehört zu einem anderen Lieferanten.“ |
+| TS-019-14 | 3 | Beleg mit Skonto (z. B. 10 Tage 2 %) heute buchen; Liste öffnen. | „Skonto bis“ in Sekundärfarbe; nach Ablauf der Fälligkeit „überfällig · N Tage“. |
+| TS-019-15 | 13 | Entwurf löschen. | Zur Liste mit „Der Entwurf (…) wurde gelöscht.“ |
+| TS-019-16 | 14 | Offenen Beleg stornieren; danach dieselbe Rechnungsnummer neu erfassen. | Status „Storniert“, Gegenbuchung im Journal. Die Nummer lässt sich wieder erfassen. |
+| TS-019-17 | 15 | Projekt, Adresse des Lieferanten öffnen und löschen; Einkaufsauftrag ansehen. | Abschnitte „Eingangsrechnungen“ bzw. „Kreditoren“ mit „Offen gesamt“. Löschen verhindert, Meldung nennt die Belege. |
+| TS-019-18 | 16 | `/finanzen/kreditoren/999999` öffnen. | „Rechnung nicht gefunden“. |
+
+## ANF-020 Zahlungen
+
+Vorbereitung wie ANF-018 und ANF-019, dazu die Zahlungsbedingung „10 Tage 2 %, 30 netto“, ein EUR-Kurs am
+Zahlungsdatum und gebuchte Rechnungen und Gutschriften für „Muster AG“ und „Lieferant AG“.
+
+| Nr | AK | Schritte | Erwartet |
+|----|----|----------|----------|
+| TS-020-01 | 1 | Reiter „Zahlungen“, „Zahlungseingang“. | `?neu=eingang`; Datum heute, Standard-Bankkonto, Währung CHF. |
+| TS-020-02 | 2 | Kunde „Muster AG“ wählen. | Offene Rechnungen und Gutschriften mit offenem Betrag; andere Währungen ausgegraut. |
+| TS-020-03 | 2 | Rechnungsnummer eingeben, „Übernehmen“. | Kunde gesetzt, Rechnung mit vollem Betrag vorgewählt, Betrag übernommen. |
+| TS-020-04 | 2, 3 | Betrag 105.94 bei Rechnung mit 2 % Skonto, „Betrag verteilen“. | Betrag 105.94, Skonto 2.16 vorgeschlagen; „vollständig zugeordnet“. |
+| TS-020-05 | 8 | „Zahlung buchen“. | Detailansicht; Rechnung „Bezahlt“. Journal: Soll 1020 105.94, Soll 3800 2.00 (UN81), Soll 2200 0.16, Haben 1100 108.10. |
+| TS-020-06 | 4 | Teilzahlung 45 auf Rechnung 108.10 mit Differenz 5 auf Konto 6000. | Rechnung „Teilweise bezahlt“ (offen 58.10); Journal Soll 6000 5.00. Ohne Konto: Feldmeldung. |
+| TS-020-07 | 5, 9 | EUR-Zahlung 1100 auf Rechnung über EUR 1081 (gebucht zu 0.95, Kurs heute 0.97). | Vorauszahlung 19 EUR; Kursgewinn 21.62 auf 6960. |
+| TS-020-08 | — | Mehr zuordnen als bezahlt. | „Zugeordnet ist … mehr als der Betrag der Zahlung.“ |
+| TS-020-09 | 11 | „Verrechnen Debitoren“: Rechnung und Gutschrift mit gleichem Betrag. | Beide ausgeglichen, keine Buchung. Ungleiche Beträge: Meldung mit Differenz. |
+| TS-020-10 | 5, 11 | Vorauszahlung mit einer Rechnung verrechnen. | Vorauszahlung offen 0; die Zahlung zeigt „Verrechnung der Vorauszahlung“. |
+| TS-020-11 | 10 | Zahlung mit verrechneter Vorauszahlung stornieren; dann Verrechnung und Zahlung stornieren. | Erst Hinweis; danach Gegenbuchungen, Rechnungen wieder „Offen“ bzw. „Teilweise bezahlt“. |
+| TS-020-12 | 6 | „Zahlungsausgang“ an Lieferant AG mit Skonto. | Journal: Soll 2000, Haben 1020, Haben 4900 und 1170 (Vorsteuer-Korrektur). |
+| TS-020-13 | 7 | Kreditorenliste: zwei Rechnungen markieren, „Als bezahlt erfassen“. | Fenster mit Datum und Bankkonto; je Rechnung ein Zahlungsausgang, Skonto bei laufender Frist; Meldung „2 Zahlungsausgänge erfasst.“ |
+| TS-020-14 | 12 | Zahlungsliste filtern (Art, Zeitraum, Bankkonto), sortieren, suchen nach Rechnungsnummer. | Zustand in der Webadresse; Spalte „Ausgeglichen“ nennt die Belege. |
+| TS-020-15 | 13 | „Offene Posten“, Stichtag Monatsende. | Debitoren und Kreditoren je Partner mit fünf Altersklassen und Summen in CHF. |
+| TS-020-16 | — | Bankkonto mit Zahlungen löschen. | „Mit diesem Bankkonto gibt es Zahlungen …“ |
 
 ## ANF-025 Firma
 

@@ -34,11 +34,11 @@
   leer oder beide gesetzt; die Skontofrist ist kleiner als die Zahlungsfrist, Skonto liegt über 0 und unter 100 %.
 - [x] **AK-3:** Gegeben die Eingaben, dann schlägt das System einen Rechnungstext vor, z. B.
   „Zahlbar innert 10 Tagen mit 2 % Skonto oder innert 30 Tagen netto“; der Text ist änderbar.
-- [ ] **AK-4:** Gegeben mehrere Bedingungen, dann ist genau eine als **Standard** markiert; sie wird bei
+- [x] **AK-4:** Gegeben mehrere Bedingungen, dann ist genau eine als **Standard** markiert; sie wird bei
   neuen Rechnungen verwendet, wenn die Adresse keine Vorgabe hat.
 - [x] **AK-5:** Gegeben eine Adresse (ANF-002), dann kann im Adressformular eine Vorgabe-Zahlungsbedingung
   gewählt werden; sie wird in neuen Rechnungen an diese Adresse vorgeschlagen.
-- [ ] **AK-6:** Gegeben eine Rechnung, dann wird **Fälligkeit = Rechnungsdatum + Zahlungsfrist** und
+- [x] **AK-6:** Gegeben eine Rechnung, dann wird **Fälligkeit = Rechnungsdatum + Zahlungsfrist** und
   **Skonto bis = Rechnungsdatum + Skontofrist** berechnet und in der Rechnung gespeichert (spätere Änderungen
   der Bedingung wirken nicht auf bestehende Rechnungen).
 - [x] **AK-7:** Gegeben eine verwendete Bedingung, dann kann sie nicht gelöscht, nur deaktiviert werden.
@@ -89,8 +89,8 @@ Festlegungen bei der Umsetzung:
 - **Standard:** Die erste Zahlungsbedingung wird automatisch Standard. Die Standard-Bedingung bleibt aktiv und lässt sich nicht löschen.
 - **Rechnungstext:** Beispiel „Zahlbar innert 10 Tagen mit 2 % Skonto oder innert 30 Tagen netto“; bei Frist 0 „Zahlbar sofort netto“.
 - **Löschen (AK-7):** Eine von einer Adresse verwendete Bedingung lässt sich nicht löschen, nur deaktivieren.
-- **AK-4 (teilweise):** Die Standard-Regel gilt; der Vorschlag bei neuen Rechnungen folgt mit ANF-018.
-- **AK-6 (offen):** Fälligkeit und Skontofrist werden erst beim Buchen von Rechnungen berechnet (ANF-018).
+- **AK-4:** Neue Ausgangsrechnungen (ANF-018) übernehmen die Vorgabe der Adresse, sonst die Standard-Bedingung. Eingangsrechnungen (ANF-019) ebenso.
+- **AK-6:** Ausgangsrechnungen (ANF-018) speichern Fälligkeit, Skonto bis und Skonto % beim Buchen. Eingangsrechnungen (ANF-019) ebenso; dort lässt sich die Fälligkeit überschreiben.
 - Geprüft: 7 Modultests (Rechnungstext, Skonto-Paare, Tagesgrenzen, Pflichtfelder), Migration auf einer leeren Datenbank, Löschsperre per Fremdschlüssel.
 - Die Browser-Prüfung steht noch aus.
 
@@ -100,3 +100,5 @@ Festlegungen bei der Umsetzung:
 |------------|--------------------|-----------------|
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
 | 2026-11-25 | Claude Code | Freigegeben (Umsetzung von Block 1 beauftragt); umgesetzt bis auf AK-4 (Standard bei Rechnungen) und AK-6 (Fälligkeit, mit ANF-018) |
+| 2026-11-27 | Claude Code | AK-4 und AK-6 für Ausgangsrechnungen umgesetzt (ANF-018) |
+| 2026-11-27 | Claude Code | AK-4 und AK-6 für Eingangsrechnungen (ANF-019) |

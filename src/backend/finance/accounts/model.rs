@@ -325,6 +325,19 @@ pub const SYSTEM_ROLES: &[SystemRole] = &[
         kinds: &["passiv"],
         required: false,
     },
+    // ANF-018 AK-5: Vorgabe für das Ertragskonto neuer Rechnungspositionen
+    SystemRole {
+        key: "ertrag",
+        label: "Ertrag (Vorgabe Debitoren)",
+        kinds: &["ertrag"],
+        required: false,
+    }, // ANF-019 AK-8: Vorgabe für das Aufwandskonto übernommener Einkaufspositionen
+    SystemRole {
+        key: "aufwand",
+        label: "Aufwand (Vorgabe Kreditoren)",
+        kinds: &["aufwand"],
+        required: false,
+    },
 ];
 
 pub fn system_role(key: &str) -> Option<&'static SystemRole> {
@@ -732,6 +745,8 @@ pub const KMU_SYSTEM_ACCOUNTS: &[(&str, &str)] = &[
     ("gewinnvortrag", "2970"),
     ("eroeffnungsbilanz", "9100"),
     ("jahresergebnis", "2979"),
+    ("ertrag", "3400"),
+    ("aufwand", "4000"),
 ];
 
 #[cfg(test)]

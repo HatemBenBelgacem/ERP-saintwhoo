@@ -68,7 +68,7 @@ Die Firmenverwaltung liegt in den Einstellungen unter `/einstellungen/firma`.
 **Verwendung**
 - [ ] **AK-9:** Gegeben eine Druckansicht eines Belegs (Rechnung, Gutschrift, Mahnung, Auswertung), dann
   stammt der Absender immer aus der Firma und ihrer Adresse zum Zeitpunkt des Drucks.
-- [ ] **AK-10:** Gegeben keine erfasste Firma, dann zeigen Belege im Druck einen Hinweis „Firma nicht
+- [x] **AK-10:** Gegeben keine erfasste Firma, dann zeigen Belege im Druck einen Hinweis „Firma nicht
   erfasst“, und das Buchen von Debitorenrechnungen ist mit Verweis auf `/einstellungen/firma` gesperrt.
 - [x] **AK-11:** Gegeben die Adresse der Firma, wenn der Benutzer sie löschen will, dann wird das Löschen
   verhindert und die Meldung nennt „als eigene Firma“ (wie ANF-002 AK-16). In der Adress-Detailansicht ist
@@ -132,7 +132,9 @@ Hinweise:
 - **AK-2:** Die Bankkonten werden mit ANF-015 als Verweis ergänzt.
 - **AK-6:** UID-Prüfung und MWST-Nummer umgesetzt. Die MWST-Nummer erscheint nur bei eingeschalteter MWST-Pflicht (ANF-012).
 - **AK-9/AK-10:** Der Absenderblock (`SenderBlock`) liest die Firma zum Zeitpunkt der Anzeige und zeigt ohne Firma
-  „Firma nicht erfasst“. Die Druckansichten und die Buchungssperre für Debitorenrechnungen folgen mit ANF-018 ff.
+  „Firma nicht erfasst“. Die Druckansicht der Ausgangsrechnungen (ANF-018) nutzt den Absenderblock; ohne Firma
+  ist das Buchen von Debitorenrechnungen mit Verweis auf `/einstellungen/firma` gesperrt. Mahnungen und
+  Auswertungen folgen (AK-9 teilweise).
 - **AK-7:** Der Dateityp wird am Inhalt erkannt, nicht an der Endung. SVG-Logos werden mit
   `Content-Security-Policy: sandbox` ausgeliefert, damit eingebettete Skripte nicht ausgeführt werden.
 - **AK-8:** Geprüft beim Erfassen und Bearbeiten. Wird die Adresse später im Adressstamm unvollständig, zeigt die
@@ -150,3 +152,4 @@ Geprüft: AK-1, AK-3 bis AK-8, AK-11, AK-12 im Browser (grosser Bildschirm und M
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt (Antwort auf offene Frage zu ANF-018: Absender aus Firmenverwaltung) |
 | 2026-11-18 | Hatem Ben Belgacem | Umgesetzt bis auf Bankkonten (ANF-015), MWST-Bedingung (ANF-012) und Belege (ANF-018 ff.) |
 | 2026-11-19 | Claude Code | MWST-Nummer nur bei eingeschalteter MWST-Pflicht (AK-6, mit ANF-012) |
+| 2026-11-27 | Claude Code | AK-10 und AK-9 für Rechnungen und Gutschriften umgesetzt (ANF-018) |

@@ -9,7 +9,11 @@ use crate::backend::projects::model::Level;
 use crate::components::{
     addresses::{AddressDetailPage, AddressListPage},
     auth::{LoginPage, RegisterPage},
-    finance::{BookingDetailPage, JournalListPage, ReportsPage},
+    finance::{
+        BookingDetailPage, CreditorDetailPage, CreditorListPage, InvoiceDetailPage,
+        InvoiceListPage, InvoicePrintPage, JournalListPage, PaymentDetailPage, PaymentsPage,
+        ReportsPage,
+    },
     home::HomePage,
     portal::PortalPage,
     projects::{ElementDetailPage, ProjectDetailPage, ProjectListPage},
@@ -58,6 +62,11 @@ pub fn App() -> impl IntoView {
                 // ANF-026: Registrierung (öffentlich) und Portal-Übersicht (ohne Mandant erreichbar)
                 <Route path=StaticSegment("registrieren") view=RegisterPage/>
                 <Route path=StaticSegment("portal") view=PortalPage/>
+                // ANF-018 AK-11: Druckansicht einer Rechnung für A4, ohne Grundgerüst
+                <Route
+                    path=(StaticSegment("finanzen"), StaticSegment("debitoren"), ParamSegment("id"), StaticSegment("druck"))
+                    view=InvoicePrintPage
+                />
                 <ParentRoute path=StaticSegment("") view=AppLayout>
                     <Route path=StaticSegment("") view=HomePage/>
                     // ANF-010 Finanzen: Übersicht folgt (AK-4); bis dahin führt der Bereich ins Journal
@@ -74,6 +83,33 @@ pub fn App() -> impl IntoView {
                     <Route
                         path=(StaticSegment("finanzen"), StaticSegment("journal"), ParamSegment("id"))
                         view=BookingDetailPage
+                    />
+                    // ANF-018 Debitoren – Eingabe im Modal-Fenster (?neu=rechnung|gutschrift|position, ?bearbeiten=…)
+                    <Route
+                        path=(StaticSegment("finanzen"), StaticSegment("debitoren"))
+                        view=InvoiceListPage
+                    />
+                    <Route
+                        path=(StaticSegment("finanzen"), StaticSegment("debitoren"), ParamSegment("id"))
+                        view=InvoiceDetailPage
+                    />
+                    // ANF-019 Kreditoren – Eingabe im Modal-Fenster (?neu=rechnung|gutschrift|position, ?bearbeiten=…)
+                    <Route
+                        path=(StaticSegment("finanzen"), StaticSegment("kreditoren"))
+                        view=CreditorListPage
+                    />
+                    <Route
+                        path=(StaticSegment("finanzen"), StaticSegment("kreditoren"), ParamSegment("id"))
+                        view=CreditorDetailPage
+                    />
+                    // ANF-020 Zahlungen (?neu=eingang|ausgang|verrechnung-…, ?beleg=, ?ansicht=offene-posten, ?stichtag=)
+                    <Route
+                        path=(StaticSegment("finanzen"), StaticSegment("zahlungen"))
+                        view=PaymentsPage
+                    />
+                    <Route
+                        path=(StaticSegment("finanzen"), StaticSegment("zahlungen"), ParamSegment("id"))
+                        view=PaymentDetailPage
                     />
                     // ANF-021 Auswertungen (?art=, ?geschaeftsjahr_id=, ?von=, ?bis=, ?konto_id=, ?projekt_id=, ?vorjahr=)
                     <Route
