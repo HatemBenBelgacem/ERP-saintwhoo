@@ -118,6 +118,8 @@ pub async fn delete_address(id: i64) -> Result<(), ServerFnError> {
             let where_used = match db.table() {
                 Some("projekt") => "in Projekten (als Kunde)".to_string(),
                 Some("einkaufsauftrag") => "in Einkaufsaufträgen (als Lieferant)".to_string(),
+                // ANF-018 AK-16, ANF-010 AK-9
+                Some("debitorenrechnung") => "in Ausgangsrechnungen (als Kunde)".to_string(),
                 // ANF-025 AK-11
                 Some("firma") => "als eigene Firma".to_string(),
                 // ANF-005 AK-19

@@ -32,6 +32,7 @@ Schlägt ein Szenario fehl, trage es in [task.md](task.md) als offene Aufgabe ei
 | ANF-006 | Aufgaben | 21 | Bedienung im Browser noch nicht von Hand geprüft |
 | ANF-007 | Anmeldung | 29 | Seit ANF-026 mit E-Mail statt Benutzername; TS-007-26/27 entfallen |
 | ANF-026 | Registrierung, Datenbank, Mandant | 32 | Alle Schritte (Portal-Datenbank, Registrierung, Anmeldung, Datenbank erstellen, Mandant definieren, Passwort im Portal) |
+| ANF-018 | Debitoren | 20 | Bedienung im Browser noch nicht von Hand geprüft |
 
 Die Anforderungen ANF-005 bis ANF-007 haben bisher keine Prüfung im Browser. Mit diesen Szenarien starten.
 
@@ -365,6 +366,34 @@ Vorbereitung: Kontenrahmen übernehmen (TS-011-01) und eine Firma mit UID erfass
 | TS-013-09 | 7 | Das ältere Jahr 2026 ansehen, dann das neueste (2027) löschen. | Beim älteren Jahr fehlt „Geschäftsjahr löschen“. Beim neuesten erscheint die Bestätigung. Nach dem Löschen sind das Jahr und seine Perioden weg. |
 | TS-013-10 | 6 | Gesperrte Periode: Buchung mit Datum darin erfassen. | Erst mit dem Buchungsjournal (ANF-017) prüfbar. Die Prüffunktion für das Buchungsdatum ist vorbereitet. |
 | TS-013-11 | 12 | Seite am Mobiltelefon (390 px) öffnen, Perioden aufklappen. | Keine seitliche Verschiebung. Tabelle und Knöpfe sind erreichbar. |
+
+## ANF-018 Debitoren
+
+Vorbereitung: Mandant mit Firma, Kontenplan aus der KMU-Vorlage (mit Systemkonten), Geschäftsjahr 2026, MWST-Pflicht
+ab 01.01.2024 mit Standard-Codes, Standard-Bankkonto, Adresse „Muster AG“ und Projekt mit Kunde „Muster AG“.
+
+| Nr | AK | Schritte | Erwartet |
+|----|----|----------|----------|
+| TS-018-01 | 1, 2 | Finanzen › Reiter „Debitoren“ öffnen. | Tabelle mit Nummer, Art, Kunde, Projekt, Rechnungsdatum, Fälligkeit, Gesamtbetrag, Offen, Währung, Status. Filter „Offen und teilweise bezahlt“, sortiert nach Fälligkeit. Ohne Belege: „Keine offenen Rechnungen.“ |
+| TS-018-02 | 4 | „Neue Rechnung“ wählen, ohne Kunde speichern. | Webadresse `?neu=rechnung`. Meldung „Bitte einen Kunden wählen.“; Rechnungsdatum ist heute vorbelegt. |
+| TS-018-03 | 7 | Im neuen Fenster zuerst das Projekt wählen. | Der Kunde des Projekts („Muster AG“) erscheint im Feld Kunde. |
+| TS-018-04 | 4 | Mit Kunde, Zahlungsbedingung „Vorgabe“ speichern. | Detailansicht „Entwurf Rechnung“, Zahlungsbedingung der Adresse bzw. „30 Tage netto“, Fälligkeit „wird beim Buchen berechnet“. |
+| TS-018-05 | 5 | „Neue Position“: Beratung, 3 h, 33.33, ohne Rabatt. | Ertragskonto 3400 und Code UN81 sind vorgeschlagen. Nach dem Speichern: Betrag 99.99. |
+| TS-018-06 | 6 | Summen ansehen. | Zwischensumme 99.99, MWST UN81 8.1 % 8.10, Rundung 0.01, Gesamtbetrag CHF 108.10. |
+| TS-018-07 | 5 | Zweite Position anlegen, mit ▲ nach oben schieben, bearbeiten, löschen. | Reihenfolge, Änderung und Löschen wirken sofort. Menge 0 oder Rabatt 101 ergeben Feldmeldungen. |
+| TS-018-08 | 8 | „Buchen“ wählen und bestätigen. | Nummer R-2026-0001, Status „Offen“, Fälligkeit = Rechnungsdatum + 30 Tage. „Im Journal anzeigen“ führt zur Buchung mit Herkunft „Debitoren“: Soll 1100 108.10, Haben 3400 99.99 (Basis), Haben 2200 8.10, Haben 6990 0.01. |
+| TS-018-09 | 10 | Gebuchte Rechnung bearbeiten. | Nur Referenz, Einleitungs-, Schlusstext und Bemerkung sind änderbar; Positionen ohne Knöpfe. |
+| TS-018-10 | 9 | Entwurf mit Datum in einer gesperrten Periode buchen. | Meldung „Die Periode für das Datum … ist gesperrt.“; der Entwurf bleibt unverändert, keine Nummer verbraucht. |
+| TS-018-11 | 9 | Systemkonto „Debitoren“ entfernen, Entwurf buchen. Danach Firma fehlt (neuer Mandant). | „Das Systemkonto „Debitoren“ fehlt …“ bzw. „Die eigene Firma ist nicht erfasst …“. Nichts wird gebucht. |
+| TS-018-12 | 8 | Entwurf in EUR ohne Kurs buchen, danach Kurs 0.95 erfassen und erneut buchen. | Erst „Für EUR gibt es keinen Kurs …“. Dann gebucht; Kurs 0.95 und Gesamtbetrag in CHF in der Detailansicht. |
+| TS-018-13 | 3 | Rechnung mit Rechnungsdatum vor über 30 Tagen buchen, Liste öffnen. | Fälligkeit rot mit „überfällig · N Tage“. |
+| TS-018-14 | 11 | „Drucken“ wählen. | Neues Fenster `/finanzen/debitoren/<Kennung>/druck` mit Absender, Kundenadresse, Nummer, Datum, MWST-Nr., Positionen, MWST je Satz, Gesamtbetrag, Zahlungstext, IBAN. Ein Entwurf zeigt „Entwurf“. Druckvorschau auf A4. |
+| TS-018-15 | 12 | Entwurf löschen und bestätigen. | Zur Liste mit „Der Entwurf (Rechnung) wurde gelöscht.“ |
+| TS-018-16 | 13 | Offene Rechnung „Stornieren“ und bestätigen. | Status „Storniert“, offen 0. Im Journal: Gegenbuchung „Storno: Rechnung …“, Original „Storniert“. |
+| TS-018-17 | 14 | Bei einer gebuchten Rechnung „Gutschrift erstellen“. | Entwurf Gutschrift mit denselben Positionen und „Bezug auf Rechnung“. Gebucht als G-2026-0001; im Journal Debitoren im Haben. In der Liste mit Minus. |
+| TS-018-18 | 15 | Projekt-Detailansicht öffnen. | Abschnitt „Ausgangsrechnungen“ mit den Belegen des Projekts. |
+| TS-018-19 | 16 | Adresse „Muster AG“ öffnen, dann löschen. | Abschnitt „Debitoren“ mit offenen Rechnungen und „Offen gesamt“. Löschen: „… in Ausgangsrechnungen (als Kunde) verwendet …“. |
+| TS-018-20 | 17 | `/finanzen/debitoren/999999` öffnen. | „Rechnung nicht gefunden“ mit Verweis zur Liste. |
 
 ## ANF-025 Firma
 

@@ -129,6 +129,14 @@ fn BookingCard(booking: BookingDetail) -> impl IntoView {
                         <a href=format!("/finanzen/journal/{}", r.id) class="link link-hover">{r.label.clone()}</a>
                     </p>
                 })}
+                // AK-12: Verweis zum Herkunftsbeleg (Ausgangsrechnung, ANF-018)
+                {booking.herkunftsbeleg.clone().map(|r| view! {
+                    <p class="alert alert-info alert-soft text-sm">
+                        "Automatische Buchung aus "
+                        <a href=format!("/finanzen/debitoren/{}", r.id) class="link link-hover">{r.label.clone()}</a>
+                        ". Storniert wird sie über den Beleg."
+                    </p>
+                })}
                 {booking.storniert_durch.clone().map(|r| view! {
                     <p class="alert alert-warning alert-soft text-sm">
                         "Storniert durch "

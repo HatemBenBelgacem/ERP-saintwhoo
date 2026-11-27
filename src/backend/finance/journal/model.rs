@@ -220,6 +220,8 @@ pub struct BookingDetail {
     pub zeilen: Vec<LineView>,
     pub storno_von: Option<BookingRef>,
     pub storniert_durch: Option<BookingRef>,
+    /// Herkunftsbeleg einer automatischen Buchung, z. B. Ausgangsrechnung (AK-12, ANF-018)
+    pub herkunftsbeleg: Option<BookingRef>,
     pub summe: i64,
 }
 

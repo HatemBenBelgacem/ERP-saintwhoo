@@ -2,9 +2,10 @@
 
 use leptos::prelude::*;
 
+use crate::backend::finance::debtors::model::DEBTORS_URL;
 use crate::backend::finance::journal::server_fns::JOURNAL_URL;
 
-/// `active` ist der Schlüssel des aktiven Reiters: `journal` oder `auswertungen`.
+/// `active` ist der Schlüssel des aktiven Reiters: `journal`, `debitoren` oder `auswertungen`.
 #[component]
 pub fn FinanceTabs(active: &'static str) -> impl IntoView {
     view! {
@@ -21,9 +22,15 @@ pub fn FinanceTabs(active: &'static str) -> impl IntoView {
             >
                 "Journal"
             </a>
-            <span role="tab" class="tab tab-disabled whitespace-nowrap" aria-disabled="true" title="Folgt mit ANF-018">
+            <a
+                role="tab"
+                href=DEBTORS_URL
+                class="tab whitespace-nowrap"
+                class:tab-active=active == "debitoren"
+                aria-current=if active == "debitoren" { "page" } else { "false" }
+            >
                 "Debitoren"
-            </span>
+            </a>
             <span role="tab" class="tab tab-disabled whitespace-nowrap" aria-disabled="true" title="Folgt mit ANF-019">
                 "Kreditoren"
             </span>

@@ -169,6 +169,21 @@ pub async fn storniert_durch<'e>(
     .await
 }
 
+/// Ausgangsrechnung bzw. Gutschrift, aus der die Buchung stammt (AK-12, ANF-018); die Kennung ist die des Belegs.
+pub async fn debtor_document<'e>(
+    exec: impl PgExecutor<'e>,
+    id: i64,
+) -> Result<Option<BookingRef>, sqlx::Error> {
+    sqlx::query_as(
+        "SELECT r.id, CASE r.art WHEN 'gutschrift' THEN 'Gutschrift ' ELSE 'Rechnung ' END \
+                || COALESCE(r.nummer, '') AS label \
+         FROM debitorenrechnung r WHERE r.buchung_id = $1",
+    )
+    .bind(id)
+    .fetch_optional(exec)
+    .await
+}
+
 /// Geschäftsjahr zu einem Datum mit Status des Jahrs und der Periode (ANF-013 AK-5, AK-6).
 /// `None`, wenn kein Geschäftsjahr das Datum enthält.
 pub async fn year_for_date<'e>(

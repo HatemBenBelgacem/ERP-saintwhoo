@@ -227,6 +227,11 @@ pub async fn delete_element(level: Level, id: i64) -> Result<(), ServerFnError> 
                 if db.table() == Some("buchungszeile") {
                     verwendet.push("Buchungen".to_string());
                 }
+                // ANF-018 AK-16: Ausgangsrechnungen mit Nummer nennen
+                let invoices = repository::invoice_numbers_of_project(&pool, id).await?;
+                if !invoices.is_empty() {
+                    verwendet.push(format!("Ausgangsrechnungen ({})", invoices.join(", ")));
+                }
                 let list = if verwendet.is_empty() {
                     "anderen Datensätzen".to_string()
                 } else {

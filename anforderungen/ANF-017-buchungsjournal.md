@@ -160,7 +160,7 @@ Festlegungen bei der Umsetzung:
 - **AK-5:** Die Vorgabe ist brutto. Die MWST-Zeile liegt auf derselben Seite wie die Zeile, die sie berechnet. Netto oder brutto gilt für alle Zeilen einer Buchung.
 - **AK-9:** Die Journalnummer kommt aus einem Zähler je Geschäftsjahr, der in der Buchungstransaktion gesperrt wird. Bricht eine Buchung ab, entsteht keine Lücke.
 - **AK-11:** Die Gegenbuchung bekommt eine eigene Journalnummer. Das Original wird „storniert“; ein zweiter Storno ist durch einen eindeutigen Index ausgeschlossen.
-- **AK-12:** Der Verweis zum Herkunftsbeleg folgt mit ANF-018 und ANF-019. Bis dahin gibt es nur den Hinweis, dass automatische Buchungen über ihren Beleg storniert werden.
+- **AK-12:** Buchungen aus Ausgangsrechnungen (ANF-018) verweisen in der Detailansicht auf ihren Beleg. Der Verweis für Eingangsrechnungen folgt mit ANF-019.
 - **Offen:** Der Zeilentext (`buchungszeile.text`) ist im Schema, aber noch nicht im Formular. Die Browser-Prüfung steht aus, siehe `task.md`.
 
 ## 8. Änderungshistorie
@@ -169,3 +169,4 @@ Festlegungen bei der Umsetzung:
 |------------|--------------------|-----------------|
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
 | 2026-11-26 | Claude Code | Umgesetzt: Journal mit Zeilen, Entwurf, Buchen, Storno, Journalnummer je Geschäftsjahr, Unveränderlichkeit und Ausgleich in der Datenbank. Reste aus ANF-010, ANF-011, ANF-012, ANF-013 mit umgesetzt. |
+| 2026-11-27 | Claude Code | AK-12: Verweis zum Herkunftsbeleg für Ausgangsrechnungen (ANF-018) |

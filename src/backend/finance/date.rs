@@ -98,6 +98,45 @@ pub fn months_between(start: &str, end: &str) -> Vec<(String, String)> {
     result
 }
 
+/// Tage seit dem 1.1.1970 (proleptischer gregorianischer Kalender).
+fn days_from_civil(y: i32, m: u32, d: u32) -> i64 {
+    let y = i64::from(y) - i64::from(m <= 2);
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let mp = (i64::from(m) + 9) % 12;
+    let doy = (153 * mp + 2) / 5 + i64::from(d) - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    era * 146_097 + doe - 719_468
+}
+
+/// Datum aus Tagen seit dem 1.1.1970.
+fn civil_from_days(z: i64) -> (i32, u32, u32) {
+    let z = z + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
+    let y = yoe + era * 400 + i64::from(m <= 2);
+    (y as i32, m, d)
+}
+
+/// `s` plus `days` Tage, z. B. Fälligkeit = Rechnungsdatum + Zahlungsfrist (ANF-016 AK-6).
+pub fn add_days(s: &str, days: i64) -> Option<String> {
+    let (y, m, d) = split(s)?;
+    let (y, m, d) = civil_from_days(days_from_civil(y, m, d) + days);
+    Some(format(y, m, d))
+}
+
+/// Anzahl Tage von `start` bis `end` (negativ, wenn `end` vor `start` liegt).
+pub fn days_between(start: &str, end: &str) -> Option<i64> {
+    let (sy, sm, sd) = split(start)?;
+    let (ey, em, ed) = split(end)?;
+    Some(days_from_civil(ey, em, ed) - days_from_civil(sy, sm, sd))
+}
+
 /// Monatsname mit Jahr, z. B. „März 2026“.
 pub fn month_label(s: &str) -> Option<String> {
     let (y, m, _) = split(s)?;
@@ -158,5 +197,17 @@ mod tests {
         assert_eq!(shift_month(2026, 1, -1), (2025, 12));
         assert_eq!(month_label("2026-03-01").as_deref(), Some("März 2026"));
         assert_eq!(year_of("2031-07-01"), Some(2031));
+    }
+
+    #[test]
+    fn add_days_over_month_year_and_leap_day() {
+        assert_eq!(add_days("2026-01-31", 30).as_deref(), Some("2026-03-02"));
+        assert_eq!(add_days("2026-12-15", 30).as_deref(), Some("2027-01-14"));
+        assert_eq!(add_days("2028-02-28", 1).as_deref(), Some("2028-02-29"));
+        assert_eq!(add_days("2026-03-01", 0).as_deref(), Some("2026-03-01"));
+        assert_eq!(add_days("2026-03-01", -1).as_deref(), Some("2026-02-28"));
+        assert_eq!(add_days("kein Datum", 3), None);
+        assert_eq!(days_between("2026-11-01", "2026-11-27"), Some(26));
+        assert_eq!(days_between("2026-12-31", "2026-01-01"), Some(-364));
     }
 }

@@ -112,7 +112,7 @@ Grundsätze für alle Komponenten:
   bearbeitbar oder löschbar; Korrekturen erfolgen über „Stornieren“, das eine Gegenbuchung erzeugt.
 - [x] **AK-8:** Gegeben eine gesperrte Periode oder ein abgeschlossenes Geschäftsjahr, wenn ein Benutzer
   mit Datum darin buchen will, dann wird das Buchen mit einer Meldung verhindert.
-- [ ] **AK-9:** Gegeben eine Adresse oder ein Projekt mit Finanzbelegen, wenn der Benutzer sie löschen
+- [x] **AK-9:** Gegeben eine Adresse oder ein Projekt mit Finanzbelegen, wenn der Benutzer sie löschen
   will, dann wird das Löschen verhindert und die Meldung nennt die Belege (wie ANF-002 AK-16).
 
 ## 4. Daten / Felder
@@ -168,7 +168,7 @@ Umgesetzt mit ANF-017 und ANF-021:
 - **AK-6:** Unausgeglichene Buchungen lehnt der Server ab; die Datenbank prüft den Ausgleich am Ende der Transaktion.
 - **AK-7:** Gebuchte Belege lassen sich nicht ändern oder löschen. Die Datenbank erzwingt das; Korrektur über Storno.
 - **AK-8:** Buchungen in gesperrten Perioden und in abgeschlossenen Geschäftsjahren werden abgelehnt (`check_booking_date`).
-- **AK-9:** Projekte mit Buchungen lassen sich nicht löschen; die Meldung nennt die Buchungen. Adressen folgen mit ANF-018, wenn es Rechnungen gibt.
+- **AK-9:** Projekte mit Buchungen oder Ausgangsrechnungen und Adressen mit Ausgangsrechnungen lassen sich nicht löschen; die Meldung nennt die Art der Belege (ANF-018). Eingangsrechnungen folgen mit ANF-019.
 - **Offen:** AK-4 (Übersicht mit Kennzahlen) und AK-5 (Hinweis bei fehlenden Stammdaten) folgen mit ANF-018 bis ANF-021.
 
 ## 8. Änderungshistorie
@@ -178,3 +178,4 @@ Umgesetzt mit ANF-017 und ANF-021:
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
 | 2026-11-18 | Hatem Ben Belgacem | Offene Fragen geklärt: führende Buchhaltung, MWST-Pflicht ab 100 000, QR-Rechnung offen, Firmenverwaltung ANF-025 ergänzt |
 | 2026-11-26 | Claude Code | Umgesetzt: Navigation und Reiter, Grundsätze für Buchungen (Ausgleich, Unveränderlichkeit, gesperrte Perioden), Löschprüfung für Projekte. Übersicht offen. |
+| 2026-11-27 | Claude Code | Reiter „Debitoren“ aktiv; AK-9 für Adressen mit Ausgangsrechnungen (ANF-018) |
