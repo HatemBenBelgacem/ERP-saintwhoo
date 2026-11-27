@@ -32,6 +32,7 @@ Schlägt ein Szenario fehl, trage es in [task.md](task.md) als offene Aufgabe ei
 | ANF-006 | Aufgaben | 21 | Bedienung im Browser noch nicht von Hand geprüft |
 | ANF-007 | Anmeldung | 29 | Seit ANF-026 mit E-Mail statt Benutzername; TS-007-26/27 entfallen |
 | ANF-026 | Registrierung, Datenbank, Mandant | 32 | Alle Schritte (Portal-Datenbank, Registrierung, Anmeldung, Datenbank erstellen, Mandant definieren, Passwort im Portal) |
+| ANF-021 | Auswertungen | 14 | Bedienung im Browser noch nicht von Hand geprüft |
 | ANF-018 | Debitoren | 20 | Bedienung im Browser noch nicht von Hand geprüft |
 | ANF-019 | Kreditoren | 18 | Bedienung im Browser noch nicht von Hand geprüft |
 | ANF-020 | Zahlungen | 16 | Bedienung im Browser noch nicht von Hand geprüft |
@@ -368,6 +369,29 @@ Vorbereitung: Kontenrahmen übernehmen (TS-011-01) und eine Firma mit UID erfass
 | TS-013-09 | 7 | Das ältere Jahr 2026 ansehen, dann das neueste (2027) löschen. | Beim älteren Jahr fehlt „Geschäftsjahr löschen“. Beim neuesten erscheint die Bestätigung. Nach dem Löschen sind das Jahr und seine Perioden weg. |
 | TS-013-10 | 6 | Gesperrte Periode: Buchung mit Datum darin erfassen. | Erst mit dem Buchungsjournal (ANF-017) prüfbar. Die Prüffunktion für das Buchungsdatum ist vorbereitet. |
 | TS-013-11 | 12 | Seite am Mobiltelefon (390 px) öffnen, Perioden aufklappen. | Keine seitliche Verschiebung. Tabelle und Knöpfe sind erreichbar. |
+
+## ANF-021 Auswertungen
+
+Vorbereitung: Mandant mit Kontenplan aus der KMU-Vorlage, Geschäftsjahre 2025 und 2026, einige gebuchte Buchungen
+in beiden Jahren (darunter eine mit Projekt), ein Entwurf, eine stornierte Buchung mit Gegenbuchung und ein
+bestellter Einkaufsauftrag für das Projekt.
+
+| Nr | AK | Schritte | Erwartet |
+|----|----|----------|----------|
+| TS-021-01 | 1 | Finanzen › Reiter „Auswertungen“ öffnen. | Auswahl der Auswertung, Geschäftsjahr (laufendes) und Zeitraum 01.01. bis heute; die Auswahl steht in der Webadresse und bleibt beim Neuladen. |
+| TS-021-02 | 3 | „Saldenliste“ wählen. | Alle Konten mit Bewegung oder Saldo, gruppiert nach Kontenklasse mit Zwischensummen; Hinweis „Soll und Haben stimmen überein.“ |
+| TS-021-03 | 2 | In der Saldenliste auf ein Konto klicken. | Kontoauszug des Kontos: Anfangssaldo, Zeilen mit Datum, Beleg, Text, Gegenkonto, Soll, Haben, laufendem Saldo, Summen und Endsaldo. |
+| TS-021-04 | 2 | Im Kontoauszug auf eine Buchung klicken. | Die Buchung öffnet sich im Journal. |
+| TS-021-05 | 2, 1 | Zeitraum auf März einschränken. | Anfangssaldo = Saldo bis Ende Februar; nur Buchungen im März. |
+| TS-021-06 | 4 | „Bilanz“ wählen. | Aktiven und Passiven nach Kontengruppen; Zeile mit dem Ergebnis des laufenden Jahres; „Aktiven und Passiven stimmen überein.“ |
+| TS-021-07 | 5 | „Erfolgsrechnung“ wählen. | Ertrag positiv, Aufwand negativ, Bruttogewinn, Betriebsergebnis, Jahresergebnis; gleich der Ergebniszeile der Bilanz. |
+| TS-021-08 | 6 | Bei Bilanz bzw. Erfolgsrechnung „Vorjahr vergleichen“. | Spalten Vorjahr (gleicher Zeitraum 2025) und Abweichung. |
+| TS-021-09 | 7 | „Projektauswertung“, dann ein Projekt wählen. | Erlöse, Aufwand, Ergebnis und offene Einkaufsaufträge je Projekt bzw. für das gewählte Projekt. Auf der Projektseite führt „Finanzauswertung“ hierher. |
+| TS-021-10 | 9 | Saldenliste mit einem Entwurf und einer stornierten Buchung ansehen. | Der Entwurf zählt nicht; Original und Gegenbuchung heben sich auf. Im Kontoauszug stehen beide. |
+| TS-021-11 | 8 | „Drucken“ wählen. | Druckvorschau A4 ohne Seitenleiste, Auswahl und Knöpfe. |
+| TS-021-12 | 8 | „CSV herunterladen“ bei Saldenliste und Kontoauszug. | Datei mit denselben Zahlen; öffnet sich in einer Tabellenkalkulation mit Umlauten. |
+| TS-021-13 | 10 | Testdatenbank mit 100 000 Buchungszeilen, alle Auswertungen aufrufen. | Jede Auswertung erscheint in unter 2 Sekunden (gemessen 2026-11-27: höchstens 0.62 s). |
+| TS-021-14 | — | Auswertungen am Mobiltelefon (390 px). | Keine seitliche Verschiebung der Seite; Tabellen lassen sich seitlich wischen. |
 
 ## ANF-018 Debitoren
 

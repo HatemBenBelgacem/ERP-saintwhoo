@@ -14,10 +14,9 @@ Stand: 2026-11-27
 - [ ] Browser-Prüfung Debitoren (ANF-018): Szenarien TS-018-01 bis TS-018-20, besonders Projekt-zuerst-Vorschlag des Kunden (AK-7), Bestätigungsfenster, Druckvorschau A4 und Mobiltelefon
 - [ ] ANF-014 AK-4 Rest: Kurs im Beleg überschreiben (Debitoren buchen heute immer zum Kurs am Rechnungsdatum)
 - [ ] Browser-Prüfung Journal und Auswertungen (ANF-017, ANF-021): Liste, Filter, Formular mit Zeilen und MWST-Vorschau, Entwurf, Buchen, Storno, Detail, Kontoauszug, Bilanz, Erfolgsrechnung, Projekte, Drucken und CSV. Dafür ist ein Mandant mit Anmeldung nötig; der Serverstart wendet die neuen Migrationen an
-- [ ] ANF-021 AK-10: Laufzeit der Auswertungen mit 100 000 Buchungszeilen messen
 - [ ] ANF-010 AK-4 und AK-5: Übersicht Finanzen mit Kennzahlen (ANF-018 bis ANF-020 sind umgesetzt; dort auch die Umsatzgrenze)
 - [ ] ANF-017: Zeilentext im Formular
-- [ ] Testszenarien für ANF-017 und ANF-021 in `testszenarien.md` ergänzen
+- [ ] Testszenarien für ANF-017 in `testszenarien.md` ergänzen
 - [ ] ANF-014 AK-4 und AK-5: Kurs am Belegdatum im Beleg vorschlagen und Löschsperre für Rechnungen und Buchungen (mit ANF-018 bis ANF-019)
 - [ ] Browser-Prüfung der Bankkonten, Zahlungsbedingungen und Währungen (Layout, Fenster, Speichern; noch nicht gemacht, der Serverstart gegen die Entwicklungsdatenbank ebenfalls nicht)
 - [ ] ANF-028: offene Fragen klären (Vorgabe der Personendichte, Besucherzahl je Zone oder Projekt, Grenzen der Ampel, Durchfluss je Meter Wegbreite); später Stufe 4 (Zeitregler)
@@ -47,6 +46,7 @@ Stand: 2026-11-27
 
 ## Erledigt
 
+- [x] ANF-021 AK-10: Laufzeit mit 100 069 Buchungszeilen gemessen (über den laufenden Server, Entwicklungsbau): alle Auswertungen, Seiten und CSV unter 0.7 s, Saldenabfrage 84 ms in der Datenbank; keine weiteren Indizes nötig. Testszenarien TS-021-01 bis TS-021-14 ergänzt
 - [x] ANF-020 Zahlungen freigegeben (Skonto mit MWST-Korrektur, Differenzen immer bestätigt) und umgesetzt: Zahlungseingang und -ausgang mit Verteilung nach Fälligkeit, Skontovorschlag, Differenz ausbuchen, Vorauszahlung, Kursdifferenz, Verrechnung ohne Buchung, Storno, „Als bezahlt erfassen“, Zahlungsliste, offene Posten mit Altersgliederung. Migration `20261206100000_zahlung`; Reste ANF-015 AK-6 und ANF-018 AK-14 mit erledigt. Ablauf über den laufenden Server gegen eine Testdatenbank geprüft
 - [x] ANF-019 Kreditoren freigegeben (kein Visum, IBAN und Belegablage später) und umgesetzt: Liste mit Filter „fällig bis“, Skonto- und Überfälligkeitsmarkierung, Erfassen mit Kontrollbetrag und Rundung bis 0.05, Netto/Brutto je Position, Übernahme aus dem Einkaufsauftrag mit „bestellt / verrechnet“, Buchen ins Journal, Storno, Löschsperren, Abschnitte in Projekt, Adresse und Einkauf. Migration `20261205100000_kreditorenrechnung`; Systemkonto „Aufwand“; Journal-Verweis auch für Eingangsrechnungen. Ablauf über den laufenden Server gegen eine Testdatenbank geprüft
 - [x] ANF-018 Debitoren freigegeben (Nummern R-/G-JJJJ-NNNN, Teilrechnungen später) und umgesetzt: Liste mit Filter und Überfälligkeit, Entwurf mit Positionen, Summen je MWST-Code, Buchen ins Journal (auch Fremdwährung), Druckansicht A4, Storno, Gutschrift, Abschnitte in Projekt und Adresse, Löschsperren. Migration `20261204100000_debitorenrechnung`; Systemkonto „Ertrag“; Verweis Journal → Beleg (ANF-017 AK-12); Reste aus ANF-010, ANF-011, ANF-012, ANF-014, ANF-016, ANF-025 mit umgesetzt. fmt, Clippy (Server und Browser) sauber, `cargo test` grün (201 Tests); Ablauf über den laufenden Server gegen eine Testdatenbank geprüft

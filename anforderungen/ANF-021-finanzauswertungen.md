@@ -9,7 +9,7 @@
 | **Modul**     | Finanzen                                          |
 | **Autor**     | Hatem Ben Belgacem                                |
 | **Erstellt**  | 2026-11-18                                        |
-| **Geändert**  | 2026-11-18                                        |
+| **Geändert**  | 2026-11-27                                        |
 
 ## 1. Beschreibung
 
@@ -59,7 +59,7 @@ Finanzbuchhaltung. Alle Auswertungen lesen ausschliesslich **gebuchte** Buchunge
   heruntergeladen werden.
 - [x] **AK-9:** Gegeben Entwürfe oder stornierte Buchungen, dann zählen Entwürfe nicht; stornierte
   Buchungen und ihre Gegenbuchungen heben sich auf und erscheinen nur im Kontoauszug.
-- [ ] **AK-10:** Die Auswertungen laufen auch bei 100 000 Buchungszeilen in unter 2 Sekunden
+- [x] **AK-10:** Die Auswertungen laufen auch bei 100 000 Buchungszeilen in unter 2 Sekunden
   (Indizes auf Konto und Datum).
 
 ## 4. Daten / Felder
@@ -100,9 +100,23 @@ Festlegungen bei der Umsetzung:
 - **AK-4:** Das Ergebnis früherer Jahre steht als eigene Zeile, bis der Jahresabschluss (ANF-023) vorliegt. Das laufende Ergebnis ist der Rest. So sind Aktiven und Passiven immer gleich.
 - **AK-5:** Ertrag steht positiv, Aufwand negativ. Zwischenergebnisse: Bruttogewinn 1 und 2, Betriebsergebnis vor und nach Abschreibungen (Konten 68xx), Jahresergebnis. Es stimmt mit der Bilanzzeile überein.
 - **AK-6:** Der Vergleich nimmt denselben Zeitraum ein Jahr früher; der 29. Februar wird zum 28. Februar.
-- **AK-8:** Drucken über den Browser mit ausgeblendeter Seitenleiste. Die Seitengröße A4 setzt der Browser; sie ist nicht festgelegt.
+- **AK-8:** Drucken über den Browser mit ausgeblendeter Seitenleiste. Seit ANF-018 setzt `@page` in `styles/app.css` die Seitengrösse A4 für alle Druckansichten.
 - **AK-9:** Entwürfe zählen nie. Stornos und Gegenbuchungen stehen beide im Journal und heben sich in den Salden auf.
-- **Offen:** AK-10 (Laufzeit bei 100 000 Zeilen) ist nicht gemessen. Die Indizes auf `buchung(datum)`, `buchung(status)` und `buchungszeile(konto_id)` sind angelegt.
+- **AK-10 (gemessen 2026-11-27):** Testdatenbank mit 100 069 Buchungszeilen (50 000 Buchungen über das Jahr verteilt,
+  die Hälfte mit Projekt), Entwicklungsbau ohne Optimierung, Abruf über den laufenden Server (Server-Funktion
+  `get_report`, Zeit bis zur vollständigen Antwort, zweiter Lauf):
+
+  | Auswertung | Zeit |
+  |------------|------|
+  | Saldenliste | 0.19 s (erster Lauf 0.54 s) |
+  | Bilanz / mit Vorjahr | 0.13 s / 0.23 s |
+  | Erfolgsrechnung / mit Vorjahr | 0.11 s / 0.16 s |
+  | Projektauswertung | 0.08 s |
+  | Kontoauszug (Konto mit 4 090 Zeilen) | 0.51 s |
+  | Seite Saldenliste / Kontoauszug, auf dem Server dargestellt | 0.39 s / 0.62 s |
+  | CSV Saldenliste / Kontoauszug | 0.13 s / 0.49 s |
+
+  Die Saldenabfrage braucht in der Datenbank 84 ms. Zusätzliche Indizes sind nicht nötig.
 
 ## 8. Änderungshistorie
 
@@ -110,3 +124,4 @@ Festlegungen bei der Umsetzung:
 |------------|--------------------|-----------------|
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
 | 2026-11-26 | Claude Code | Umgesetzt: Kontoauszug, Saldenliste, Bilanz, Erfolgsrechnung mit Vorjahr, Projektauswertung, Drucken und CSV. |
+| 2026-11-27 | Claude Code | AK-10 gemessen und erfüllt (100 000 Buchungszeilen, alle Auswertungen unter 0.7 s); Testszenarien ergänzt |
