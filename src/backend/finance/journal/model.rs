@@ -58,6 +58,14 @@ pub fn status_label(key: &str) -> &'static str {
     label_in(STATUSES, key)
 }
 
+/// Webadresse des Herkunftsbelegs einer automatischen Buchung (AK-12), z. B. `/finanzen/debitoren/4`.
+pub fn document_url(herkunft: &str, id: i64) -> String {
+    match herkunft {
+        "kreditor" => format!("/finanzen/kreditoren/{id}"),
+        _ => format!("/finanzen/debitoren/{id}"),
+    }
+}
+
 pub fn herkunft_label(key: &str) -> &'static str {
     label_in(HERKUNFT, key)
 }

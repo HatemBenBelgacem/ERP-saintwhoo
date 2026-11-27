@@ -9,14 +9,15 @@ use sqlx::{AssertSqlSafe, PgConnection, PgPool};
 use super::model::{CodeValues, VatCode, VatSettings};
 
 /// Ein MWST-Code mit Konto. `verwendet` prüft Einkaufspositionen, Buchungszeilen (ANF-017) und Positionen von
-/// Ausgangsrechnungen (ANF-018); Eingangsrechnungen folgen (AK-5, AK-7).
+/// Aus- und Eingangsrechnungen (ANF-018, ANF-019) (AK-5, AK-7).
 const SELECT_CODE: &str = "\
     SELECT m.id, m.code, m.bezeichnung, m.art, (m.satz * 100)::int8 AS satz, \
            m.gueltig_ab::text AS gueltig_ab, m.gueltig_bis::text AS gueltig_bis, m.konto_id, \
            k.nummer AS konto_nummer, k.bezeichnung AS konto_bezeichnung, m.formularziffer, m.aktiv, \
            (EXISTS (SELECT 1 FROM einkaufsposition p WHERE p.mwst_code_id = m.id) \
             OR EXISTS (SELECT 1 FROM buchungszeile z WHERE z.mwst_code_id = m.id) \
-            OR EXISTS (SELECT 1 FROM debitorenposition d WHERE d.mwst_code_id = m.id)) AS verwendet \
+            OR EXISTS (SELECT 1 FROM debitorenposition d WHERE d.mwst_code_id = m.id) \
+            OR EXISTS (SELECT 1 FROM kreditorenposition c WHERE c.mwst_code_id = m.id)) AS verwendet \
     FROM mwst_code m JOIN konto k ON k.id = m.konto_id";
 
 /// Die einzige Zeile der MWST-Einstellungen.

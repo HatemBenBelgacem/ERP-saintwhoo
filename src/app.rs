@@ -10,8 +10,8 @@ use crate::components::{
     addresses::{AddressDetailPage, AddressListPage},
     auth::{LoginPage, RegisterPage},
     finance::{
-        BookingDetailPage, InvoiceDetailPage, InvoiceListPage, InvoicePrintPage, JournalListPage,
-        ReportsPage,
+        BookingDetailPage, CreditorDetailPage, CreditorListPage, InvoiceDetailPage,
+        InvoiceListPage, InvoicePrintPage, JournalListPage, ReportsPage,
     },
     home::HomePage,
     portal::PortalPage,
@@ -91,6 +91,15 @@ pub fn App() -> impl IntoView {
                     <Route
                         path=(StaticSegment("finanzen"), StaticSegment("debitoren"), ParamSegment("id"))
                         view=InvoiceDetailPage
+                    />
+                    // ANF-019 Kreditoren – Eingabe im Modal-Fenster (?neu=rechnung|gutschrift|position, ?bearbeiten=…)
+                    <Route
+                        path=(StaticSegment("finanzen"), StaticSegment("kreditoren"))
+                        view=CreditorListPage
+                    />
+                    <Route
+                        path=(StaticSegment("finanzen"), StaticSegment("kreditoren"), ParamSegment("id"))
+                        view=CreditorDetailPage
                     />
                     // ANF-021 Auswertungen (?art=, ?geschaeftsjahr_id=, ?von=, ?bis=, ?konto_id=, ?projekt_id=, ?vorjahr=)
                     <Route

@@ -16,6 +16,7 @@ use crate::backend::purchase_orders::server_fns::{
     CancelOrder, DeleteOrder, DeletePosition, DeliverAll, MovePosition, PlaceOrder, get_order,
     list_project_orders,
 };
+use crate::components::finance::creditors::OrderCreditors;
 use crate::forms::{Breadcrumbs, data_version, error_message, use_base_href, with_params};
 use crate::icons::{Icon, IconView};
 
@@ -260,7 +261,16 @@ fn OrderView(detail: OrderDetail) -> impl IntoView {
             </div>
 
             <OrderInfo order=order.clone()/>
-            <PositionsCard order=order.clone() positions=positions.clone() totals/>
+            <PositionsCard order=order.clone() positions=positions.clone() totals=totals.clone()/>
+            // ANF-019 AK-8, AK-9: Eingangsrechnungen, „bestellt / verrechnet“, Übernahme
+            {(!is_draft).then(|| view! {
+                <OrderCreditors
+                    order_id=id
+                    bestellt=totals.total
+                    waehrung=order.waehrung.clone()
+                    can_invoice=matches!(order.status.as_str(), "bestellt" | "teilweise_geliefert" | "geliefert")
+                />
+            })}
 
             <p class="text-sm text-base-content/60">
                 "Erstellt am " {order.erstellt_am.clone()} " · Geändert am " {order.geaendert_am.clone()}

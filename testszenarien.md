@@ -33,6 +33,7 @@ Schlägt ein Szenario fehl, trage es in [task.md](task.md) als offene Aufgabe ei
 | ANF-007 | Anmeldung | 29 | Seit ANF-026 mit E-Mail statt Benutzername; TS-007-26/27 entfallen |
 | ANF-026 | Registrierung, Datenbank, Mandant | 32 | Alle Schritte (Portal-Datenbank, Registrierung, Anmeldung, Datenbank erstellen, Mandant definieren, Passwort im Portal) |
 | ANF-018 | Debitoren | 20 | Bedienung im Browser noch nicht von Hand geprüft |
+| ANF-019 | Kreditoren | 18 | Bedienung im Browser noch nicht von Hand geprüft |
 
 Die Anforderungen ANF-005 bis ANF-007 haben bisher keine Prüfung im Browser. Mit diesen Szenarien starten.
 
@@ -394,6 +395,32 @@ ab 01.01.2024 mit Standard-Codes, Standard-Bankkonto, Adresse „Muster AG“ un
 | TS-018-18 | 15 | Projekt-Detailansicht öffnen. | Abschnitt „Ausgangsrechnungen“ mit den Belegen des Projekts. |
 | TS-018-19 | 16 | Adresse „Muster AG“ öffnen, dann löschen. | Abschnitt „Debitoren“ mit offenen Rechnungen und „Offen gesamt“. Löschen: „… in Ausgangsrechnungen (als Kunde) verwendet …“. |
 | TS-018-20 | 17 | `/finanzen/debitoren/999999` öffnen. | „Rechnung nicht gefunden“ mit Verweis zur Liste. |
+
+## ANF-019 Kreditoren
+
+Vorbereitung wie ANF-018, dazu Vorsteuer-Code VM81, Lieferant „Lieferant AG“ und ein gelieferter Einkaufsauftrag
+mit zwei Positionen (eine davon mit MWST-Code, eine nur mit Satz 8.1 %) und einer nicht gelieferten Position.
+
+| Nr | AK | Schritte | Erwartet |
+|----|----|----------|----------|
+| TS-019-01 | 1, 2 | Finanzen › Reiter „Kreditoren“ öffnen. | Tabelle mit Nummer, Rechnungs-Nr., Lieferant, Einkaufsauftrag, Projekt, Rechnungsdatum, Fälligkeit, Skonto bis, Gesamtbetrag, Offen, Währung, Status. Filter „Offen …“, sortiert nach Fälligkeit; Feld „fällig bis“. |
+| TS-019-02 | 4 | „Neue Eingangsrechnung“ ohne Eingaben speichern. | `?neu=rechnung`. Meldungen bei Lieferant, Rechnungsnummer und Betrag gemäss Rechnung. |
+| TS-019-03 | 4, 5 | Lieferant AG, Nummer RE-1, Betrag 100 speichern; dann eine zweite mit „re-1“. | Erste wird Entwurf. Zweite: „Rechnung bereits erfasst …“. |
+| TS-019-04 | 6 | Position „Material“, Konto 4000, VM81, Betrag 108.10 „Brutto“. | Vorschau „Netto 100.00 · MWST 8.10 · Brutto 108.10“; nach dem Speichern dieselben Werte in der Tabelle. |
+| TS-019-05 | 6 | Position mit Konto 3400 speichern. | „Bitte ein aktives Aufwandskonto wählen.“ |
+| TS-019-06 | 7 | Betrag gemäss Rechnung 100 lassen. | Differenz -8.10 rot, „Buchen“ deaktiviert mit Hinweis. |
+| TS-019-07 | 7 | Betrag gemäss Rechnung auf 108.15 ändern (im Fenster erscheint die Differenz sofort). | „Rundung ausgleichen (0.05)“ erscheint; danach Differenz 0.00 und „Buchen“ aktiv. |
+| TS-019-08 | 10 | „Buchen“ bestätigen. | Nummer K-2026-0001, Status „Offen“, Fälligkeit aus der Zahlungsbedingung. Journal: Soll 4000 100.00, Soll 1170 8.10, Soll 6990 0.05, Haben 2000 108.15, Herkunft „Kreditoren“, Verweis zurück zum Beleg. |
+| TS-019-09 | 12 | Gebuchten Beleg bearbeiten. | Nur Fälligkeit und Bemerkung; Positionen ohne Knöpfe. |
+| TS-019-10 | 11 | Entwurf in gesperrter Periode bzw. ohne Systemkonto „Kreditoren“ buchen. | Meldung, nichts gebucht, keine Nummer verbraucht. |
+| TS-019-11 | 8 | Einkaufsauftrag öffnen, „Eingangsrechnung erfassen“. | Entwurf mit Lieferant, Projekt, Währung, Verweis auf den Auftrag; nur gelieferte Positionen, Konto 4000, Code VM81 auch für die Position ohne Code; Bearbeiten-Fenster offen. |
+| TS-019-12 | 9 | Einkaufsauftrag erneut öffnen. | Abschnitt „Eingangsrechnungen“ mit „Bestellt … / verrechnet …“; übersteigt verrechnet den Auftrag, erscheint ein Hinweis. |
+| TS-019-13 | 4 | Neue Eingangsrechnung eines anderen Lieferanten mit diesem Auftrag. | „Der Einkaufsauftrag gehört zu einem anderen Lieferanten.“ |
+| TS-019-14 | 3 | Beleg mit Skonto (z. B. 10 Tage 2 %) heute buchen; Liste öffnen. | „Skonto bis“ in Sekundärfarbe; nach Ablauf der Fälligkeit „überfällig · N Tage“. |
+| TS-019-15 | 13 | Entwurf löschen. | Zur Liste mit „Der Entwurf (…) wurde gelöscht.“ |
+| TS-019-16 | 14 | Offenen Beleg stornieren; danach dieselbe Rechnungsnummer neu erfassen. | Status „Storniert“, Gegenbuchung im Journal. Die Nummer lässt sich wieder erfassen. |
+| TS-019-17 | 15 | Projekt, Adresse des Lieferanten öffnen und löschen; Einkaufsauftrag ansehen. | Abschnitte „Eingangsrechnungen“ bzw. „Kreditoren“ mit „Offen gesamt“. Löschen verhindert, Meldung nennt die Belege. |
+| TS-019-18 | 16 | `/finanzen/kreditoren/999999` öffnen. | „Rechnung nicht gefunden“. |
 
 ## ANF-025 Firma
 

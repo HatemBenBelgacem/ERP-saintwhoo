@@ -8,13 +8,15 @@ Stand: 2026-11-27
 
 ## Offen
 
+- [ ] Browser-Prüfung Kreditoren (ANF-019): Szenarien TS-019-01 bis TS-019-18, besonders Live-Differenz und Netto/Brutto-Vorschau, „Eingangsrechnung erfassen“ im Einkauf
+- [ ] Bestehende Mandanten: Systemkonto „Aufwand (Vorgabe Kreditoren)“ zuordnen (die Vorlage setzt es nur bei neuen Kontenplänen; bis dahin gilt Konto 4000)
 - [ ] Browser-Prüfung Debitoren (ANF-018): Szenarien TS-018-01 bis TS-018-20, besonders Projekt-zuerst-Vorschlag des Kunden (AK-7), Bestätigungsfenster, Druckvorschau A4 und Mobiltelefon
 - [ ] ANF-018 AK-14 Rest: Gutschrift mit Rechnung verrechnen (mit ANF-020)
 - [ ] ANF-014 AK-4 Rest: Kurs im Beleg überschreiben (Debitoren buchen heute immer zum Kurs am Rechnungsdatum)
 - [ ] Browser-Prüfung Journal und Auswertungen (ANF-017, ANF-021): Liste, Filter, Formular mit Zeilen und MWST-Vorschau, Entwurf, Buchen, Storno, Detail, Kontoauszug, Bilanz, Erfolgsrechnung, Projekte, Drucken und CSV. Dafür ist ein Mandant mit Anmeldung nötig; der Serverstart wendet die neuen Migrationen an
 - [ ] ANF-021 AK-10: Laufzeit der Auswertungen mit 100 000 Buchungszeilen messen
 - [ ] ANF-010 AK-4 und AK-5: Übersicht Finanzen mit Kennzahlen (folgt mit ANF-018 bis ANF-020; dort auch die Umsatzgrenze)
-- [ ] ANF-017 AK-12: Verweis zum Herkunftsbeleg für Eingangsrechnungen (mit ANF-019); Zeilentext im Formular
+- [ ] ANF-017: Zeilentext im Formular
 - [ ] Testszenarien für ANF-017 und ANF-021 in `testszenarien.md` ergänzen
 - [ ] ANF-014 AK-4 und AK-5: Kurs am Belegdatum im Beleg vorschlagen und Löschsperre für Rechnungen und Buchungen (mit ANF-018 bis ANF-019)
 - [ ] ANF-015 AK-6: Löschsperre für Bankkonten mit Zahlungen (mit ANF-020)
@@ -46,6 +48,7 @@ Stand: 2026-11-27
 
 ## Erledigt
 
+- [x] ANF-019 Kreditoren freigegeben (kein Visum, IBAN und Belegablage später) und umgesetzt: Liste mit Filter „fällig bis“, Skonto- und Überfälligkeitsmarkierung, Erfassen mit Kontrollbetrag und Rundung bis 0.05, Netto/Brutto je Position, Übernahme aus dem Einkaufsauftrag mit „bestellt / verrechnet“, Buchen ins Journal, Storno, Löschsperren, Abschnitte in Projekt, Adresse und Einkauf. Migration `20261205100000_kreditorenrechnung`; Systemkonto „Aufwand“; Journal-Verweis auch für Eingangsrechnungen. Ablauf über den laufenden Server gegen eine Testdatenbank geprüft
 - [x] ANF-018 Debitoren freigegeben (Nummern R-/G-JJJJ-NNNN, Teilrechnungen später) und umgesetzt: Liste mit Filter und Überfälligkeit, Entwurf mit Positionen, Summen je MWST-Code, Buchen ins Journal (auch Fremdwährung), Druckansicht A4, Storno, Gutschrift, Abschnitte in Projekt und Adresse, Löschsperren. Migration `20261204100000_debitorenrechnung`; Systemkonto „Ertrag“; Verweis Journal → Beleg (ANF-017 AK-12); Reste aus ANF-010, ANF-011, ANF-012, ANF-014, ANF-016, ANF-025 mit umgesetzt. fmt, Clippy (Server und Browser) sauber, `cargo test` grün (201 Tests); Ablauf über den laufenden Server gegen eine Testdatenbank geprüft
 - [x] ANF-027 AK-26: Elemente beschriften (Bezeichnung je Element, höchstens 100 Zeichen, unter „Masse von …“; auf der Karte über dem Modell und in der Liste; mit dem Plan gespeichert). Migration `20261203110000_gelaendeplan_element_bezeichnung`. Im Browser geprüft: Beschriftung über Sanität und Allgemeinem Element, nach dem Speichern und Neuladen erhalten
 - [x] ANF-027: Elemente über die Auswahlliste „Element“ platzieren (statt Schaltflächen); neue Elementarten Sanität (weisse Kabine mit rotem Kreuz) und Allgemeines Element (quadratisch mit Spitzdach); Migration `20261203100000_gelaendeplan_element_art`; AK-4 und AK-25 in ANF-027. `cargo fmt`, Clippy (Server und Browser) sauber, `cargo test` grün (180 Tests). Im Browser geprüft: Sanität (weisse Kabine, rotes Kreuz, dunkle Tür vorne links), Allgemeines Element (petrol Körper, anthrazit Spitzdach, helle Tür) und Festzelt (Giebel unverändert)

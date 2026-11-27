@@ -331,6 +331,12 @@ pub const SYSTEM_ROLES: &[SystemRole] = &[
         label: "Ertrag (Vorgabe Debitoren)",
         kinds: &["ertrag"],
         required: false,
+    }, // ANF-019 AK-8: Vorgabe für das Aufwandskonto übernommener Einkaufspositionen
+    SystemRole {
+        key: "aufwand",
+        label: "Aufwand (Vorgabe Kreditoren)",
+        kinds: &["aufwand"],
+        required: false,
     },
 ];
 
@@ -740,6 +746,7 @@ pub const KMU_SYSTEM_ACCOUNTS: &[(&str, &str)] = &[
     ("eroeffnungsbilanz", "9100"),
     ("jahresergebnis", "2979"),
     ("ertrag", "3400"),
+    ("aufwand", "4000"),
 ];
 
 #[cfg(test)]

@@ -9,5 +9,5 @@ mod print;
 
 pub use detail::InvoiceDetailPage;
 pub use links::{CustomerInvoices, ProjectInvoices};
-pub use list::InvoiceListPage;
+pub use list::{DueDate, InvoiceListPage};
 pub use print::InvoicePrintPage;

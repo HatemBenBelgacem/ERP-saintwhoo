@@ -96,8 +96,8 @@ Festlegungen bei der Umsetzung:
 - **Kurse:** Gespeichert mit bis zu sechs Nachkommastellen. Ein Kurs gilt ab seinem Datum.
 - **Löschen:** Eine Währung ohne Verwendung lässt sich löschen; ihre Kurse gehen dabei verloren (AK-5).
 - **AK-1 bis AK-3, AK-6, AK-7:** vollständig umgesetzt. Geprüft: 8 Modultests, Migration auf einer leeren Datenbank, Regeln direkt in der Datenbank (Dublette am Datum, Rundung, Kaskade).
-- **AK-4 (teilweise):** Ausgangsrechnungen (ANF-018) verwenden beim Buchen den neuesten Kurs ≤ Rechnungsdatum; fehlt er, wird das Buchen mit Meldung verhindert. Das Überschreiben des Kurses im Beleg ist noch offen.
-- **AK-5 (teilweise):** Eine im Einkauf oder in Ausgangsrechnungen (ANF-018) verwendete Währung lässt sich nicht löschen. Eingangsrechnungen folgen mit ANF-019.
+- **AK-4 (teilweise):** Aus- und Eingangsrechnungen (ANF-018, ANF-019) verwenden beim Buchen den neuesten Kurs ≤ Rechnungsdatum; fehlt er, wird das Buchen mit Meldung verhindert. Das Überschreiben des Kurses im Beleg ist noch offen.
+- **AK-5 (teilweise):** Eine im Einkauf oder in Aus- oder Eingangsrechnungen (ANF-018, ANF-019) verwendete Währung lässt sich nicht löschen.
 - Die Browser-Prüfung der Szenarien aus `testszenarien.md` steht noch aus.
 
 ## 8. Änderungshistorie
@@ -107,3 +107,4 @@ Festlegungen bei der Umsetzung:
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
 | 2026-11-25 | Claude Code | Freigegeben (Umsetzung von Block 1 beauftragt); umgesetzt bis auf AK-4 und AK-5 (Belege folgen mit ANF-018 bis ANF-019) |
 | 2026-11-27 | Claude Code | AK-4 und AK-5 für Ausgangsrechnungen umgesetzt (ANF-018); Kurs überschreiben noch offen |
+| 2026-11-27 | Claude Code | AK-4 und AK-5 auch für Eingangsrechnungen (ANF-019) |

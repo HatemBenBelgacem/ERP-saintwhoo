@@ -8,6 +8,7 @@ use super::form::AddressEditModal;
 use crate::backend::addresses::model::{Address, country_name};
 use crate::backend::addresses::server_fns::{DeleteAddress, get_address};
 use crate::backend::users::server_fns::user_url;
+use crate::components::finance::creditors::SupplierCreditors;
 use crate::components::finance::debtors::CustomerInvoices;
 use crate::forms::error_message;
 use crate::forms::{data_version, use_base_href, with_params};
@@ -177,6 +178,8 @@ fn AddressDetail(address: Address, saved: Signal<bool>) -> impl IntoView {
 
             // ANF-018 AK-16: offene Rechnungen des Kunden
             <CustomerInvoices address_id=a.id/>
+            // ANF-019 AK-15: offene Kreditoren des Lieferanten
+            <SupplierCreditors address_id=a.id/>
 
             <p class="text-sm text-base-content/60">
                 "Erstellt am " {a.erstellt_am.clone()} " · Geändert am " {a.geaendert_am.clone()}

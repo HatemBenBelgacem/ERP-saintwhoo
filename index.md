@@ -35,7 +35,7 @@
 | [ANF-016](anforderungen/ANF-016-zahlungsbedingungen.md) | Zahlungsbedingungen | Finanzen / Einstellungen | Muss | In Umsetzung |
 | [ANF-017](anforderungen/ANF-017-buchungsjournal.md) | Buchungsjournal (Hauptbuch) | Finanzen | Muss | In Umsetzung |
 | [ANF-018](anforderungen/ANF-018-debitorenrechnungen.md) | Debitoren – Ausgangsrechnungen | Finanzen | Muss | In Umsetzung |
-| [ANF-019](anforderungen/ANF-019-kreditorenrechnungen.md) | Kreditoren – Eingangsrechnungen | Finanzen | Muss | Entwurf |
+| [ANF-019](anforderungen/ANF-019-kreditorenrechnungen.md) | Kreditoren – Eingangsrechnungen | Finanzen | Muss | In Umsetzung |
 | [ANF-020](anforderungen/ANF-020-zahlungen.md) | Zahlungen und offene Posten | Finanzen | Muss | Entwurf |
 | [ANF-021](anforderungen/ANF-021-finanzauswertungen.md) | Auswertungen – Kontoauszug, Saldenliste, Bilanz, Erfolgsrechnung | Finanzen | Muss | In Umsetzung |
 | [ANF-022](anforderungen/ANF-022-mwst-abrechnung.md) | MWST-Abrechnung | Finanzen | Soll | Entwurf |

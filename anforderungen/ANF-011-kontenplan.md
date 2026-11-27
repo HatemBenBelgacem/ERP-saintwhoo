@@ -138,7 +138,8 @@ Hinweise:
   Inaktive Konten werden in „Systemkonten bearbeiten“ nicht angeboten; die Auswahl bei Buchungen folgt mit ANF-017.
 - **AK-11:** Zusätzliche Rolle „Abrechnungskonto MWST“ (für ANF-022). „Skonto gewährt“ ist als Erlösminderung (Ertrag),
   „Skonto erhalten“ als Aufwandminderung (Aufwand) vorbelegt; beide erlauben Aufwand oder Ertrag.
-- **AK-12:** Die Warnung erscheint auf der Seite. Ausgangsrechnungen (ANF-018) lassen sich ohne Systemkonto „Debitoren“ nicht buchen; Kreditoren folgen mit ANF-019.
+- **AK-12:** Die Warnung erscheint auf der Seite. Ausgangsrechnungen (ANF-018) lassen sich ohne Systemkonto „Debitoren“ nicht buchen; Eingangsrechnungen (ANF-019) ebenso ohne Systemkonto „Kreditoren“.
+- **Neue Rolle (ANF-019 AK-8):** „Aufwand (Vorgabe Kreditoren)“, Kontoart Aufwand, nicht Pflicht; die KMU-Vorlage belegt sie mit 4000.
 - **Neue Rolle (ANF-018 AK-5):** „Ertrag (Vorgabe Debitoren)“, Kontoart Ertrag, nicht Pflicht; die KMU-Vorlage belegt sie mit 3400.
 - Vorlage: Klasse 9 enthält nur „9100 Eröffnungsbilanz“ (als Passivkonto geführt); Rundungsdifferenzen 6990 und
   Kursdifferenzen 6960 sind ergänzt.
@@ -155,3 +156,4 @@ Prüfung der Systemkonten auf dem Server mit veränderter Anfrage, 8 neue Modult
 | 2026-11-18 | Hatem Ben Belgacem | Umgesetzt (AK-6 Sperre nach Buchung mit ANF-017, AK-7 mit ANF-012) |
 | 2026-11-26 | Claude Code | Nachtrag: AK-6 (Sperre nach Buchung) und AK-7 (Vorgabe-MWST-Code am Konto) mit ANF-017 umgesetzt (Migration `20261202110000_konto_vorgabe_mwst.sql`). |
 | 2026-11-27 | Claude Code | Systemkonto-Rolle „Ertrag (Vorgabe Debitoren)“ ergänzt (ANF-018) |
+| 2026-11-27 | Claude Code | Systemkonto-Rolle „Aufwand (Vorgabe Kreditoren)“ ergänzt (ANF-019) |

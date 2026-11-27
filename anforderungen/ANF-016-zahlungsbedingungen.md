@@ -89,8 +89,8 @@ Festlegungen bei der Umsetzung:
 - **Standard:** Die erste Zahlungsbedingung wird automatisch Standard. Die Standard-Bedingung bleibt aktiv und lässt sich nicht löschen.
 - **Rechnungstext:** Beispiel „Zahlbar innert 10 Tagen mit 2 % Skonto oder innert 30 Tagen netto“; bei Frist 0 „Zahlbar sofort netto“.
 - **Löschen (AK-7):** Eine von einer Adresse verwendete Bedingung lässt sich nicht löschen, nur deaktivieren.
-- **AK-4:** Neue Ausgangsrechnungen (ANF-018) übernehmen die Vorgabe der Adresse, sonst die Standard-Bedingung. Eingangsrechnungen folgen mit ANF-019.
-- **AK-6:** Ausgangsrechnungen (ANF-018) speichern Fälligkeit, Skonto bis und Skonto % beim Buchen. Eingangsrechnungen folgen mit ANF-019.
+- **AK-4:** Neue Ausgangsrechnungen (ANF-018) übernehmen die Vorgabe der Adresse, sonst die Standard-Bedingung. Eingangsrechnungen (ANF-019) ebenso.
+- **AK-6:** Ausgangsrechnungen (ANF-018) speichern Fälligkeit, Skonto bis und Skonto % beim Buchen. Eingangsrechnungen (ANF-019) ebenso; dort lässt sich die Fälligkeit überschreiben.
 - Geprüft: 7 Modultests (Rechnungstext, Skonto-Paare, Tagesgrenzen, Pflichtfelder), Migration auf einer leeren Datenbank, Löschsperre per Fremdschlüssel.
 - Die Browser-Prüfung steht noch aus.
 
@@ -101,3 +101,4 @@ Festlegungen bei der Umsetzung:
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
 | 2026-11-25 | Claude Code | Freigegeben (Umsetzung von Block 1 beauftragt); umgesetzt bis auf AK-4 (Standard bei Rechnungen) und AK-6 (Fälligkeit, mit ANF-018) |
 | 2026-11-27 | Claude Code | AK-4 und AK-6 für Ausgangsrechnungen umgesetzt (ANF-018) |
+| 2026-11-27 | Claude Code | AK-4 und AK-6 für Eingangsrechnungen (ANF-019) |

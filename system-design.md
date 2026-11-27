@@ -72,6 +72,7 @@ src/
 | `finance::vat`     | ANF-012     | model, server_fns, repository (unter `backend/finance/`) | `settings/finance/mwst/`: list, form |
 | `finance::fiscal_year` | ANF-013 | model, server_fns, repository (unter `backend/finance/`) | `settings/finance/geschaeftsjahre/`: list, form |
 | `finance::journal` | ANF-017, ANF-010 AK-7/AK-8 | model (Prüfregeln, MWST-Aufteilung), server_fns, repository (unter `backend/finance/`) | `finance/journal/`: list, form, detail, storno |
+| `finance::creditors` | ANF-019 | model (Kontrollbetrag, Netto/Brutto, Zeilen der Buchung), server_fns (Übernahme aus Einkaufsauftrag, Buchen und Storno über das Journal), repository | `finance/creditors/`: list, detail, form, links (Abschnitte in Projekt, Adresse, Einkaufsauftrag) |
 | `finance::debtors` | ANF-018 | model (Summen je MWST-Code, Zeilen der Buchung), server_fns (Buchen und Storno über das Journal), repository (unter `backend/finance/`) | `finance/debtors/`: list, detail, form, print (Druckansicht ohne Grundgerüst), links (Abschnitte in Projekt und Adresse) |
 | `finance::reports` | ANF-021 | model (Rechenregeln, CSV), service (Zusammensetzen), server_fns, repository, csv (Route `/finanzen/auswertungen/csv`) | `finance/reports/`: page |
 | `finance::date`    | ANF-012, ANF-013, ANF-017 | model-artige Datei ohne Datenbank (Datumsrechnung, `backend/finance/date.rs`) | – |

@@ -42,7 +42,8 @@ src/
                      mit map_bridge.js: MapLibre + Three.js als ES-Module aus dem Netz, nur im Browser),
                      system (Datenbank-Status), home, settings, company (ANF-025, Seite unter settings/company) – Details in system-design.md
   backend/finance/<teil>/  Finanzen (ANF-010), je Komponente ein Untermodul: accounts (ANF-011 Kontenplan),
-                     journal (ANF-017), debtors (ANF-018 Debitoren, Druckansicht /finanzen/debitoren/<Kennung>/druck) …
+                     journal (ANF-017), debtors (ANF-018 Debitoren, Druckansicht /finanzen/debitoren/<Kennung>/druck),
+                     creditors (ANF-019 Kreditoren /finanzen/kreditoren) …
   components/settings/finance/<teil>/  Stammdaten-Seiten der Finanzen unter /einstellungen/finanzen/…
   db.rs              Verbindungspools (ERP und Portal) + Migrationen (nur ssr)
 migrations/          SQL-Migrationen der ERP- bzw. Mandanten-Datenbank (sqlx), laufen beim Serverstart automatisch

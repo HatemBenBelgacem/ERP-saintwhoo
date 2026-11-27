@@ -232,6 +232,13 @@ pub async fn delete_element(level: Level, id: i64) -> Result<(), ServerFnError> 
                 if !invoices.is_empty() {
                     verwendet.push(format!("Ausgangsrechnungen ({})", invoices.join(", ")));
                 }
+                // ANF-019 AK-15: Eingangsrechnungen (Kopf oder Position)
+                let creditors =
+                    crate::backend::finance::creditors::repository::numbers_of_project(&pool, id)
+                        .await?;
+                if !creditors.is_empty() {
+                    verwendet.push(format!("Eingangsrechnungen ({})", creditors.join(", ")));
+                }
                 let list = if verwendet.is_empty() {
                     "anderen Datensätzen".to_string()
                 } else {

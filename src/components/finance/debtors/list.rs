@@ -282,7 +282,7 @@ fn InvoiceTable(page: InvoicePage, filter: InvoiceFilter) -> impl IntoView {
 
 /// Fälligkeit mit Markierung „überfällig“ und Tagen seit Fälligkeit (AK-3).
 #[component]
-pub(super) fn DueDate(faelligkeit: Option<String>, tage: Option<i32>) -> impl IntoView {
+pub fn DueDate(faelligkeit: Option<String>, tage: Option<i32>) -> impl IntoView {
     view! {
         <span class:text-error=tage.is_some()>{format_date(faelligkeit.as_deref())}</span>
         {tage.map(|t| {

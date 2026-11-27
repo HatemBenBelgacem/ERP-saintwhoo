@@ -2,6 +2,7 @@
 
 pub mod accounts;
 pub mod bank_account;
+pub mod creditors;
 pub mod currency;
 pub mod date;
 pub mod debtors;
