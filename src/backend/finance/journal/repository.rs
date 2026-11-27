@@ -199,6 +199,21 @@ pub async fn creditor_document<'e>(
     .await
 }
 
+/// Zahlung, aus der die Buchung stammt (AK-12, ANF-020).
+pub async fn payment_document<'e>(
+    exec: impl PgExecutor<'e>,
+    id: i64,
+) -> Result<Option<BookingRef>, sqlx::Error> {
+    sqlx::query_as(
+        "SELECT z.id, CASE z.art WHEN 'ausgang' THEN 'Zahlungsausgang ' ELSE 'Zahlungseingang ' END \
+                || to_char(z.datum, 'DD.MM.YYYY') AS label \
+         FROM zahlung z WHERE z.buchung_id = $1",
+    )
+    .bind(id)
+    .fetch_optional(exec)
+    .await
+}
+
 /// Geschäftsjahr zu einem Datum mit Status des Jahrs und der Periode (ANF-013 AK-5, AK-6).
 /// `None`, wenn kein Geschäftsjahr das Datum enthält.
 pub async fn year_for_date<'e>(

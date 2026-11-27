@@ -11,7 +11,8 @@ use crate::components::{
     auth::{LoginPage, RegisterPage},
     finance::{
         BookingDetailPage, CreditorDetailPage, CreditorListPage, InvoiceDetailPage,
-        InvoiceListPage, InvoicePrintPage, JournalListPage, ReportsPage,
+        InvoiceListPage, InvoicePrintPage, JournalListPage, PaymentDetailPage, PaymentsPage,
+        ReportsPage,
     },
     home::HomePage,
     portal::PortalPage,
@@ -100,6 +101,15 @@ pub fn App() -> impl IntoView {
                     <Route
                         path=(StaticSegment("finanzen"), StaticSegment("kreditoren"), ParamSegment("id"))
                         view=CreditorDetailPage
+                    />
+                    // ANF-020 Zahlungen (?neu=eingang|ausgang|verrechnung-…, ?beleg=, ?ansicht=offene-posten, ?stichtag=)
+                    <Route
+                        path=(StaticSegment("finanzen"), StaticSegment("zahlungen"))
+                        view=PaymentsPage
+                    />
+                    <Route
+                        path=(StaticSegment("finanzen"), StaticSegment("zahlungen"), ParamSegment("id"))
+                        view=PaymentDetailPage
                     />
                     // ANF-021 Auswertungen (?art=, ?geschaeftsjahr_id=, ?von=, ?bis=, ?konto_id=, ?projekt_id=, ?vorjahr=)
                     <Route

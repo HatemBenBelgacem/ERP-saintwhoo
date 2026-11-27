@@ -62,6 +62,7 @@ pub fn status_label(key: &str) -> &'static str {
 pub fn document_url(herkunft: &str, id: i64) -> String {
     match herkunft {
         "kreditor" => format!("/finanzen/kreditoren/{id}"),
+        "zahlung" => format!("/finanzen/zahlungen/{id}"),
         _ => format!("/finanzen/debitoren/{id}"),
     }
 }

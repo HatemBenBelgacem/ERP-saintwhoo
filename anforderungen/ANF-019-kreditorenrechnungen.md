@@ -192,3 +192,4 @@ Festlegungen bei der Umsetzung:
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
 | 2026-11-27 | Hatem Ben Belgacem | Freigegeben; offene Fragen nach Vorschlag entschieden |
 | 2026-11-27 | Claude Code | Umgesetzt; Browser-Prüfung offen |
+| 2026-11-27 | Claude Code | Abschnitt „Zahlungen“ und „Als bezahlt erfassen“ mit ANF-020 |

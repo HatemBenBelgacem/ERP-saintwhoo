@@ -113,6 +113,7 @@ pub async fn get_booking(id: i64) -> Result<Option<BookingDetail>, ServerFnError
     let herkunftsbeleg = match head.herkunft.as_str() {
         "debitor" => repository::debtor_document(&pool, id).await?,
         "kreditor" => repository::creditor_document(&pool, id).await?,
+        "zahlung" => repository::payment_document(&pool, id).await?,
         _ => None,
     };
     Ok(Some(BookingDetail {

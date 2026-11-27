@@ -36,7 +36,7 @@ Zahlungsverbindung (IBAN, QR-IBAN) angegeben.
   Institutskennung 30000–31999); sie ist optional.
 - [x] **AK-5:** Gegeben mehrere Bankkonten, dann ist genau eines als **Standard** markiert; es wird in
   Zahlungen und auf Rechnungen vorgeschlagen. Das erste angelegte Konto wird automatisch Standard.
-- [ ] **AK-6:** Gegeben ein Bankkonto mit Zahlungen, dann kann es nicht gelöscht, nur deaktiviert werden.
+- [x] **AK-6:** Gegeben ein Bankkonto mit Zahlungen, dann kann es nicht gelöscht, nur deaktiviert werden.
 - [x] **AK-7:** Die Tabelle wird per sqlx-Migration angelegt.
 
 ## 4. Daten / Felder
@@ -86,7 +86,7 @@ Festlegungen bei der Umsetzung:
 - **Standard:** Das erste Konto wird automatisch Standard. Das Standard-Konto lässt sich nur ersetzen, indem man ein anderes als Standard festlegt; es bleibt aktiv und lässt sich nicht löschen.
 - **Kasse:** Bank, IBAN, QR-IBAN und BIC entfallen; sie werden beim Speichern gelöscht.
 - **Speicherung:** IBAN und BIC ohne Leerzeichen, in Grossbuchstaben. Die Liste zeigt die IBAN in Vierergruppen.
-- **AK-6 (teilweise):** Ein Bankkonto lässt sich löschen, weil es noch keine Zahlungen gibt. Die Prüfung auf Zahlungen folgt mit ANF-020.
+- **AK-6:** Ein Bankkonto mit Zahlungen (ANF-020) lässt sich nicht löschen; die Meldung verweist auf das Deaktivieren.
 - **Offen aus ANF-025 (AK-2):** Die Firmenseite verweist noch nicht auf die Bankkonten.
 - Geprüft: 8 Modultests (IBAN, QR-IBAN, BIC, Gruppierung, Kasse, Pflichtfelder), Migration auf einer leeren Datenbank, Regeln direkt in der Datenbank (ein Konto nur einmal, ein Standard-Konto).
 - Die Browser-Prüfung steht noch aus.
@@ -98,3 +98,4 @@ Festlegungen bei der Umsetzung:
 | 2026-11-18 | Hatem Ben Belgacem | Erstellt        |
 | 2026-11-18 | Hatem Ben Belgacem | QR-Rechnung wird benötigt; Bezug zu ANF-025 |
 | 2026-11-25 | Claude Code | Freigegeben (Umsetzung von Block 1 beauftragt); umgesetzt bis auf AK-6 (Prüfung auf Zahlungen mit ANF-020) und den Verweis aus ANF-025 |
+| 2026-11-27 | Claude Code | AK-6 mit ANF-020 umgesetzt |

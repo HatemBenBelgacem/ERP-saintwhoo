@@ -126,7 +126,7 @@ pub async fn update_bank_account(
 }
 
 /// Bankkonto löschen (AK-6). Das Standard-Konto lässt sich nicht löschen.
-/// Zahlungen (ANF-020) gibt es noch nicht; ihre Prüfung folgt mit ANF-020.
+/// Ein Bankkonto mit Zahlungen (ANF-020) lässt sich nicht löschen, nur deaktivieren.
 #[server]
 pub async fn delete_bank_account(id: i64, zurueck: String) -> Result<(), ServerFnError> {
     let pool = crate::db::pool()?;
@@ -140,7 +140,15 @@ pub async fn delete_bank_account(id: i64, zurueck: String) -> Result<(), ServerF
             "Das Standard-Konto kann nicht gelöscht werden. Zuerst ein anderes Konto als Standard festlegen.",
         ));
     }
-    repository::delete(&mut tx, id).await?;
+    match repository::delete(&mut tx, id).await {
+        Ok(_) => {}
+        Err(sqlx::Error::Database(db)) if db.code().as_deref() == Some("23503") => {
+            return Err(ServerFnError::new(
+                "Mit diesem Bankkonto gibt es Zahlungen. Es lässt sich nicht löschen, nur deaktivieren.",
+            ));
+        }
+        Err(e) => return Err(e.into()),
+    }
     tx.commit().await?;
     redirect_back(&zurueck, "geloescht", "bankkonto");
     Ok(())

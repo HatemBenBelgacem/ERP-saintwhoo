@@ -19,6 +19,7 @@ use crate::backend::projects::model::format_date;
 use crate::backend::purchase_orders::model::format_amount;
 use crate::components::finance::FinanceTabs;
 use crate::components::finance::debtors::DueDate;
+use crate::components::finance::payments::PayCreditorsModal;
 use crate::forms::{data_version, encode, error_message, use_base_href, with_params};
 use crate::icons::{Icon, IconView};
 
@@ -175,6 +176,7 @@ pub fn CreditorListPage() -> impl IntoView {
             </Form>
 
             {move || create().map(|art| view! { <CreditorCreateModal art/> })}
+            {move || query.read().get("bezahlt").filter(|ids| !ids.is_empty()).map(|ids| view! { <PayCreditorsModal ids/> })}
 
             <Transition fallback=|| view! { <span class="loading loading-spinner"></span> }>
                 {move || Suspend::new(async move {
@@ -235,16 +237,40 @@ fn CreditorTable(page: CreditorPage, filter: CreditorFilter) -> impl IntoView {
     };
     let prev = (page.page > 1).then(|| with_page(page.page - 1));
     let next = (page.page < page_count).then(|| with_page(page.page + 1));
+    // ANF-020 AK-7: offene Rechnungen markieren und gemeinsam als bezahlt erfassen
+    let selected = RwSignal::new(Vec::<i64>::new());
+    let base = use_base_href();
+    let pay_href = move || {
+        let ids = selected
+            .get()
+            .iter()
+            .map(|i| i.to_string())
+            .collect::<Vec<_>>()
+            .join(",");
+        with_params(&base.get(), &[("bezahlt", ids)])
+    };
     let rows = page
         .rows
         .into_iter()
-        .map(|row| view! { <CreditorTableRow row show_supplier=true show_order=true show_project=true/> })
+        .map(|row| view! { <CreditorTableRow row show_supplier=true show_order=true show_project=true selected/> })
         .collect_view();
     view! {
+        <div class="flex flex-wrap items-center gap-2">
+            <a
+                href=pay_href
+                class="btn btn-sm btn-primary"
+                class:btn-disabled=move || selected.read().is_empty()
+                aria-disabled=move || selected.read().is_empty().then_some("true")
+            >
+                {move || format!("Als bezahlt erfassen ({})", selected.read().len())}
+            </a>
+            <span class="text-sm text-base-content/60">"Offene Rechnungen links markieren."</span>
+        </div>
         <div class="overflow-x-auto rounded-box bg-base-100 shadow">
             <table class="table">
                 <thead>
                     <tr>
+                        <th><span class="sr-only">"Markieren"</span></th>
                         {header("nummer", "Nummer", false)}
                         {header("rechnungsnummer", "Rechnungs-Nr.", false)}
                         {header("lieferant", "Lieferant", false)}
@@ -301,7 +327,13 @@ pub fn CreditorTableRow(
     show_supplier: bool,
     show_order: bool,
     show_project: bool,
+    /// Markierte Rechnungen (nur in der Liste, ANF-020 AK-7)
+    #[prop(optional)]
+    selected: Option<RwSignal<Vec<i64>>>,
 ) -> impl IntoView {
+    let id = row.id;
+    let payable =
+        row.art == "rechnung" && matches!(row.status.as_str(), "offen" | "teilweise_bezahlt");
     let navigate = use_navigate();
     let href = format!("{CREDITORS_URL}/{}", row.id);
     let target = href.clone();
@@ -311,6 +343,19 @@ pub fn CreditorTableRow(
         (row.status != "entwurf").then(|| format_amount(signed(&row.art, row.offener_betrag)));
     view! {
         <tr class="cursor-pointer hover:bg-base-200" on:click=move |_| navigate(&target, Default::default())>
+            {selected.map(|sel| view! {
+                <td on:click=|ev| ev.stop_propagation()>
+                    {payable.then(|| view! {
+                        <input
+                            type="checkbox"
+                            class="checkbox checkbox-sm checkbox-primary"
+                            aria-label="Markieren"
+                            prop:checked=move || sel.read().contains(&id)
+                            on:change=move |_| sel.update(|s| if let Some(p) = s.iter().position(|x| *x == id) { s.remove(p); } else { s.push(id); })
+                        />
+                    })}
+                </td>
+            })}
             <td class="whitespace-nowrap">
                 <a href=href class="link link-hover font-medium" class:italic=row.nummer.is_none()>{label}</a>
                 {(row.art == "gutschrift").then(|| view! { <span class="badge badge-sm badge-ghost ml-1">"Gutschrift"</span> })}

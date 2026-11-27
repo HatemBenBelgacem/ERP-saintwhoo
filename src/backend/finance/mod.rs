@@ -9,5 +9,6 @@ pub mod debtors;
 pub mod fiscal_year;
 pub mod journal;
 pub mod payment_term;
+pub mod payments;
 pub mod reports;
 pub mod vat;

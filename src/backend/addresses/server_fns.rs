@@ -122,6 +122,8 @@ pub async fn delete_address(id: i64) -> Result<(), ServerFnError> {
                 Some("debitorenrechnung") => "in Ausgangsrechnungen (als Kunde)".to_string(),
                 // ANF-019 AK-15
                 Some("kreditorenrechnung") => "in Eingangsrechnungen (als Lieferant)".to_string(),
+                // ANF-020
+                Some("zahlung") => "in Zahlungen".to_string(),
                 // ANF-025 AK-11
                 Some("firma") => "als eigene Firma".to_string(),
                 // ANF-005 AK-19

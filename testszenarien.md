@@ -34,6 +34,7 @@ Schlägt ein Szenario fehl, trage es in [task.md](task.md) als offene Aufgabe ei
 | ANF-026 | Registrierung, Datenbank, Mandant | 32 | Alle Schritte (Portal-Datenbank, Registrierung, Anmeldung, Datenbank erstellen, Mandant definieren, Passwort im Portal) |
 | ANF-018 | Debitoren | 20 | Bedienung im Browser noch nicht von Hand geprüft |
 | ANF-019 | Kreditoren | 18 | Bedienung im Browser noch nicht von Hand geprüft |
+| ANF-020 | Zahlungen | 16 | Bedienung im Browser noch nicht von Hand geprüft |
 
 Die Anforderungen ANF-005 bis ANF-007 haben bisher keine Prüfung im Browser. Mit diesen Szenarien starten.
 
@@ -421,6 +422,30 @@ mit zwei Positionen (eine davon mit MWST-Code, eine nur mit Satz 8.1 %) und eine
 | TS-019-16 | 14 | Offenen Beleg stornieren; danach dieselbe Rechnungsnummer neu erfassen. | Status „Storniert“, Gegenbuchung im Journal. Die Nummer lässt sich wieder erfassen. |
 | TS-019-17 | 15 | Projekt, Adresse des Lieferanten öffnen und löschen; Einkaufsauftrag ansehen. | Abschnitte „Eingangsrechnungen“ bzw. „Kreditoren“ mit „Offen gesamt“. Löschen verhindert, Meldung nennt die Belege. |
 | TS-019-18 | 16 | `/finanzen/kreditoren/999999` öffnen. | „Rechnung nicht gefunden“. |
+
+## ANF-020 Zahlungen
+
+Vorbereitung wie ANF-018 und ANF-019, dazu die Zahlungsbedingung „10 Tage 2 %, 30 netto“, ein EUR-Kurs am
+Zahlungsdatum und gebuchte Rechnungen und Gutschriften für „Muster AG“ und „Lieferant AG“.
+
+| Nr | AK | Schritte | Erwartet |
+|----|----|----------|----------|
+| TS-020-01 | 1 | Reiter „Zahlungen“, „Zahlungseingang“. | `?neu=eingang`; Datum heute, Standard-Bankkonto, Währung CHF. |
+| TS-020-02 | 2 | Kunde „Muster AG“ wählen. | Offene Rechnungen und Gutschriften mit offenem Betrag; andere Währungen ausgegraut. |
+| TS-020-03 | 2 | Rechnungsnummer eingeben, „Übernehmen“. | Kunde gesetzt, Rechnung mit vollem Betrag vorgewählt, Betrag übernommen. |
+| TS-020-04 | 2, 3 | Betrag 105.94 bei Rechnung mit 2 % Skonto, „Betrag verteilen“. | Betrag 105.94, Skonto 2.16 vorgeschlagen; „vollständig zugeordnet“. |
+| TS-020-05 | 8 | „Zahlung buchen“. | Detailansicht; Rechnung „Bezahlt“. Journal: Soll 1020 105.94, Soll 3800 2.00 (UN81), Soll 2200 0.16, Haben 1100 108.10. |
+| TS-020-06 | 4 | Teilzahlung 45 auf Rechnung 108.10 mit Differenz 5 auf Konto 6000. | Rechnung „Teilweise bezahlt“ (offen 58.10); Journal Soll 6000 5.00. Ohne Konto: Feldmeldung. |
+| TS-020-07 | 5, 9 | EUR-Zahlung 1100 auf Rechnung über EUR 1081 (gebucht zu 0.95, Kurs heute 0.97). | Vorauszahlung 19 EUR; Kursgewinn 21.62 auf 6960. |
+| TS-020-08 | — | Mehr zuordnen als bezahlt. | „Zugeordnet ist … mehr als der Betrag der Zahlung.“ |
+| TS-020-09 | 11 | „Verrechnen Debitoren“: Rechnung und Gutschrift mit gleichem Betrag. | Beide ausgeglichen, keine Buchung. Ungleiche Beträge: Meldung mit Differenz. |
+| TS-020-10 | 5, 11 | Vorauszahlung mit einer Rechnung verrechnen. | Vorauszahlung offen 0; die Zahlung zeigt „Verrechnung der Vorauszahlung“. |
+| TS-020-11 | 10 | Zahlung mit verrechneter Vorauszahlung stornieren; dann Verrechnung und Zahlung stornieren. | Erst Hinweis; danach Gegenbuchungen, Rechnungen wieder „Offen“ bzw. „Teilweise bezahlt“. |
+| TS-020-12 | 6 | „Zahlungsausgang“ an Lieferant AG mit Skonto. | Journal: Soll 2000, Haben 1020, Haben 4900 und 1170 (Vorsteuer-Korrektur). |
+| TS-020-13 | 7 | Kreditorenliste: zwei Rechnungen markieren, „Als bezahlt erfassen“. | Fenster mit Datum und Bankkonto; je Rechnung ein Zahlungsausgang, Skonto bei laufender Frist; Meldung „2 Zahlungsausgänge erfasst.“ |
+| TS-020-14 | 12 | Zahlungsliste filtern (Art, Zeitraum, Bankkonto), sortieren, suchen nach Rechnungsnummer. | Zustand in der Webadresse; Spalte „Ausgeglichen“ nennt die Belege. |
+| TS-020-15 | 13 | „Offene Posten“, Stichtag Monatsende. | Debitoren und Kreditoren je Partner mit fünf Altersklassen und Summen in CHF. |
+| TS-020-16 | — | Bankkonto mit Zahlungen löschen. | „Mit diesem Bankkonto gibt es Zahlungen …“ |
 
 ## ANF-025 Firma
 

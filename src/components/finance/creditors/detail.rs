@@ -23,6 +23,7 @@ use crate::backend::projects::model::format_date;
 use crate::backend::purchase_orders::model::{format_amount, format_trimmed};
 use crate::components::finance::FinanceTabs;
 use crate::components::finance::debtors::DueDate;
+use crate::components::finance::payments::DocumentPayments;
 use crate::forms::{Breadcrumbs, data_version, error_message, use_base_href, with_params};
 use crate::icons::{Icon, IconView};
 
@@ -263,6 +264,15 @@ fn CreditorView(detail: CreditorDetail) -> impl IntoView {
 
         <CreditorInfo invoice=invoice.clone()/>
         <PositionsCard invoice=invoice.clone() positions totals/>
+        // ANF-020: Zahlungen bzw. Verrechnungen des Belegs
+        {(!is_draft && invoice.status != "storniert").then(|| view! {
+            <DocumentPayments
+                seite="kreditoren"
+                beleg_id=id
+                key=format!("{}:{id}", if invoice.art == "gutschrift" { "g" } else { "r" })
+                offen=matches!(invoice.status.as_str(), "offen" | "teilweise_bezahlt")
+            />
+        })}
 
         <p class="text-sm text-base-content/60">
             "Erstellt am " {invoice.erstellt_am.clone()} " · Geändert am " {invoice.geaendert_am.clone()}

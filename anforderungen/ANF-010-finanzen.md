@@ -180,3 +180,4 @@ Umgesetzt mit ANF-017 und ANF-021:
 | 2026-11-26 | Claude Code | Umgesetzt: Navigation und Reiter, Grundsätze für Buchungen (Ausgleich, Unveränderlichkeit, gesperrte Perioden), Löschprüfung für Projekte. Übersicht offen. |
 | 2026-11-27 | Claude Code | Reiter „Debitoren“ aktiv; AK-9 für Adressen mit Ausgangsrechnungen (ANF-018) |
 | 2026-11-27 | Claude Code | Reiter „Kreditoren“ aktiv; Löschsperre für Eingangsrechnungen (ANF-019) |
+| 2026-11-27 | Claude Code | Reiter „Zahlungen“ aktiv (ANF-020) |

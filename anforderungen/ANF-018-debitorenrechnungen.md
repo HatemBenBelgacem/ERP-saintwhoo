@@ -91,7 +91,7 @@ Die Debitoren liegen im Reiter „Debitoren“ unter `/finanzen/debitoren`.
 - [x] **AK-13:** Gegeben eine offene Rechnung ohne Zahlungen, wenn der Benutzer „Stornieren“ bestätigt,
   dann wird die Buchung storniert (Gegenbuchung) und der Status ist „Storniert“. Rechnungen mit Zahlungen
   können nicht storniert werden; stattdessen wird eine Gutschrift erstellt.
-- [ ] **AK-14:** Gegeben eine gebuchte Rechnung, wenn der Benutzer „Gutschrift erstellen“ wählt, dann wird
+- [x] **AK-14:** Gegeben eine gebuchte Rechnung, wenn der Benutzer „Gutschrift erstellen“ wählt, dann wird
   ein Gutschrift-Entwurf mit denselben Positionen und Verweis auf die Rechnung angelegt. Eine gebuchte
   Gutschrift kann mit der Rechnung verrechnet werden (ANF-020).
 
@@ -191,8 +191,8 @@ Festlegungen bei der Umsetzung:
   Gesamtbetrag über null.
 - **AK-13:** Die Gegenbuchung erhält das Rechnungsdatum, wenn dessen Periode offen ist, sonst das heutige Datum.
   „Ohne Zahlungen“ heisst: offener Betrag = Gesamtbetrag (Zahlungen folgen mit ANF-020).
-- **AK-14 (teilweise):** Die Gutschrift übernimmt Kunde, Projekt, Währung, Zahlungsbedingung und Referenz; das Datum
-  ist heute. Das Verrechnen mit der Rechnung folgt mit ANF-020.
+- **AK-14:** Die Gutschrift übernimmt Kunde, Projekt, Währung, Zahlungsbedingung und Referenz; das Datum ist heute.
+  Verrechnet wird sie seit ANF-020 über „Verrechnen“ (Abschnitt „Zahlungen“ der Gutschrift).
 - **Geprüft (2026-11-27):** 18 Modultests; Migrationen auf leerer Datenbank; Ablauf über den laufenden Server gegen eine
   lokale Testdatenbank (Registrierung, Mandant, Kontenvorlage): Anlegen nur mit Projekt (Kunde übernommen), Position,
   Buchen mit Journalzeilen 1100/3400/2200/6990, gesperrte Periode, EUR ohne und mit Kurs, Gutschrift, Storno,
@@ -210,3 +210,4 @@ Festlegungen bei der Umsetzung:
 | 2026-11-18 | Hatem Ben Belgacem | Absender aus Firmenverwaltung (ANF-025); QR-Rechnung benötigt, Zeitpunkt offen |
 | 2026-11-27 | Hatem Ben Belgacem | Freigegeben; Nummernformat und Teilrechnungen nach Vorschlag entschieden |
 | 2026-11-27 | Claude Code | Umgesetzt bis auf das Verrechnen von Gutschriften (AK-14, mit ANF-020); Browser-Prüfung offen |
+| 2026-11-27 | Claude Code | AK-14 vollständig (Verrechnen mit ANF-020); Abschnitt „Zahlungen“ in der Detailansicht |
