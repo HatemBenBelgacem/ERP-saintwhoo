@@ -14,9 +14,10 @@ use super::bridge::{MapEvent, MapView, ViewState, search_address};
 use super::flows;
 use crate::backend::site_plans::flows::{AccessKind, parse_decimal};
 use crate::backend::site_plans::model::{
-    AddressHit, Corner, ElementKind, HEIGHT_RANGE_M, MAX_ELEMENT_LABEL_LEN, MAX_MEASURE_LABEL_LEN,
-    MAX_MEASURES, MAX_SIZE_M, MIN_SIZE_M, Measure, MeasureKind, OriginInput, ROTATION_STEP_DEG,
-    SiteElement, SitePlan, SitePlanPage, format_area, format_distance, format_m, has_aerial_image,
+    AddressHit, Corner, ElementKind, HEIGHT_RANGE_M, MAX_DISTANCE_M, MAX_ELEMENT_LABEL_LEN,
+    MAX_MEASURE_LABEL_LEN, MAX_MEASURES, MAX_SIZE_M, MIN_SIZE_M, Measure, MeasureKind, OriginInput,
+    ROTATION_STEP_DEG, SiteElement, SitePlan, SitePlanPage, format_area, format_distance, format_m,
+    has_aerial_image,
 };
 use crate::backend::site_plans::server_fns::{DeleteSitePlan, SaveSitePlan, get_site_plan};
 use crate::forms::{
@@ -1006,8 +1007,8 @@ fn ElementList() -> impl IntoView {
     }
 }
 
-/// Eigene Masse des ausgewählten Elements: Breite, Tiefe, Höhe und Drehung. Übernommen wird beim
-/// Verlassen eines Felds; ein Element auf der Rasenfläche darf dabei nicht über den Rand wachsen.
+/// Eigenschaften des ausgewählten Elements: Art, Bezeichnung, Masse, Drehung und Lage. Übernommen wird
+/// beim Verlassen eines Felds; ein Element auf der Rasenfläche darf dabei nicht über den Rand hinausragen.
 #[component]
 fn ElementSizeEditor(i: usize) -> impl IntoView {
     let ed = expect_context::<Editor>();
@@ -1025,7 +1026,7 @@ fn ElementSizeEditor(i: usize) -> impl IntoView {
         };
         if fitted && !ed.plan.with_untracked(|p| p.fits(&changed)) {
             ed.notice.set(Some(
-                "Mit diesen Massen würde das Element über die Rasenfläche hinausragen.".into(),
+                "Mit dieser Änderung würde das Element über die Rasenfläche hinausragen.".into(),
             ));
             // Felder auf die bisherigen Werte zurücksetzen
             ed.plan.update(|_| {});
@@ -1034,10 +1035,10 @@ fn ElementSizeEditor(i: usize) -> impl IntoView {
         ed.notice.set(None);
         ed.plan.update(|p| p.elements[i] = changed);
     };
-    let size_field = move |label: &'static str,
-                           value: fn(&SiteElement) -> f64,
-                           range: (f64, f64),
-                           set: fn(&mut SiteElement, f64)| {
+    let element_field = move |label: &'static str,
+                              value: fn(&SiteElement) -> f64,
+                              range: (f64, f64),
+                              set: fn(&mut SiteElement, f64)| {
         flows::number_field(
             label,
             move || get().map(|e| format_m(value(&e))).unwrap_or_default(),
@@ -1060,7 +1061,23 @@ fn ElementSizeEditor(i: usize) -> impl IntoView {
     view! {
         <Show when=move || get().is_some()>
             <div class="flex flex-col gap-2 rounded-box border border-base-300 p-2">
-                <h3 class="text-sm font-semibold">"Masse von " {name}</h3>
+                <h3 class="text-sm font-semibold">"Eigenschaften von " {name}</h3>
+                // Art: Wechsel behält Lage, Drehung, Masse und Bezeichnung
+                <select
+                    class="select select-sm w-full"
+                    aria-label=move || format!("Art von {}", name())
+                    prop:value=move || get().map(|e| e.kind.key()).unwrap_or_default()
+                    on:change=move |ev| {
+                        if let Some(kind) = ElementKind::from_key(&event_target_value(&ev)) {
+                            change(&|e| e.kind = kind);
+                        }
+                    }
+                >
+                    {ElementKind::ALL
+                        .into_iter()
+                        .map(|kind| view! { <option value=kind.key()>{kind.label()}</option> })
+                        .collect_view()}
+                </select>
                 // Bezeichnung: wird auf der Karte über dem Element und in der Liste gezeigt
                 <input
                     type="text"
@@ -1079,14 +1096,16 @@ fn ElementSizeEditor(i: usize) -> impl IntoView {
                     }
                 />
                 <div class="grid grid-cols-2 gap-2">
-                    {size_field("Breite (m)", |e| e.width_m, (MIN_SIZE_M, MAX_SIZE_M), |e, v| e.width_m = v)}
-                    {size_field("Tiefe (m)", |e| e.depth_m, (MIN_SIZE_M, MAX_SIZE_M), |e, v| e.depth_m = v)}
-                    {size_field("Höhe (m)", SiteElement::height, HEIGHT_RANGE_M, |e, v| e.height_m = Some(v))}
-                    {size_field("Drehung (°)", |e| e.rotation_deg, (0.0, 360.0), |e, v| e.rotation_deg = v.rem_euclid(360.0))}
+                    {element_field("Breite (m)", |e| e.width_m, (MIN_SIZE_M, MAX_SIZE_M), |e, v| e.width_m = v)}
+                    {element_field("Tiefe (m)", |e| e.depth_m, (MIN_SIZE_M, MAX_SIZE_M), |e, v| e.depth_m = v)}
+                    {element_field("Höhe (m)", SiteElement::height, HEIGHT_RANGE_M, |e, v| e.height_m = Some(v))}
+                    {element_field("Drehung (°)", |e| e.rotation_deg, (0.0, 360.0), |e, v| e.rotation_deg = v.rem_euclid(360.0))}
+                    {element_field("X (m)", |e| e.x, (-MAX_DISTANCE_M, MAX_DISTANCE_M), |e, v| e.x = v)}
+                    {element_field("Z (m)", |e| e.z, (-MAX_DISTANCE_M, MAX_DISTANCE_M), |e, v| e.z = v)}
                 </div>
                 <p class="text-xs text-base-content/60">
                     {format!(
-                        "Breite und Tiefe {} bis {} m, Höhe {} bis {} m. Eine längere Gitterabsperrung ist eine ganze Absperrlinie.",
+                        "Breite und Tiefe {} bis {} m, Höhe {} bis {} m. X nach Osten und Z nach Süden, in Metern vom Standort. Eine längere Gitterabsperrung ist eine ganze Absperrlinie.",
                         format_m(MIN_SIZE_M),
                         format_m(MAX_SIZE_M),
                         format_m(HEIGHT_RANGE_M.0),

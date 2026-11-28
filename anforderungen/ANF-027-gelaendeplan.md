@@ -130,7 +130,7 @@ Plan mit.
   Lageprüfung der Elemente und Markierung „ausserhalb“ werden laufend nachgeführt. Ein Klick auf einen
   bestehenden Eckpunkt setzt keinen neuen. Fläche, Umriss und Eckpunkte sind **lila**.
 - [x] **AK-23:** Gegeben ein ausgewähltes Element, dann zeigt die Liste „Platzierte Elemente“ darunter
-  „Masse von …“ mit **Breite, Tiefe, Höhe** (in Metern, Dezimalkomma erlaubt) und **Drehung** (°). Ein
+  „Eigenschaften von …“ mit **Breite, Tiefe, Höhe** (in Metern, Dezimalkomma erlaubt) und **Drehung** (°). Ein
   geänderter Wert wird beim Verlassen des Felds übernommen; 3D-Modell, Liste, Lageprüfung und Engstellen
   (ANF-028) folgen sofort. Erlaubt sind Breite und Tiefe 0,1 bis 200 m, Höhe 0,1 bis 50 m; ungültige Werte
   werden am Feld gemeldet. Würde ein Element auf der Rasenfläche über den Rand wachsen, wird die Änderung mit
@@ -147,10 +147,15 @@ Plan mit.
     dunkle Tür vorne links.
   - **Allgemeines Element** (4 m, quadratisch): Körper in Petrol mit Spitzdach (Giebel) in Anthrazit und heller Tür
     vorne. Es steht für verschiedene Zwecke.
-- [x] **AK-26:** Gegeben ein ausgewähltes Element, dann lässt sich unter „Masse von …“ eine **Bezeichnung** eintragen
+- [x] **AK-26:** Gegeben ein ausgewähltes Element, dann lässt sich unter „Eigenschaften von …“ eine **Bezeichnung** eintragen
   (höchstens 100 Zeichen, z. B. „Erste Hilfe Nord“). Sie steht auf der Karte als Marke über dem 3D-Modell und in der
   Liste „Platzierte Elemente“ hinter dem Namen. Leer = keine Beschriftung. Die Bezeichnung wird mit dem Plan gespeichert;
   mehr als 100 Zeichen meldet der Server.
+- [x] **AK-27:** Gegeben ein ausgewähltes Element, dann lassen sich unter „Eigenschaften von …“ die **Art** (Auswahl wie
+  bei der Platzierung), die **Bezeichnung**, die **Masse**, die **Drehung** und die **Lage** ändern. Die Lage ist der Abstand
+  vom Standort in Metern: X nach Osten, Z nach Süden (Dezimalkomma erlaubt). Ein Wechsel der Art behält Lage, Drehung,
+  Masse und Bezeichnung; „Vorgabemasse“ setzt die Masse auf die Vorgabe der neuen Art zurück. Eine Änderung, die das
+  Element über den Rand der Rasenfläche brächte, wird mit Hinweis abgewiesen. Ungültige Zahlen werden am Feld gemeldet.
 - [x] **AK-14:** Gegeben die Karte kann nicht geladen werden (z. B. ohne Internet), dann erscheint eine
   Fehlermeldung; der Rest der Seite bleibt bedienbar.
 
@@ -237,3 +242,4 @@ Vorläufige Annahmen, bis sie geklärt sind:
 | 2026-11-24 | Hatem Ben Belgacem | AK-12a/b: Adresssuche und Standort-Adresse; AK-15 bis AK-17: Messwerkzeuge Strecke und Fläche; AK-11: Umriss ohne Überschneidung |
 | 2026-11-26 | Hatem Ben Belgacem | AK-4: Elemente über die Auswahlliste „Element“ platzieren statt über Schaltflächen; AK-25: Elementarten Sanität und Allgemeines Element (Spitzdach); Migration `gelaendeplan_element_art` |
 | 2026-11-26 | Hatem Ben Belgacem | AK-26: Elemente lassen sich beschriften (Bezeichnung, auf der Karte und in der Liste); Migration `gelaendeplan_element_bezeichnung` |
+| 2026-11-26 | Hatem Ben Belgacem | AK-27: Art und Lage (X, Z) eines Elements nachträglich ändern; der Abschnitt heisst jetzt „Eigenschaften von …“ (AK-23, AK-26 angepasst) |

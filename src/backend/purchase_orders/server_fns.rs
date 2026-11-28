@@ -6,11 +6,13 @@
 
 use leptos::prelude::*;
 
-use super::model::{OrderDetail, OrderInput, OrderPage, OrderRow, PositionInput, SaveOutcome};
+use super::model::{
+    FromVorgangInput, OrderDetail, OrderInput, OrderPage, OrderRow, PositionInput, SaveOutcome,
+};
 
 #[cfg(feature = "ssr")]
 use super::{
-    model::{FieldErrors, VatSelection, VatWrite},
+    model::{FieldErrors, PositionValues, VatSelection, VatWrite, order_from_vorgang},
     repository,
 };
 #[cfg(feature = "ssr")]
@@ -55,6 +57,13 @@ pub async fn list_orders(
 pub async fn list_project_orders(projekt_id: i64) -> Result<Vec<OrderRow>, ServerFnError> {
     let pool = crate::db::pool()?;
     Ok(repository::list_by_project(&pool, projekt_id).await?)
+}
+
+/// Einkaufsaufträge, die aus einem Vorgang erzeugt wurden, neueste zuerst (ANF-029 AK-10).
+#[server]
+pub async fn list_vorgang_orders(vorgang_id: i64) -> Result<Vec<OrderRow>, ServerFnError> {
+    let pool = crate::db::pool()?;
+    Ok(repository::list_by_vorgang(&pool, vorgang_id).await?)
 }
 
 /// Ein Einkaufsauftrag mit Positionen (AK-6, AK-7, AK-24). `None`, wenn es ihn nicht gibt.
@@ -181,13 +190,84 @@ pub async fn create_order(input: OrderInput) -> Result<SaveOutcome, ServerFnErro
     if !errors.is_empty() {
         return Ok(SaveOutcome::Invalid(errors));
     }
-    let id = match repository::insert_order(&mut tx, &input).await {
+    let id = match repository::insert_order(&mut tx, &input, None).await {
         Ok(id) => id,
         Err(e) => return reference_outcome(e),
     };
     tx.commit().await?;
     redirect_to_order(id);
     Ok(SaveOutcome::Saved(id))
+}
+
+/// Einkaufsauftrag aus einem Vorgang erzeugen (ANF-029 AK-8 bis AK-13): Entwurf mit dem Projekt des Vorgangs,
+/// der Beschreibung als Bemerkung und einer Pauschal-Position mit dem Namen des Vorgangs.
+#[server]
+pub async fn create_order_from_vorgang(
+    vorgang_id: i64,
+    input: FromVorgangInput,
+) -> Result<SaveOutcome, ServerFnError> {
+    let pool = crate::db::pool()?;
+    // Den MWST-Stand vor der Transaktion lesen, wie bei Positionen (create_position).
+    let vat = first_purchase_vat().await?;
+    let mut tx = pool.begin().await?;
+    // AK-13: Kennung des Vorgangs prüfen; die Angaben kommen aus der Datenbank, nicht aus dem Formular.
+    let Some((projekt_id, name, beschreibung)) =
+        repository::vorgang_source(&mut tx, vorgang_id).await?
+    else {
+        return Err(ServerFnError::new("Vorgang nicht gefunden."));
+    };
+
+    let order = order_from_vorgang(input.adresse_id.trim(), projekt_id, beschreibung.as_deref());
+    let errors = order.validate();
+    if !errors.is_empty() {
+        return Ok(SaveOutcome::Invalid(errors));
+    }
+    if !currency_usable(&mut tx, &order.waehrung).await? {
+        return Err(ServerFnError::new(CHF_UNUSABLE));
+    }
+
+    let order_id = match repository::insert_order(&mut tx, &order, Some(vorgang_id)).await {
+        Ok(id) => id,
+        Err(e) => return reference_outcome(e),
+    };
+    // Eine Pauschal-Position mit dem Namen des Vorgangs (AK-9). Menge 1, Preis 0.00 – bitte ergänzen.
+    // Der MWST-Stand kommt aus `vat`; das Feld `mwst` wird beim Einfügen nicht gelesen.
+    let position = PositionInput {
+        bezeichnung: name,
+        einheit: "pauschal".into(),
+        ..Default::default()
+    };
+    let values = PositionValues {
+        menge: 1000,
+        einzelpreis: 0,
+        rabatt_prozent: 0,
+        mwst: VatSelection::Keep,
+    };
+    repository::insert_position(&mut tx, order_id, &position, &values, vat).await?;
+    tx.commit().await?;
+    redirect_to_order(order_id);
+    Ok(SaveOutcome::Saved(order_id))
+}
+
+/// Meldung, wenn die Währung des Einkaufsauftrags (CHF) nicht aktiv ist (ANF-014 AK-6).
+#[cfg(feature = "ssr")]
+const CHF_UNUSABLE: &str = "Die Währung CHF ist nicht aktiv. Sie muss unter Einstellungen › Finanzen › Währungen aktiviert werden.";
+
+/// MWST-Stand der Pauschal-Position: erster gültiger Vorsteuer-Code, wie ihn das Auswahlfeld beim Anlegen
+/// einer Position vorschlägt. Ist die MWST-Pflicht nicht in Kraft, gilt „ohne MWST“ (Satz 0).
+#[cfg(feature = "ssr")]
+async fn first_purchase_vat() -> Result<VatWrite, ServerFnError> {
+    let codes = crate::backend::finance::vat::server_fns::list_purchase_codes().await?;
+    Ok(match codes.first() {
+        Some(code) => VatWrite {
+            code_id: Some(code.id),
+            satz: code.satz,
+        },
+        None => VatWrite {
+            code_id: None,
+            satz: 0,
+        },
+    })
 }
 
 /// Kopfdaten ändern (AK-13, AK-15). Nach dem Bestellen werden nur Liefertermin, Referenz und Bemerkung übernommen.

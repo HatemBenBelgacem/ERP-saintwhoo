@@ -233,3 +233,4 @@ Geprüft: alle AK im Browser (grosser Bildschirm und Mobiltelefon, 61 Testprojek
 | 2026-11-12 | Hatem Ben Belgacem | Feld „Verantwortlich“ bei Projekt, Teilprojekt und Vorgang umgesetzt (ANF-005) |
 | 2026-11-12 | Hatem Ben Belgacem | ANF-006: Aufgaben ohne Projekt erscheinen nicht im Projektbereich |
 | 2026-11-17 | Hatem Ben Belgacem | Ebenen-Farben an Farbpalette ANF-009 angepasst: Projekt Indigo, Teilprojekt Himmelblau |
+| 2026-11-28 | Claude Code | Vorgang: Abschnitte „Anfragen“ und „Einkaufsaufträge“ (ANF-029) |

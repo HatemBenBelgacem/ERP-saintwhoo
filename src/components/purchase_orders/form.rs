@@ -2,6 +2,7 @@
 //! und Wareneingang (AK-16 bis AK-18).
 
 use leptos::prelude::*;
+use leptos_router::hooks::use_query_map;
 
 use crate::backend::addresses::server_fns::search_addresses;
 use crate::backend::finance::currency::server_fns::list_currencies;
@@ -13,7 +14,8 @@ use crate::backend::purchase_orders::model::{
     format_trimmed, parse_fixed, unit_label,
 };
 use crate::backend::purchase_orders::server_fns::{
-    CreateOrder, CreatePosition, RecordDelivery, UpdateOrder, UpdatePosition,
+    CreateOrder, CreateOrderFromVorgang, CreatePosition, RecordDelivery, UpdateOrder,
+    UpdatePosition,
 };
 use crate::forms::{
     ErrorText, Modal, OptionField, SearchPicker, SelectField, TextField, error_message,
@@ -430,6 +432,60 @@ pub fn DeliveryModal(position: Position, number: usize) -> impl IntoView {
                         </div>
                     })}
                     <FormActions cancel_href=close.into() pending/>
+                </div>
+            </ActionForm>
+        </Modal>
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Einkaufsauftrag aus einem Vorgang (ANF-029)
+// ---------------------------------------------------------------------------------------------
+
+/// Öffnet das Modal-Fenster „Einkaufsauftrag aus Vorgang“ bei `?neu=einkauf` (ANF-029 AK-7).
+/// Wird in der Detailansicht jedes Vorgangs eingebunden.
+#[component]
+pub fn OrderFromVorgangHost(vorgang_id: i64) -> impl IntoView {
+    let query = use_query_map();
+    move || {
+        (query.read().get("neu").as_deref() == Some("einkauf"))
+            .then(|| view! { <OrderFromVorgangModal vorgang_id/> })
+    }
+}
+
+/// Lieferant wählen; Projekt, Bemerkung und Position kommen aus dem Vorgang (ANF-029 AK-8, AK-9, AK-12).
+#[component]
+fn OrderFromVorgangModal(vorgang_id: i64) -> impl IntoView {
+    let action = ServerAction::<CreateOrderFromVorgang>::new();
+    let close = use_base_href();
+    let errors = Signal::derive(move || field_errors(action.value().get()));
+    let message = Signal::derive(move || server_error(action.value().get()));
+    view! {
+        <Modal title="Einkaufsauftrag aus Vorgang".to_string() close_href=close.into()>
+            <ActionForm action=action>
+                <input type="hidden" name="vorgang_id" value=vorgang_id/>
+                <div class="flex flex-col gap-4">
+                    <FormAlerts errors server_error=message/>
+                    <p class="text-sm text-base-content/70">
+                        "Der Einkaufsauftrag übernimmt das Projekt und die Beschreibung dieses Vorgangs. "
+                        "Dazu kommt eine Position mit dem Namen des Vorgangs: Menge 1, Einheit Pauschal, "
+                        "Einzelpreis 0.00. Preis und Menge lassen sich im Entwurf anpassen."
+                    </p>
+                    <SearchPicker
+                        field="adresse_id"
+                        label="Lieferant"
+                        placeholder="Adresse suchen (Name, Nummer, Ort) …"
+                        initial=None
+                        errors
+                        search=search_addresses
+                        required=true
+                    />
+                </div>
+                <div class="modal-action mt-0">
+                    <a href=move || close.get() class="btn btn-ghost">"Abbrechen"</a>
+                    <button type="submit" class="btn btn-primary" disabled=move || action.pending().get()>
+                        {move || if action.pending().get() { "Erstellen …" } else { "Einkaufsauftrag erstellen" }}
+                    </button>
                 </div>
             </ActionForm>
         </Modal>

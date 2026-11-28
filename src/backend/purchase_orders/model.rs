@@ -513,6 +513,30 @@ impl OrderInput {
     }
 }
 
+/// Formulareingabe „Einkaufsauftrag aus Vorgang“ (ANF-029 AK-8): nur der Lieferant wird gewählt.
+/// Projekt, Bemerkung und Position kommen aus dem Vorgang (siehe `order_from_vorgang`).
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct FromVorgangInput {
+    pub adresse_id: String,
+}
+
+/// Kopfdaten eines Einkaufsauftrags aus einem Vorgang (ANF-029 AK-9): Projekt des Vorgangs,
+/// Beschreibung des Vorgangs als Bemerkung, Währung CHF. Die Prüfung übernimmt `OrderInput::validate`.
+pub fn order_from_vorgang(
+    adresse_id: &str,
+    projekt_id: i64,
+    beschreibung: Option<&str>,
+) -> OrderInput {
+    OrderInput {
+        adresse_id: adresse_id.into(),
+        projekt_id: projekt_id.to_string(),
+        bemerkung: beschreibung.unwrap_or_default().into(),
+        ..OrderInput::new_default()
+    }
+    .normalized()
+}
+
 /// Formulareingabe für eine Position (AK-11, AK-12).
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
@@ -881,6 +905,21 @@ mod tests {
         assert!(i.normalized().validate().is_empty());
         i.waehrung = "US".into();
         assert!(i.normalized().validate().contains_key("waehrung"));
+    }
+
+    #[test]
+    fn order_from_vorgang_takes_project_and_description() {
+        // ANF-029 AK-9: Projekt des Vorgangs, Beschreibung als Bemerkung, Währung CHF
+        let o = order_from_vorgang(" 3 ", 7, Some("  Zelte aufstellen \n"));
+        assert_eq!(o.projekt_id, "7");
+        assert_eq!(o.bemerkung, "Zelte aufstellen");
+        assert_eq!(o.waehrung, "CHF");
+        assert!(o.validate().is_empty(), "{:?}", o.validate());
+
+        // Ohne Beschreibung bleibt die Bemerkung leer; ohne Lieferant ist die Eingabe ungültig (AK-12)
+        let o = order_from_vorgang("", 7, None);
+        assert!(o.bemerkung.is_empty());
+        assert!(o.validate().contains_key("adresse_id"));
     }
 
     #[test]

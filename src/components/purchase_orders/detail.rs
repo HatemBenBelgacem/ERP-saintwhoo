@@ -9,12 +9,12 @@ use super::form::{DeliveryModal, OrderEditModal, PositionCreateModal, PositionEd
 use super::list::OrderTableRow;
 use crate::backend::projects::model::format_date;
 use crate::backend::purchase_orders::model::{
-    Order, OrderDetail, Position, Totals, format_amount, format_trimmed, status_badge,
+    Order, OrderDetail, OrderRow, Position, Totals, format_amount, format_trimmed, status_badge,
     status_label, unit_label,
 };
 use crate::backend::purchase_orders::server_fns::{
     CancelOrder, DeleteOrder, DeletePosition, DeliverAll, MovePosition, PlaceOrder, get_order,
-    list_project_orders,
+    list_project_orders, list_vorgang_orders,
 };
 use crate::forms::{Breadcrumbs, data_version, error_message, use_base_href, with_params};
 use crate::icons::{Icon, IconView};
@@ -632,14 +632,52 @@ pub fn ProjectOrders(project_id: i64) -> impl IntoView {
         |(id, _)| list_project_orders(id),
     );
     view! {
+        <OrdersCard data empty="Noch keine Einkaufsaufträge für dieses Projekt." action=().into_any()/>
+    }
+}
+
+/// Einkaufsaufträge eines Vorgangs in dessen Detailansicht (ANF-029 AK-7, AK-10).
+/// Die Schaltfläche öffnet das Modal-Fenster „Einkaufsauftrag aus Vorgang“ (`?neu=einkauf`).
+#[component]
+pub fn VorgangOrders(vorgang_id: i64) -> impl IntoView {
+    let base = use_base_href();
+    let data = Resource::new(
+        move || (vorgang_id, data_version()),
+        |(id, _)| list_vorgang_orders(id),
+    );
+    let action = view! {
+        <a
+            href=move || with_params(&base.get(), &[("neu", "einkauf".into())])
+            class="btn btn-primary btn-sm"
+        >
+            "Einkaufsauftrag erstellen"
+        </a>
+    }
+    .into_any();
+    view! {
+        <OrdersCard data empty="Noch kein Einkaufsauftrag aus diesem Vorgang." action/>
+    }
+}
+
+/// Karte mit der Tabelle der Einkaufsaufträge; `action` steht rechts im Kopf.
+#[component]
+fn OrdersCard(
+    data: Resource<Result<Vec<OrderRow>, ServerFnError>>,
+    empty: &'static str,
+    action: AnyView,
+) -> impl IntoView {
+    view! {
         <section class="card bg-base-100 shadow">
             <div class="card-body gap-3">
-                <h2 class="card-title text-base">"Einkaufsaufträge"</h2>
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h2 class="card-title text-base">"Einkaufsaufträge"</h2>
+                    {action}
+                </div>
                 <Transition fallback=|| view! { <span class="loading loading-spinner"></span> }>
                     {move || Suspend::new(async move {
                         match data.await {
                             Ok(rows) if rows.is_empty() => view! {
-                                <p class="text-base-content/60">"Noch keine Einkaufsaufträge für dieses Projekt."</p>
+                                <p class="text-base-content/60">{empty}</p>
                             }.into_any(),
                             Ok(rows) => view! {
                                 <div class="overflow-x-auto">

@@ -10,7 +10,8 @@ use crate::backend::projects::model::{
     status_badge, status_label, task_stats,
 };
 use crate::backend::projects::server_fns::{DeleteElement, MoveElement, ToggleTask, get_tree};
-use crate::components::purchase_orders::ProjectOrders;
+use crate::components::inquiries::VorgangInquiries;
+use crate::components::purchase_orders::{OrderFromVorgangHost, ProjectOrders, VorgangOrders};
 use crate::forms::{Breadcrumbs, data_version, error_message, use_base_href, with_params};
 use crate::icons::{Icon, IconView};
 
@@ -280,6 +281,12 @@ fn ElementView(
                 }.into_any()
             }}
             {(!is_task).then(|| view! { <Structure level id=node.id nodes=node.children.clone()/> })}
+            // ANF-029: Anfragen und Einkaufsaufträge aus dem Vorgang
+            {(level == Level::Process).then(|| view! {
+                <VorgangInquiries vorgang_id=node.id/>
+                <VorgangOrders vorgang_id=node.id/>
+                <OrderFromVorgangHost vorgang_id=node.id/>
+            })}
             <p class="text-sm text-base-content/60">
                 "Erstellt am " {node.erstellt_am.clone()} " · Geändert am " {node.geaendert_am.clone()}
             </p>
