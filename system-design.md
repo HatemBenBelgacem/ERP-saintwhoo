@@ -61,6 +61,7 @@ src/
 | `addresses`        | ANF-002     | model, server_fns, repository                | list, detail, form                          |
 | `projects`         | ANF-003     | model, server_fns, repository                | list, detail, form                          |
 | `purchase_orders`  | ANF-004     | model, server_fns, repository                | list, detail, form                          |
+| `inquiries`        | ANF-029     | model, server_fns, repository                | section (Abschnitt im Vorgang)              |
 | `auth`             | ANF-007, ANF-026 | model, server_fns, repository, session, middleware, password (Portal-Datenbank) | login, register    |
 | `portal`           | ANF-026     | model, server_fns, repository, provision (Datenbanken anlegen) | page (`/portal`)          |
 | `tasks`            | ANF-006     | model, server_fns, repository                | list, detail, form                          |

@@ -6,6 +6,7 @@ pub mod addresses;
 pub mod auth;
 pub mod company;
 pub mod finance;
+pub mod inquiries;
 pub mod portal;
 pub mod projects;
 pub mod purchase_orders;

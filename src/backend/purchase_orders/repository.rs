@@ -132,6 +132,19 @@ pub async fn list_by_project(pool: &PgPool, project_id: i64) -> Result<Vec<Order
     Ok(rows)
 }
 
+/// Einkaufsaufträge, die aus einem Vorgang stammen, neueste zuerst, Gesamtbeträge bereits berechnet (ANF-029 AK-10).
+pub async fn list_by_vorgang(pool: &PgPool, vorgang_id: i64) -> Result<Vec<OrderRow>, sqlx::Error> {
+    let mut rows: Vec<OrderRow> = sqlx::query_as(AssertSqlSafe(format!(
+        "SELECT {ROW_COLUMNS}, {OVERDUE} AS ueberfaellig FROM {FROM} \
+         WHERE e.vorgang_id = $1 ORDER BY e.id DESC"
+    )))
+    .bind(vorgang_id)
+    .fetch_all(pool)
+    .await?;
+    fill_totals(pool, &mut rows).await?;
+    Ok(rows)
+}
+
 /// Gesamtbeträge der Zeilen aus ihren Positionen berechnen (gleiche Rechnung wie in der Detailansicht).
 async fn fill_totals(pool: &PgPool, rows: &mut [OrderRow]) -> Result<(), sqlx::Error> {
     let ids: Vec<i64> = rows.iter().map(|r| r.id).collect();
@@ -232,8 +245,28 @@ pub async fn lock_order_of_position(
 
 // ---------- Auftrag schreiben ----------
 
+/// Herkunft eines Vorgangs für einen Einkaufsauftrag (ANF-029): Projekt-Kennung, Name und Beschreibung.
+/// `None`, wenn es den Vorgang nicht gibt. Sperrt den Vorgang bis zum Ende der Transaktion.
+pub async fn vorgang_source(
+    conn: &mut PgConnection,
+    vorgang_id: i64,
+) -> Result<Option<(i64, String, Option<String>)>, sqlx::Error> {
+    sqlx::query_as(
+        "SELECT t.projekt_id, v.name, v.beschreibung FROM vorgang v \
+         JOIN teilprojekt t ON t.id = v.teilprojekt_id WHERE v.id = $1 FOR SHARE OF v",
+    )
+    .bind(vorgang_id)
+    .fetch_optional(conn)
+    .await
+}
+
 /// Neuen Auftrag im Status „Entwurf“ speichern, Nummer E-JJJJ-NNNN vergeben; liefert die Kennung.
-pub async fn insert_order(conn: &mut PgConnection, input: &OrderInput) -> Result<i64, sqlx::Error> {
+/// `vorgang_id`: Herkunft aus einem Vorgang (ANF-029), sonst `None`.
+pub async fn insert_order(
+    conn: &mut PgConnection,
+    input: &OrderInput,
+    vorgang_id: Option<i64>,
+) -> Result<i64, sqlx::Error> {
     let (year, n): (i32, i32) = sqlx::query_as(
         "INSERT INTO einkaufsauftrag_nummer (jahr, letzte) \
          VALUES (extract(year FROM now() AT TIME ZONE 'Europe/Zurich')::int, 1) \
@@ -244,8 +277,8 @@ pub async fn insert_order(conn: &mut PgConnection, input: &OrderInput) -> Result
     .await?;
     sqlx::query_scalar(
         "INSERT INTO einkaufsauftrag (nummer, adresse_id, projekt_id, bestelldatum, liefertermin, \
-                                      referenz_lieferant, waehrung, lieferadresse, bemerkung) \
-         VALUES ($1, $2, $3, $4::date, $5::date, $6, $7, $8, $9) RETURNING id",
+                                      referenz_lieferant, waehrung, lieferadresse, bemerkung, vorgang_id) \
+         VALUES ($1, $2, $3, $4::date, $5::date, $6, $7, $8, $9, $10) RETURNING id",
     )
     .bind(format!("E-{year}-{n:04}"))
     .bind(input.supplier_id())
@@ -256,6 +289,7 @@ pub async fn insert_order(conn: &mut PgConnection, input: &OrderInput) -> Result
     .bind(&input.waehrung)
     .bind(opt(&input.lieferadresse))
     .bind(opt(&input.bemerkung))
+    .bind(vorgang_id)
     .fetch_one(&mut *conn)
     .await
 }

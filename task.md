@@ -1,6 +1,6 @@
 # Aufgaben
 
-Stand: 2026-11-26
+Stand: 2026-11-28
 
 ## In Arbeit
 
@@ -8,6 +8,8 @@ Stand: 2026-11-26
 
 ## Offen
 
+- [ ] Browser-Prüfung ANF-029 (TS-029-01 bis TS-029-15): Anfrage und Einkaufsauftrag aus einem Vorgang, Modal-Fenster, Löschen, Mobiltelefon. Dafür ist ein Mandant mit Anmeldung nötig
+- [ ] ANF-029 offene Fragen klären (Art der Anfrage: intern oder an Lieferanten, Nummernformat `A-JJJJ-NNNN`, Währung CHF, nur eine Pauschal-Position)
 - [ ] Browser-Prüfung Journal und Auswertungen (ANF-017, ANF-021): Liste, Filter, Formular mit Zeilen und MWST-Vorschau, Entwurf, Buchen, Storno, Detail, Kontoauszug, Bilanz, Erfolgsrechnung, Projekte, Drucken und CSV. Dafür ist ein Mandant mit Anmeldung nötig; der Serverstart wendet die neuen Migrationen an
 - [ ] ANF-021 AK-10: Laufzeit der Auswertungen mit 100 000 Buchungszeilen messen
 - [ ] ANF-010 AK-4 und AK-5: Übersicht Finanzen mit Kennzahlen (folgt mit ANF-018 bis ANF-020; dort auch die Umsatzgrenze)
@@ -45,6 +47,7 @@ Stand: 2026-11-26
 
 ## Erledigt
 
+- [x] ANF-029 Anfragen und Einkaufsaufträge aus einem Vorgang umgesetzt: Anfrage übernimmt Titel (Teilprojekt) und Beschreibung (Vorgang), Einkaufsauftrag aus dem Vorgang mit Projekt, Bemerkung und Pauschal-Position; Migration `20261204100000_anfrage`. `cargo fmt`, Clippy (Server und Browser) sauber, `cargo test` grün; SQL gegen eine Wegwerf-Datenbank geprüft. Browser-Prüfung noch offen
 - [x] ANF-027 AK-27: Art und Lage (X, Z in m vom Standort) eines Elements nachträglich ändern; Abschnitt „Eigenschaften von …“ (AK-23, AK-26 angepasst). Im Browser geprüft: Art wechseln, Lage innerhalb der Fläche übernommen, Lage ausserhalb abgewiesen, nach Speichern in der Datenbank
 - [x] ANF-027 AK-26: Elemente beschriften (Bezeichnung je Element, höchstens 100 Zeichen, unter „Masse von …“; auf der Karte über dem Modell und in der Liste; mit dem Plan gespeichert). Migration `20261203110000_gelaendeplan_element_bezeichnung`. Im Browser geprüft: Beschriftung über Sanität und Allgemeinem Element, nach dem Speichern und Neuladen erhalten
 - [x] ANF-027: Elemente über die Auswahlliste „Element“ platzieren (statt Schaltflächen); neue Elementarten Sanität (weisse Kabine mit rotem Kreuz) und Allgemeines Element (quadratisch mit Spitzdach); Migration `20261203100000_gelaendeplan_element_art`; AK-4 und AK-25 in ANF-027. `cargo fmt`, Clippy (Server und Browser) sauber, `cargo test` grün (180 Tests). Im Browser geprüft: Sanität (weisse Kabine, rotes Kreuz, dunkle Tür vorne links), Allgemeines Element (petrol Körper, anthrazit Spitzdach, helle Tür) und Festzelt (Giebel unverändert)

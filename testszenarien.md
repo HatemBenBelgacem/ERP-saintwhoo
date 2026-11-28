@@ -32,6 +32,7 @@ Schlägt ein Szenario fehl, trage es in [task.md](task.md) als offene Aufgabe ei
 | ANF-006 | Aufgaben | 21 | Bedienung im Browser noch nicht von Hand geprüft |
 | ANF-007 | Anmeldung | 29 | Seit ANF-026 mit E-Mail statt Benutzername; TS-007-26/27 entfallen |
 | ANF-026 | Registrierung, Datenbank, Mandant | 32 | Alle Schritte (Portal-Datenbank, Registrierung, Anmeldung, Datenbank erstellen, Mandant definieren, Passwort im Portal) |
+| ANF-029 | Anfragen und Einkauf aus Vorgang | 15 | Noch nicht im Browser geprüft; die SQL-Teile gegen eine Wegwerf-Datenbank geprüft |
 
 Die Anforderungen ANF-005 bis ANF-007 haben bisher keine Prüfung im Browser. Mit diesen Szenarien starten.
 
@@ -383,6 +384,26 @@ Vorbereitung: Kontenrahmen übernehmen (TS-011-01) und eine Firma mit UID erfass
 | TS-025-11 | 11 | Die Adresse der Firma im Adressstamm öffnen und löschen. | Plakette „Eigene Firma“. Löschen wird verhindert: „… als eigene Firma verwendet …“. |
 | TS-025-12 | 12 | Neues Projekt: im Feld „Kunde“ nach dem Firmennamen suchen. Ebenso bei einem neuen Einkaufsauftrag (Lieferant). | Die eigene Firma wird nicht angeboten. |
 | TS-025-13 | 6 | Firma ansehen, zuerst bei ausgeschalteter, dann bei eingeschalteter MWST-Pflicht (ANF-012). | Ohne Pflicht fehlt die Zeile „MWST-Nummer“. Mit Pflicht steht dort „CHE-… MWST“.
+
+## ANF-029 Anfragen und Einkauf aus Vorgang
+
+| Nr | AK | Schritte | Erwartet |
+|----|----|----------|----------|
+| TS-029-01 | 1 | Einen Vorgang öffnen, dann einen Teilprojekt- und einen Aufgabenbereich öffnen. | Im Vorgang stehen unter dem Strukturbaum die Abschnitte „Anfragen“ (mit „Anfrage erstellen“) und „Einkaufsaufträge“ (mit „Einkaufsauftrag erstellen“). Teilprojekt und Aufgabe zeigen sie nicht. |
+| TS-029-02 | 2 | Im Vorgang „Zelte aufstellen“ (Beschreibung „Vier Festzelte am Hauptplatz“, Teilprojekt „Zelte“) auf „Anfrage erstellen“ klicken. | Eine Anfrage erscheint mit einer Nummer `A-JJJJ-NNNN`, dem Titel „Zelte“ und der Beschreibung „Vier Festzelte am Hauptplatz“. |
+| TS-029-03 | 2 | Den Namen des Teilprojekts und die Beschreibung des Vorgangs ändern. Die Anfrage aus TS-029-02 ansehen. | Die Anfrage behält den alten Titel und die alte Beschreibung. Sie ist eine Kopie. |
+| TS-029-04 | 3, 4 | Im selben Vorgang eine zweite Anfrage erstellen. | Die neue Anfrage bekommt die nächste Nummer und steht oben in der Liste. |
+| TS-029-05 | 5 | Einen Vorgang ohne Beschreibung öffnen und eine Anfrage erstellen. | Die Beschreibung der Anfrage zeigt „–“. |
+| TS-029-06 | 6 | Bei einer Anfrage „Löschen“ und dann „Nein“ klicken. Danach „Löschen“ und „Ja, löschen“ klicken. | Nach „Nein“ bleibt die Anfrage. Nach „Ja, löschen“ verschwindet sie. Der Vorgang ist unverändert. |
+| TS-029-07 | 7 | Im Vorgang auf „Einkaufsauftrag erstellen“ klicken. | Das Modal-Fenster „Einkaufsauftrag aus Vorgang“ liegt über der Seite. Die Webadresse endet auf `?neu=einkauf`. |
+| TS-029-08 | 8, 12 | Ohne Lieferant speichern. | Das Feld „Lieferant“ ist markiert. Es wird nichts gespeichert; die Liste „Einkauf“ bleibt unverändert. |
+| TS-029-09 | 9 | Den Lieferanten „Lieferant AG“ über die Suche wählen und speichern. Vorgang „Zelte aufstellen“ im Projekt P-2026-001. | Es öffnet sich `/einkauf/<Kennung>` im Status Entwurf. Projekt ist P-2026-001. Die Bemerkung ist „Vier Festzelte am Hauptplatz“. Währung CHF. Eine Position „Zelte aufstellen“ mit Menge 1, Einheit Pauschal und Einzelpreis 0.00. |
+| TS-029-10 | 9, 15 | Im Entwurf den Einzelpreis auf 1200.00 ändern und „Bestellen“ klicken. | Die Position zeigt 1'200.00. Der Auftrag ist im Status Bestellt (ANF-004 AK-13, AK-14). |
+| TS-029-11 | 10 | Zurück zum Vorgang. Den Abschnitt „Einkaufsaufträge“ ansehen. | Der Auftrag steht mit Nummer, Lieferant, Bestelldatum, Liefertermin, Status und Gesamtbetrag in der Liste. |
+| TS-029-12 | 11 | Das Teilprojekt mit dem Vorgang aus TS-029-09 löschen und bestätigen. Dann unter „Einkauf“ nachsehen. | Die Anfragen des Vorgangs sind weg. Der Einkaufsauftrag bleibt erhalten. DB: `SELECT vorgang_id FROM einkaufsauftrag WHERE nummer = 'E-…'` liefert NULL. |
+| TS-029-13 | 13 | Das Modal-Fenster „Einkaufsauftrag aus Vorgang“ öffnen. In einem zweiten Fenster den Vorgang löschen. Im ersten Fenster Lieferant wählen und speichern. | Die Meldung „Vorgang nicht gefunden.“ erscheint. Es wird nichts gespeichert. |
+| TS-029-14 | 14 | DB: `\d anfrage` und `\d einkaufsauftrag` ausführen. | `anfrage.vorgang_id` hat `ON DELETE CASCADE`. `einkaufsauftrag.vorgang_id` hat `ON DELETE SET NULL`. Die Tabelle `anfrage_nummer` existiert. |
+| TS-029-15 | Allgemein | Mit einem Mobiltelefon (390 px) einen Vorgang mit Anfragen und Einkaufsaufträgen öffnen. Das Modal-Fenster öffnen. | Die Tabellen lassen sich waagrecht scrollen, die Seite läuft nicht seitlich über. Das Modal-Fenster erscheint unten. |
 
 ## Offene Punkte aus der Prüfung
 
